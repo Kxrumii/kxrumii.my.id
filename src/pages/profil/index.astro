@@ -33,7 +33,7 @@ import { ClientRouter } from 'astro:transitions';
 
 <body class="bg-[#eff1f5] text-[#4c4f69] dark:bg-[#1e1e2e] dark:text-[#cdd6f4] antialiased flex selection:bg-[#40a02b] selection:text-white dark:selection:bg-[#a6e3a1] transition-colors duration-500">
 
-    <header id="side-nav" class="fixed left-0 inset-y-0 w-12 hover:w-56 border-r border-[#ccd0da] dark:border-[#313244] bg-[#eff1f5]/90 dark:bg-[#1e1e2e]/90 backdrop-blur z-50 transition-all duration-500 overflow-hidden group flex flex-col py-8">
+    <header id="side-nav" class="hidden md:flex fixed left-0 inset-y-0 w-12 hover:w-56 border-r border-[#ccd0da] dark:border-[#313244] bg-[#eff1f5]/90 dark:bg-[#1e1e2e]/90 backdrop-blur z-50 transition-all duration-500 overflow-hidden group flex-col py-8">
         
         <div class="absolute right-0 top-0 w-[2px] h-full bg-[#ccd0da] dark:bg-[#313244]">
             <div id="progress-bar" class="w-full bg-[#40a02b] dark:bg-[#a6e3a1] h-0 transition-all duration-100 ease-out"></div>
@@ -78,14 +78,14 @@ import { ClientRouter } from 'astro:transitions';
         </div>
     </header>
 
-    <main class="ml-12 w-full min-h-[100svh] flex flex-col overflow-hidden relative">
+    <main class="ml-0 md:ml-12 w-full min-h-[100svh] flex flex-col overflow-x-hidden relative">
 
         <div class="fixed right-10 top-10 font-mono text-xs text-[#ccd0da] dark:text-[#313244] pointer-events-none z-[-1]">+</div>
         <div class="fixed left-20 bottom-10 font-mono text-xs text-[#ccd0da] dark:text-[#313244] pointer-events-none z-[-1]">+</div>
 
         <section id="perkenalan" class="min-h-[100svh] flex items-center p-8 md:p-24 border-b border-[#ccd0da] dark:border-[#313244] relative overflow-hidden">
-            <div class="absolute -right-10 md:-right-20 top-20 text-[25vw] font-black text-[#ccd0da]/30 dark:text-[#313244]/30 select-none leading-none pointer-events-none">01</div>
-            
+            <div class="absolute -right-4 md:-right-10 top-20 text-9xl md:text-[15rem] lg:text-[20rem] font-black text-[#ccd0da]/30 dark:text-[#313244]/30 select-none leading-none pointer-events-none">01</div>
+
             <div class="max-w-4xl fade-in-up z-10 relative border-l-2 border-[#40a02b] dark:border-[#a6e3a1] pl-6 md:pl-10">
                 <p class="text-[#40a02b] dark:text-[#a6e3a1] font-mono text-xs md:text-sm mb-4 tracking-widest uppercase">
                     // Hello, World.
@@ -104,9 +104,9 @@ import { ClientRouter } from 'astro:transitions';
 
         <section id="profil" class="min-h-[100svh] flex items-center p-8 md:p-24 border-b border-[#ccd0da] dark:border-[#313244] bg-[#e6e9ef] dark:bg-[#181825] transition-colors duration-500 relative overflow-hidden">
             <div class="absolute top-0 left-1/2 w-[1px] h-full bg-[#ccd0da] dark:bg-[#313244] pointer-events-none"></div>
-            <div class="absolute md: top-20 text-[25vw] font-black text-[#ccd0da]/30 dark:text-[#313244]/30 select-none leading-none pointer-events-none">02</div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-center w-full max-w-6xl relative z-10">
+            <div class="absolute -right-4 md:-right-10 top-20 text-9xl md:text-[15rem] lg:text-[20rem] font-black text-[#ccd0da]/30 dark:text-[#313244]/30 select-none leading-none pointer-events-none">02</div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-16 items-start md:items-center w-full max-w-6xl mx-auto relative z-10 py-12 md:py-0">
                 <div class="fade-in-up bg-[#e6e9ef] dark:bg-[#181825] md:pr-10">
                     <h2 class="text-4xl md:text-6xl font-bold uppercase tracking-tighter mb-2">FAHRI KHAIRUN<br/>ARIANSYAH.</h2>
                     <p class="font-mono text-xs text-[#8c8fa1] dark:text-[#6c7086] mb-8 uppercase">— TEKNIK INFORMATIKA, UIN Sunan Gunung Djati Bandung</p>
@@ -116,19 +116,21 @@ import { ClientRouter } from 'astro:transitions';
                     </p>
                 </div>
                 
-                <figure class="fade-in-up overflow-hidden bg-[#ccd0da] dark:bg-[#313244] aspect-square md:aspect-[4/5] shadow-2xl relative group border-4 border-white dark:border-[#11111b] rotate-2 hover:rotate-0 transition-transform duration-500">
-                    <img src="/foto-diri.png" alt="Foto portrait Fahri Khairun Ariansyah mengenakan kemeja jurusan teknik informatika UIN Sunan Gunung Djati Bandung" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" />
-                    <figcaption class="absolute bottom-4 right-4 text-[10px] font-mono bg-black/50 text-white px-2 py-1 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                        IMG_01.DAT
-                    </figcaption>
-                </figure>
+                <div class="flex justify-center lg:justify-end w-full">
+                    <figure class="fade-in-up overflow-hidden bg-[#ccd0da] dark:bg-[#313244] aspect-square md:aspect-[4/5] shadow-2xl relative group border-4 border-white dark:border-[#11111b] rotate-2 hover:rotate-0 transition-transform duration-500">
+                        <img src="/foto-diri.png" alt="Foto portrait Fahri Khairun Ariansyah mengenakan kemeja jurusan teknik informatika UIN Sunan Gunung Djati Bandung" class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700" />
+                        <figcaption class="absolute bottom-4 right-4 text-[10px] font-mono bg-black/50 text-white px-2 py-1 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                            IMG_01.DAT
+                        </figcaption>
+                    </figure>
+                </div>
             </div>
         </section>
 
         <section id="jadwal" class="min-h-[100svh] flex flex-col justify-center p-8 md:p-24 border-b border-[#ccd0da] dark:border-[#313244] relative overflow-hidden">
-            <div class="absolute -left-10 bottom-10 text-[20vw] font-black text-[#ccd0da]/30 dark:text-[#313244]/30 select-none leading-none pointer-events-none">03</div>
+            <div class="absolute -right-4 md:-right-10 top-20 text-9xl md:text-[15rem] lg:text-[20rem] font-black text-[#ccd0da]/30 dark:text-[#313244]/30 select-none leading-none pointer-events-none">03</div>
 
-            <div class="w-full max-w-6xl fade-in-up z-10">
+            <div class="w-full max-w-6xl mx-auto fade-in-up z-10">
                 <h2 class="text-4xl md:text-6xl font-bold uppercase tracking-tighter mb-8 md:mb-12 border-b-2 border-[#11111b] dark:border-[#cdd6f4] inline-block pb-2">
                     Jadwal Semester 5
                 </h2>
