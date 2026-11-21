@@ -1,0 +1,25 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+:root { font-family: 'DM Sans', sans-serif; color: #e8e6e1; background: #10110f; font-synthesis: none; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; min-height: 100vh; }
+a { color: inherit; text-decoration: none; }
+.app-shell { width: min(1040px, calc(100% - 40px)); min-height: 100vh; margin: 0 auto; display: flex; flex-direction: column; }
+.site-header { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 28px 0 22px; border-bottom: 1px solid #30312d; }
+.wordmark { font: 700 18px 'Space Grotesk', sans-serif; letter-spacing: -.06em; }
+.wordmark span { color: #a3b18a; }
+.site-header nav { display: flex; gap: 20px; color: #8d9184; font: 11px 'DM Mono', monospace; text-transform: uppercase; }
+.site-header nav a.active { color: #c5d0aa; }
+.content { flex: 1; padding: clamp(64px, 12vw, 110px) 0; }
+.eyebrow { margin: 0 0 12px; color: #8d9184; font: 11px 'DM Mono', monospace; letter-spacing: .08em; text-transform: uppercase; }
+h1 { max-width: 800px; margin: 12px 0 20px; font: 700 clamp(42px, 8vw, 76px)/.98 'Space Grotesk', sans-serif; letter-spacing: -.07em; }
+.lead, .muted { max-width: 620px; color: #b8baaf; line-height: 1.75; font-size: 16px; }
+.primary-link { display: inline-flex; gap: 16px; margin-top: 18px; padding: 12px 16px; border-radius: 8px; background: #a3b18a; color: #171915; font-size: 13px; font-weight: 700; }
+.book-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 32px; }
+.book-card, .detail-card { border: 1px solid #30312d; border-radius: 14px; background: #171915; padding: 22px; }
+.book-card { min-height: 190px; display: flex; flex-direction: column; align-items: flex-start; }
+.book-card h2, .detail-card h2 { margin: 4px 0 22px; font: 600 22px 'Space Grotesk', sans-serif; letter-spacing: -.04em; }
+.book-card a, .detail-card a { margin-top: auto; color: #c5d0aa; font-size: 12px; }
+.detail-card { max-width: 680px; margin-top: 30px; }
+.detail-card code { color: #c5d0aa; }
+.site-footer { padding: 24px 0 32px; border-top: 1px solid #30312d; color: #666b60; font: 10px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .08em; }
+@media (max-width: 760px) { .book-grid { grid-template-columns: 1fr; } .site-header { align-items: flex-start; flex-direction: column; } }
