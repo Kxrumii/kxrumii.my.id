@@ -1,101 +1,140 @@
 # kxrumii.my.id
 
-Personal website, portfolio, dan kumpulan tugas mata kuliah Pengembangan Aplikasi Web. Website utama menggunakan Astro, setiap tugas ditempatkan pada workspace terpisah sesuai teknologi yang diminta.
+Website pribadi yang menjadi tempat untuk menampilkan profil, menyimpan berbagai eksperimen, dan mengembangkan tugas-tugas perkuliahan. Project ini dibuat menggunakan Astro dan terus dikembangkan seiring dengan hal-hal baru yang sedang dipelajari.
+
+Selain website utama, repository ini juga berisi beberapa aplikasi untuk mata kuliah **Pengembangan Aplikasi Web (PAW)**. Setiap tugas dikembangkan secara terpisah agar bisa menggunakan teknologi dan konfigurasi yang sesuai dengan kebutuhan masing-masing.
+
+**Website:** [kxrumii.my.id](https://kxrumii.my.id/)
+
+## Isi Repository
+
+### Website Utama
+
+Website personal yang dibangun menggunakan Astro, Tailwind CSS, dan GSAP. Bagian ini mencakup halaman utama, profil, serta halaman yang menghubungkan berbagai tugas dan eksperimen.
+
+### Tugas Pengembangan Aplikasi Web
+
+| Pertemuan | Teknologi | Deskripsi |
+|---|---|---|
+| 01 | HTML5, Tailwind CSS | Halaman profil diri menggunakan HTML5 semantik |
+| 06 | TypeScript, Vite | Aplikasi pengelolaan daftar tugas kuliah |
+| 07 | React, TypeScript, Vite | Eksperimen UI berbasis komponen React |
+| 08 | React Router, TypeScript, Vite | Aplikasi multi-halaman dengan sistem routing |
+
+Source code setiap tugas berada di dalam direktori `apps/` masing-masing.
 
 ## Teknologi
 
-- **Website utama:** Astro 7, Tailwind CSS v4, GSAP.
-- **Pertemuan 1:** HTML5 semantik, CSS dengan Tailwind CSS, dan Vite sebagai build tool untuk halaman statis.
-- **Pertemuan 6:** TypeScript + Vite (Vanilla).
-- **Pertemuan 7:** React + TypeScript + Vite.
-- **Pertemuan 8:** React + TypeScript + React Router + Vite.
-- **Package manager:** npm workspaces.
+Beberapa teknologi yang digunakan dalam project ini:
 
-## Persyaratan development
+- **Astro** — framework untuk membangun website utama.
+- **Tailwind CSS** — styling dan pengaturan tampilan.
+- **GSAP** — animasi dan interaksi visual.
+- **React** — pengembangan antarmuka berbasis komponen.
+- **TypeScript** — bahasa pemrograman untuk aplikasi berbasis JavaScript.
+- **Vite** — development server dan build tool untuk aplikasi tugas.
+- **React Router** — pengaturan navigasi antarhalaman.
+- **npm Workspaces** — pengelolaan beberapa aplikasi dalam satu repository.
 
-- Node.js 26.13.1 (lihat `.nvmrc`).
-- npm 12.2.3 (lihat `packageManager` pada `package.json`).
+## Menjalankan Project
 
-Setelah memasang Node.js yang sesuai, aktifkan environment proyek dan install dependency:
+Pastikan Node.js dan npm sudah terpasang. Project ini menggunakan Node.js `26.13.1` dan npm `12.2.3`.
+
+Clone repository dan masuk ke direktori project:
+
+```bash
+git clone https://github.com/Kxrumii/kxrumii.my.id.git
+cd kxrumii.my.id
+```
+
+Aktifkan versi Node.js yang digunakan project dan install dependency:
 
 ```bash
 nvm use
-npm install
+npm ci
 ```
 
-`npm install` digunakan saat pertama kali menambahkan workspace atau mengubah dependency. Setelah `package-lock.json` terbentuk dan sudah di-commit, gunakan `npm ci` untuk clean install.
+### Development
 
-## Menjalankan website dan aplikasi
+Untuk menjalankan website utama:
 
 ```bash
-# Website utama Astro
 npm run dev
+```
 
-# Aplikasi tugas individual
+Untuk menjalankan aplikasi tugas secara individual:
+
+```bash
 npm run dev:t1
 npm run dev:t6
 npm run dev:t7
 npm run dev:t8
 ```
 
-Setiap aplikasi Vite menggunakan base path sesuai URL produksi, misalnya `/tugas/pertemuan-8/`.
+Setiap aplikasi memiliki development server sendiri dan dapat dijalankan tanpa harus menjalankan aplikasi lainnya.
 
-## Build seluruh website
+### Build
+
+Untuk memeriksa TypeScript dan membangun seluruh aplikasi:
 
 ```bash
 npm run check
 npm run build
+```
+
+Hasil build tersedia di direktori `dist/`. Untuk melihat hasilnya secara lokal:
+
+```bash
 npm run preview
 ```
 
-Urutan `npm run build`:
-
-1. Membersihkan hasil build tugas sebelumnya dari `public/tugas/` dan `dist/`.
-2. Menjalankan build workspace Pertemuan 1, 6, 7, dan 8 secara berurutan.
-3. Setiap aplikasi Vite menulis hasil build ke `public/tugas/pertemuan-X/`.
-4. Astro membangun website utama dan menyalin isi `public/` ke `dist/`.
-
-Hasil akhirnya berada di `dist/` dan dapat disajikan Nginx.
-
-## Struktur repository
+## Struktur Repository
 
 ```text
-.
+kxrumii.my.id/
 ├── apps/
-│   ├── pertemuan-1/       # Source HTML5 + CSS
-│   ├── pertemuan-6/       # Vanilla TypeScript + Vite
-│   ├── pertemuan-7/       # React + Vite
-│   └── pertemuan-8/       # React Router + Vite
+│   ├── pertemuan-1/
+│   ├── pertemuan-6/
+│   ├── pertemuan-7/
+│   └── pertemuan-8/
 ├── docs/
-│   └── deployment/        # Catatan konfigurasi deployment/Nginx
+│   └── deployment/
 ├── public/
-│   ├── favicon.svg
-│   ├── foto-diri.png
-│   └── tugas/             # Generated output; tidak di-commit
 ├── scripts/
-│   └── clean-generated.mjs
-├── src/                   # Website utama Astro
-├── .github/workflows/     # CI GitHub Actions
-├── package.json           # Root package dan npm workspaces
-└── package-lock.json      # Satu lockfile untuk seluruh workspace
+├── src/
+├── .github/
+│   └── workflows/
+├── .nvmrc
+├── package.json
+└── package-lock.json
 ```
 
-## URL aplikasi
+Website utama berada di `src/`, sedangkan source code aplikasi tugas disimpan di `apps/`. Direktori `public/tugas/` dihasilkan secara otomatis ketika proses build berlangsung.
 
-- `/` — halaman utama Astro.
-- `/profil/` — halaman profil dalam website Astro.
-- `/tugas/` — indeks tugas.
-- `/tugas/pertemuan-1/` — halaman HTML5.
-- `/tugas/pertemuan-6/` — aplikasi TypeScript.
-- `/tugas/pertemuan-7/` — aplikasi React.
-- `/tugas/pertemuan-8/` — aplikasi React Router.
+## Halaman Website
 
-Pertemuan 8 menggunakan `BrowserRouter` dengan `basename` `/tugas/pertemuan-8`. Nginx memerlukan fallback ke `index.html` untuk direct visit dan refresh pada nested route. Snippet disimpan di `docs/deployment/nginx-spa-fallback.conf`; jangan diterapkan ke server sebelum artefak baru siap diuji.
+Berikut beberapa halaman yang tersedia:
 
-## Environment variables
-
-File `.env` tidak boleh di-commit. Tugas 6 menyediakan `.env.example` sebagai template konfigurasi non-rahasia. Variabel dengan prefix `VITE_` akan masuk ke bundle browser dan tidak boleh berisi password atau API key rahasia.
+| URL | Halaman |
+|---|---|
+| `/` | Beranda |
+| `/profil/` | Profil diri |
+| `/tugas/` | Arsip tugas PAW |
+| `/tugas/pertemuan-1/` | Tugas HTML5 |
+| `/tugas/pertemuan-6/` | Aplikasi TypeScript |
+| `/tugas/pertemuan-7/` | Aplikasi React |
+| `/tugas/pertemuan-8/` | Aplikasi React Router |
 
 ## Deployment
 
-GitHub menjadi source of truth. Build dilakukan di laptop/CI, sedangkan Tarazuma menjadi production static host melalui Nginx dan Cloudflare Tunnel. Workflow GitHub Actions hanya menjalankan CI; deployment ke Tarazuma dilakukan terpisah setelah hasil build diverifikasi.
+Website ini menggunakan home server pribadi sebagai production host. Hasil build statis disajikan menggunakan Nginx, sedangkan Cloudflare Tunnel digunakan untuk menghubungkan server dengan domain publik.
+
+Proses build tidak dijalankan langsung di server karena keterbatasan hardware dan kompatibilitas toolchain. Server ini menggunakan Intel Core i3-3210 (Ivy Bridge) dengan RAM 8 GB dan tidak mendukung AVX2. Dalam pengujian, salah satu komponen native compiler Astro (`@astrojs/compiler-rs`) mengalami `Illegal instruction` ketika dijalankan di server, sementara proses build yang sama berhasil dilakukan di laptop. Penyebab pasti crash tersebut belum dapat dipastikan, tetapi kondisi ini menunjukkan bahwa lingkungan server belum cocok untuk menjalankan toolchain build yang digunakan saat ini.
+
+Karena itu, proses build dilakukan di laptop atau GitHub Actions runner yang memiliki lingkungan lebih sesuai. Hasilnya berupa file statis yang kemudian dikirim ke server untuk disajikan oleh Nginx. Dengan pemisahan ini, server tidak perlu menjalankan proses kompilasi dan dapat berfokus pada penyajian website.
+
+GitHub digunakan untuk menyimpan source code dan mengelola perubahan. GitHub Actions juga menjalankan pemeriksaan otomatis setiap kali ada perubahan yang diajukan melalui pull request.
+
+## Catatan
+
+Project ini masih terus berkembang. Beberapa aplikasi tugas juga masih dalam tahap pengembangan, sehingga isi dan fiturnya dapat berubah seiring berjalannya perkuliahan dan eksperimen teknologi web.
