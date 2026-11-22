@@ -1,0 +1,71 @@
+---
+import type { PortalProject } from '../../data/portal-projects';
+
+interface Props {
+  project: PortalProject;
+  index: number;
+}
+
+const { project, index } = Astro.props;
+let nextLetterIndex = 0;
+const titleParts = project.title.id.split(/(\s+)/).map((part) => ({
+  part,
+  letters: part.trim()
+    ? Array.from(part).map((character) => ({ character, index: nextLetterIndex++ }))
+    : [],
+}));
+const accessibleLabel = `${project.number}, ${project.title.id}, ${project.category.id}. Buka proyek.`;
+---
+<li class="index-item" style={`--row-index:${index}`}>
+  <a
+    class="project-row"
+    href={project.href}
+    aria-label={accessibleLabel}
+    data-preview-title={project.title.en}
+  >
+    <span class="row-number">
+      <span class="route-reveal-mask" style={`--route-group:${3 + index}`}>
+        <span class="route-reveal-line">[{project.number}]</span>
+      </span>
+    </span>
+
+    <span
+      class="row-title"
+      data-text-id={project.title.id}
+      data-text-en={project.title.en}
+      aria-hidden="true"
+      data-letters-ready="true"
+    >
+      {titleParts.map(({ part, letters }) =>
+        part.trim()
+          ? <span class="word">{letters.map(({ character, index }) => <span class="reveal-letter" style={`--k:${index}`}><span class="letter">{character}</span></span>)}</span>
+          : part
+      )}
+    </span>
+
+    <span class="row-category">
+      <span class="route-reveal-mask" style={`--route-group:${3 + index}`}>
+        <span
+          class="route-reveal-line"
+          data-id={project.category.id}
+          data-en={project.category.en}
+        >{project.category.id}</span>
+      </span>
+    </span>
+
+    <span class="preview-group" aria-hidden="true">
+      {project.previews.map((preview) => (
+        <figure class="preview-tile" data-preview={preview.key}>
+          <span class="preview-veil">
+            <img
+              alt=""
+              loading="eager"
+              data-alt-id={preview.altId}
+              data-alt-en={preview.altEn}
+            />
+          </span>
+        </figure>
+      ))}
+    </span>
+  </a>
+</li>
