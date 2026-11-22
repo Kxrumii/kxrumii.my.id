@@ -1,0 +1,11 @@
+---
+import ProjectRow from './ProjectRow.astro';
+import { portalProjects } from '../../data/portal-projects';
+---
+<main class="archive-main" id="archive" tabindex="-1">
+  <section class="archive-list" aria-label="Daftar tugas PAW">
+    <ol class="index-list" style={`--count:${portalProjects.length}`}>
+      {portalProjects.map((project, index) => <ProjectRow project={project} index={index} />)}
+    </ol>
+  </section>
+</main>

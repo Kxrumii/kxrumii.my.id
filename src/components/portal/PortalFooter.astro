@@ -1,0 +1,31 @@
+---
+const currentYear = new Date().getFullYear();
+---
+<footer class="site-footer" data-route-shell="footer">
+  <div class="footer-left">
+    <button class="mood-button" type="button" id="mood-toggle" aria-label="Dark mood. Ganti warna website.">
+      <span class="route-reveal-mask" style="--route-group:7">
+        <span class="route-reveal-line route-reveal-line--inline">
+          <span class="mood-dot" aria-hidden="true"></span>
+          <span id="mood-name">Dark</span>
+        </span>
+      </span>
+    </button>
+  </div>
+
+  <button class="language-button" type="button" id="language-toggle" aria-label="Bahasa Indonesia aktif. Switch to English.">
+    <span class="route-reveal-mask" style="--route-group:8">
+      <span class="route-reveal-line route-reveal-line--inline">
+        <span id="language-id" class="active-lang">ID</span>
+        <span class="slash" aria-hidden="true">/</span>
+        <span id="language-en">EN</span>
+      </span>
+    </span>
+  </button>
+
+  <p class="footer-copy">
+    <span class="route-reveal-mask" style="--route-group:9">
+      <span class="route-reveal-line">©{currentYear}</span>
+    </span>
+  </p>
+</footer>
