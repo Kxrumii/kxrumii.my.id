@@ -1,10 +1,17 @@
 import { useState } from 'react';
+import { transitionIndex } from '../transition';
 
 export function CounterCard() {
   const [count, setCount] = useState(0);
 
   return (
-    <section className="counter-card" aria-labelledby="counter-title">
+    <section
+      className="counter-card"
+      aria-labelledby="counter-title"
+      data-transition-exit=""
+      data-transition-enter=""
+      style={transitionIndex(3)}
+    >
       <div>
         <p className="eyebrow">INTERACTION SAMPLE</p>
         <h2 id="counter-title">React state</h2>
