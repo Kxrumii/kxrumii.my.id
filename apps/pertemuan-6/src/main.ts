@@ -19,6 +19,9 @@ let filter: TaskFilter = 'all';
 try {
   requireElement(document, '#page-title', HTMLHeadingElement).textContent = appName;
   requireElement(document, '#app-version', HTMLElement).textContent = appVersion;
+  // Nilai env yang sama ditampilkan pada Catatan Teknis (selalu lewat textContent).
+  requireElement(document, '#env-app-name', HTMLElement).textContent = appName;
+  requireElement(document, '#env-app-version', HTMLElement).textContent = appVersion;
   requireElement(document, '#current-year', HTMLElement).textContent = String(new Date().getFullYear());
 
   const list = requireElement(document, '#task-list', HTMLOListElement);
@@ -86,6 +89,9 @@ try {
       tasks = createTask(tasks, draft);
       persist();
       render();
+      const created = tasks[tasks.length - 1];
+      // Umpan balik masuk singkat; tugas baru tidak tampil bila filter menyaringnya.
+      if (created) list.querySelector(`[data-task-id="${created.id}"]`)?.classList.add('is-new');
       if (filter === 'completed') announce('Tugas ditambahkan dengan status belum selesai; tidak tampil pada filter Selesai.');
     },
     onEdit(id, draft) {

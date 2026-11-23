@@ -54,7 +54,106 @@
           <noscript><p class="empty-note">Aplikasi ini membutuhkan JavaScript untuk menampilkan dan mengelola daftar tugas.</p></noscript>
         </section>
 
-        <footer class="footer" data-transition-exit data-transition-enter style="--i:3">TypeScript workspace · <span id="current-year"></span></footer>
+        <section class="notes" aria-labelledby="notes-title" data-transition-exit data-transition-enter style="--i:3">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">DOKUMENTASI</p>
+              <h2 id="notes-title">Catatan Teknis</h2>
+            </div>
+          </div>
+          <p class="notes-intro">Ringkasan alat dan konsep yang dipakai pada tugas ini. Setiap topik dapat dibuka dan ditutup; isinya merujuk ke file dan konfigurasi yang benar-benar ada di repository.</p>
+
+          <details class="note">
+            <summary>Git &amp; GitHub</summary>
+            <div class="note-body">
+              <p><strong>Istilah.</strong> <em>Repository</em> adalah folder proyek beserta seluruh riwayat perubahannya. <em>Commit</em> adalah satu catatan perubahan yang bermakna. <em>Branch</em> adalah jalur pengembangan terpisah. <em>Merge</em> menggabungkan dua branch. <em>Merge conflict</em> terjadi ketika dua branch mengubah bagian yang sama dengan isi berbeda sehingga Git meminta manusia memilih atau menggabungkan hasilnya. <em>Pull Request</em> (PR) adalah usulan penggabungan di GitHub yang dapat ditinjau sebelum di-merge.</p>
+              <p><strong>Alur yang dipakai di proyek ini.</strong></p>
+              <ul>
+                <li><code>main</code> adalah branch integrasi yang dilindungi: perubahan hanya masuk lewat PR dan check CI <code>build-and-verify</code> harus lulus.</li>
+                <li><code>feature/pertemuan-6-task-manager</code> memuat pengembangan aplikasi ini dalam commit-commit kecil berformat <code>type: description</code>.</li>
+                <li><code>docs/pertemuan-6-notes</code> memuat dokumentasi. Kedua branch mengubah baris README yang sama sehingga terjadi merge conflict yang nyata; konflik diselesaikan dengan menggabungkan kedua isi pada commit merge <code>4ff59f3</code>, lalu PR #5 di-merge dengan <em>merge commit</em> <code>b6ff182</code>.</li>
+                <li>Integrasi akhir ke <code>main</code> dilakukan lewat Pull Request terpisah.</li>
+              </ul>
+              <p><strong>Tautan.</strong></p>
+              <ul>
+                <li><a href="https://github.com/Kxrumii/kxrumii.my.id" target="_blank" rel="noopener noreferrer">Repository kxrumii.my.id</a></li>
+                <li><a href="https://github.com/Kxrumii/kxrumii.my.id/pull/5" target="_blank" rel="noopener noreferrer">Pull Request #5 (merged): docs → feature branch</a></li>
+                <li><a href="https://github.com/Kxrumii/kxrumii.my.id/commits/feature/pertemuan-6-task-manager/apps/pertemuan-6" target="_blank" rel="noopener noreferrer">Riwayat commit apps/pertemuan-6</a></li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="note">
+            <summary>npm</summary>
+            <div class="note-body">
+              <p>npm mengelola paket (library dan alat) yang dibutuhkan proyek, serta menjalankan <em>scripts</em> yang didefinisikan di <code>package.json</code>.</p>
+              <p><strong>Script yang tersedia.</strong></p>
+              <ul>
+                <li>Workspace Task 6 (<code>apps/pertemuan-6/package.json</code>): <code>dev</code>, <code>check</code> (<code>tsc --noEmit</code>), <code>test</code> (<code>node --test</code>), <code>build</code> (<code>npm run check &amp;&amp; vite build</code>), dan <code>preview</code>.</li>
+                <li>Root (<code>package.json</code>): <code>dev:t6</code>, <code>check</code>, <code>build</code>, <code>preview</code>, dan <code>verify:transition</code>.</li>
+              </ul>
+              <p><strong>Dependencies vs devDependencies.</strong> <code>dependencies</code> berisi paket yang dipakai aplikasi saat berjalan (<code>@kxrumii/transition-bridge</code>). <code>devDependencies</code> hanya dibutuhkan saat pengembangan dan build (<code>typescript</code> dan <code>vite</code>).</p>
+              <p><strong>Semantic versioning.</strong> Versi berformat <code>MAJOR.MINOR.PATCH</code>. <code>0.4.0</code> adalah versi eksak. <code>^7.0.2</code> (caret) mengizinkan pembaruan MINOR dan PATCH selama MAJOR tetap 7 (&ge;7.0.2 dan &lt;8.0.0), sedangkan versi yang pasti terpasang dikunci di <code>package-lock.json</code>.</p>
+              <p><strong>Workspaces.</strong> Root <code>package.json</code> mendaftarkan <code>packages/transition-bridge</code> dan empat aplikasi di <code>apps/</code> sebagai workspace. Semuanya berbagi satu <code>package-lock.json</code> di root dan dipasang sekaligus dengan <code>npm ci</code>.</p>
+            </div>
+          </details>
+
+          <details class="note">
+            <summary>TypeScript</summary>
+            <div class="note-body">
+              <p><em>Static typing</em> membuat kesalahan seperti salah nama field atau status yang tidak valid terdeteksi sebelum aplikasi dijalankan. Proyek ini memakai mode <code>strict</code>. Contoh dari source:</p>
+              <ul>
+                <li><strong>Primitive</strong> (<code>string</code>, <code>number</code>, <code>boolean</code>) dan <strong>array</strong> (<code>readonly Task[]</code>): <code>src/types.ts</code>, <code>src/tasks.ts</code>.</li>
+                <li><strong>Interface</strong> <code>Task</code> dan <code>TaskDraft</code>: <code>src/types.ts</code>.</li>
+                <li><strong>Type alias dan union</strong> <code>TaskStatus</code> (<code>'belum-selesai' | 'selesai'</code>): <code>src/types.ts</code>; <code>TaskFilter</code> (<code>'all' | 'active' | 'completed'</code>): <code>src/filters.ts</code>.</li>
+                <li><strong>Union terdiskriminasi</strong> <code>Result&lt;T, E&gt;</code> (<code>ok: true | false</code>) untuk hasil validasi form: <code>src/validation.ts</code>.</li>
+                <li><strong>Generics</strong> <code>updateById&lt;T extends { id: number }&gt;</code>: <code>src/tasks.ts</code>; <code>requireElement&lt;T extends Element&gt;</code>: <code>src/render.ts</code>.</li>
+                <li><strong>Type guard</strong> <code>isTask(value: unknown): value is Task</code> untuk memeriksa data dari <code>localStorage</code>: <code>src/storage.ts</code>; <code>isTaskFilter</code>: <code>src/filters.ts</code>.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="note">
+            <summary>Vite</summary>
+            <div class="note-body">
+              <p>Vite adalah <em>build tool</em> sekaligus <em>development server</em>.</p>
+              <ul>
+                <li><strong>Development:</strong> <code>npm run dev:t6</code> dari root (menjalankan <code>vite --host 127.0.0.1</code>; alamat tampil di terminal).</li>
+                <li><strong>Build produksi:</strong> <code>npm run build --workspace=@kxrumii/pertemuan-6</code> (pemeriksaan tipe lalu <code>vite build</code>).</li>
+                <li><strong>Konfigurasi</strong> (<code>vite.config.ts</code>): <code>base</code> bernilai <code>/tugas/pertemuan-6/</code> agar aset dimuat dari subpath yang benar, dan hasil build ditulis ke <code>public/tugas/pertemuan-6/</code> di root repository (folder hasil generate yang tidak di-commit).</li>
+                <li><strong>Masuk ke build Astro:</strong> <code>npm run build</code> di root membersihkan output lama, membangun semua aplikasi Vite, lalu menjalankan <code>astro build</code> yang menyalin isi <code>public/</code> ke <code>dist/tugas/pertemuan-6/</code>.</li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="note">
+            <summary>Environment variables</summary>
+            <div class="note-body">
+              <p>Nilai konfigurasi yang boleh berbeda antar lingkungan disimpan di file <code>.env</code> dan dibaca lewat <code>import.meta.env</code>.</p>
+              <ul>
+                <li><code>.env</code> adalah file lokal dan <strong>tidak di-commit</strong>: <code>.gitignore</code> mengabaikan <code>.env</code> dan <code>.env.*</code>, kecuali <code>.env.example</code>.</li>
+                <li><code>.env.example</code> adalah template yang di-commit dan hanya berisi contoh non-rahasia. Salin menjadi <code>.env</code> untuk pengaturan lokal.</li>
+                <li>Aplikasi ini membaca <code>VITE_APP_NAME</code> dan <code>VITE_APP_VERSION</code>. Nilai yang sedang dipakai halaman ini: nama <code id="env-app-name">College Task Manager</code> dan versi <code id="env-app-version">1.0.0</code>. Bila variabel kosong atau tidak ada (misalnya pada CI yang tidak memiliki <code>.env</code>), aplikasi memakai nilai bawaan tersebut sehingga build tetap berjalan.</li>
+              </ul>
+              <p class="note-warning"><strong>Peringatan.</strong> Variabel berawalan <code>VITE_</code> disisipkan ke dalam <em>bundle</em> JavaScript dan dapat dibaca siapa pun di browser. Jangan pernah menaruh password, API key, atau secret lain di dalamnya.</p>
+            </div>
+          </details>
+
+          <details class="note">
+            <summary>Compiler, transpiler &amp; bundler</summary>
+            <div class="note-body">
+              <ul>
+                <li><strong>Compiler</strong> menerjemahkan kode sumber ke bentuk lain yang dapat dijalankan atau diperiksa, misalnya kode mesin. Pada TypeScript, <code>tsc</code> (compiler TypeScript) memeriksa tipe dan dapat menghasilkan JavaScript.</li>
+                <li><strong>Transpiler</strong> menerjemahkan kode sumber ke bahasa lain pada tingkat abstraksi yang setara, misalnya TypeScript menjadi JavaScript dengan menghapus anotasi tipe.</li>
+                <li><strong>Bundler</strong> menggabungkan banyak modul dan aset menjadi sedikit file yang efisien dimuat browser.</li>
+              </ul>
+              <p>Di proyek ini: <code>tsc --noEmit</code> (script <code>check</code>) hanya <strong>memeriksa tipe</strong> dan tidak menghasilkan file JavaScript. Menurut dokumentasi Vite, Vite hanya melakukan <em>transpilation</em> TypeScript dan <strong>tidak</strong> melakukan type checking, sehingga script <code>build</code> menjalankan <code>npm run check</code> sebelum <code>vite build</code>.</p>
+              <p>Pada Vite 8, <strong>Oxc</strong> menjadi bagian toolchain compiler/transformer yang mengubah TypeScript menjadi JavaScript, sedangkan <strong>Rolldown</strong> adalah bundler-nya. Rolldown bukan pemeriksa tipe; pemeriksa tipe tetap <code>tsc</code>. Sumber: <a href="https://vite.dev/guide/features.html" target="_blank" rel="noopener noreferrer">Vite: Features</a> dan <a href="https://vite.dev/blog/announcing-vite8.html" target="_blank" rel="noopener noreferrer">Announcing Vite 8</a>.</p>
+            </div>
+          </details>
+        </section>
+
+        <footer class="footer" data-transition-exit data-transition-enter style="--i:4">TypeScript workspace · <span id="current-year"></span></footer>
       </main>
 
       <template id="task-row-template">
