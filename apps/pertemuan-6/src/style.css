@@ -29,3 +29,23 @@ h1 { margin: 18px 0; font-family: 'Space Grotesk', sans-serif; font-size: clamp(
 .task-status.belum-selesai { color: #d6a56b; }
 .footer { padding-top: 32px; color: #666b60; }
 @media (max-width: 560px) { .shell { width: min(100% - 28px, 960px); } .eyebrow { font-size: 9px; } .preview { padding: 18px; } .task-item { flex-wrap: wrap; padding: 14px 0; } .task-status { width: 100%; padding-left: 34px; } }
+
+/* Placeholder page motion (POC v0.4 Task 6 values); final motion ships with the Task 6 design. */
+/* Timing values are unitless milliseconds: the bridge reads them with parseFloat, and CSS minification would rewrite `520ms` as `.52s`. */
+[data-transition-exit] {
+  --transition-exit-duration: 360;
+  --transition-stagger: 38;
+  --transition-exit-transform: translate3d(0, 0, 0);
+  --transition-exit-clip: inset(0 0 0 100%);
+  --transition-enter-duration: 640;
+  --transition-enter-delay: 0;
+  --transition-enter-from-transform: translate3d(0, 0, 0);
+  --transition-enter-from-clip: inset(0 100% 0 0);
+}
+
+/* Transition interaction lock: while the shared transition is leaving or
+   entering, elements that are not already hovered stop receiving the pointer,
+   so no new hover effect starts mid-transition. Ends with the bridge state. */
+:root[data-transition-state] body :not(:hover) {
+  pointer-events: none !important;
+}

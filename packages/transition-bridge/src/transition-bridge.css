@@ -1,0 +1,36 @@
+/* Kontrak bersama. Gerak (jarak, clip, durasi, easing, stagger) dimiliki tiap halaman. */
+:root {
+  --page-canvas: #0b0b0b;
+}
+
+html {
+  background-color: var(--page-canvas);
+}
+
+/* Selama hand-off, latar yang terlihat adalah canvas milik <html>. */
+html[data-transition-state] body {
+  background-color: transparent !important;
+  transition: none !important;
+}
+
+/* Jika warna tujuan yang diprediksi ternyata berbeda dari warna aktual halaman, beda itu dihaluskan. */
+html[data-transition-state='entering'] {
+  transition: background-color 380ms cubic-bezier(.16, 1, .3, 1);
+}
+
+/* Pre-state halaman tujuan: dipasang oleh bootstrap sebelum first paint.
+   Memakai variabel yang sama dengan keyframe enter, jadi tidak ada lompatan. */
+html[data-transition-state='entering'] [data-transition-enter] {
+  transform: var(--transition-enter-from-transform, translate3d(0, 8vh, 0));
+  clip-path: var(--transition-enter-from-clip, inset(100% 0 0 0));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-transition-state='entering'] [data-transition-enter] {
+    transform: none !important;
+    clip-path: none !important;
+  }
+  html[data-transition-state='entering'] {
+    transition: none;
+  }
+}

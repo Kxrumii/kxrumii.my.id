@@ -20,6 +20,10 @@ const accessibleLabel = `${project.number}, ${project.title.id}, ${project.categ
   <a
     class="project-row"
     href={project.href}
+    data-transition-link="document"
+    data-transition-page={project.transitionPage}
+    data-transition-canvas={project.canvasFallback}
+    data-astro-reload
     aria-label={accessibleLabel}
     data-preview-title={project.title.en}
   >

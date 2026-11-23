@@ -335,6 +335,53 @@ function finishTransitionState(): void {
   enterReleaseScheduled = false;
 }
 
+/*
+ * Transition interaction lock. While a route transition runs, CSS keyed on
+ * `data-transition-lock` stops new hover effects from starting (see
+ * page-transitions.css). It spans the outgoing motion, the document swap and
+ * the incoming motion, and is released when the incoming transitions finish,
+ * on failure, on bfcache restore, or by a safety timeout — never left stale.
+ */
+const INTERACTION_LOCK_ATTRIBUTE = 'data-transition-lock';
+const INTERACTION_LOCK_MAX_MS = 4000;
+let interactionLockToken = 0;
+let interactionLockTimer = 0;
+
+function setInteractionLock(root: HTMLElement): number {
+  root.setAttribute(INTERACTION_LOCK_ATTRIBUTE, '');
+  window.clearTimeout(interactionLockTimer);
+  const token = ++interactionLockToken;
+  interactionLockTimer = window.setTimeout(() => releaseInteractionLock(token), INTERACTION_LOCK_MAX_MS);
+  return token;
+}
+
+/** Removes the lock; with a token, only if no newer transition took it over. */
+export function releaseInteractionLock(token?: number): void {
+  if (token !== undefined && token !== interactionLockToken) return;
+  window.clearTimeout(interactionLockTimer);
+  document.documentElement.removeAttribute(INTERACTION_LOCK_ATTRIBUTE);
+}
+
+function releaseInteractionLockAfterEnter(): void {
+  const token = interactionLockToken;
+  const targets = document.querySelectorAll(`${BRIDGE_MOTION_TARGETS.home}, ${BRIDGE_MOTION_TARGETS.portal}`);
+  void document.documentElement.offsetHeight;
+  const running = Array.from(targets)
+    .flatMap((element) => element.getAnimations())
+    .filter((animation) => animation instanceof CSSTransition
+      && MOTION_PROPERTIES.has(animation.transitionProperty)
+      && animation.playState !== 'idle'
+      && animation.playState !== 'finished');
+  if (!running.length) {
+    releaseInteractionLock(token);
+    return;
+  }
+  void Promise.race([
+    Promise.allSettled(running.map((animation) => animation.finished)),
+    new Promise((resolve) => window.setTimeout(resolve, 1600)),
+  ]).then(() => releaseInteractionLock(token));
+}
+
 function releaseIncomingText(): void {
   if (enterReleaseScheduled) return;
   enterReleaseScheduled = true;
@@ -344,7 +391,10 @@ function releaseIncomingText(): void {
   // the entrance motion at astro:after-swap instead of waiting for page-load.
   requestAnimationFrame(() => {
     void root.offsetHeight;
-    requestAnimationFrame(() => finishTransitionState());
+    requestAnimationFrame(() => {
+      finishTransitionState();
+      releaseInteractionLockAfterEnter();
+    });
   });
 }
 
@@ -380,6 +430,7 @@ function installTransitionListeners(): void {
     const intent = pendingIntent;
 
     event.loader = async () => {
+      setInteractionLock(document.documentElement);
       try {
         const animationPromise = animateOutgoing(intent);
         const loadedDocument = await originalLoader();
@@ -390,6 +441,7 @@ function installTransitionListeners(): void {
         document.documentElement.style.removeProperty('--route-canvas-color');
         pendingIntent = null;
         transitionInProgress = false;
+        releaseInteractionLock();
         throw error;
       }
     };
@@ -399,6 +451,8 @@ function installTransitionListeners(): void {
     if (!pendingIntent) return;
     const event = rawEvent as Event & { newDocument: Document };
     const destination = event.newDocument;
+    // Root attributes are replaced by the swap, so the lock travels with the new document.
+    setInteractionLock(destination.documentElement);
 
     if (pendingIntent === 'to-portal') {
       applyPortalMoodToDocument(destination);
@@ -414,6 +468,10 @@ function installTransitionListeners(): void {
 
   document.addEventListener('astro:after-swap', () => {
     if (pendingIntent) releaseIncomingText();
+  });
+
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) releaseInteractionLock();
   });
 
   document.addEventListener('astro:page-load', () => {
@@ -432,4 +490,148 @@ const transitionWindow = window as Window & { __kxrumiiPageTransitionsInstalled?
 if (!transitionWindow.__kxrumiiPageTransitionsInstalled) {
   transitionWindow.__kxrumiiPageTransitionsInstalled = true;
   installTransitionListeners();
+}
+
+/* -------------------------------------------------------------------------
+ * Shared Transition Bridge support (document navigation to/from Vite apps).
+ * These helpers reuse the approved choreography classes above without
+ * changing the Home ↔ Portal flow, which never sets the classes below.
+ * ---------------------------------------------------------------------- */
+
+export type BridgeDocumentKind = 'home' | 'portal';
+
+/** Root modifier that exists only while the Portal leaves for a Vite document. */
+export const PORTAL_DOCUMENT_EXIT_CLASS = 'portal-document-exit';
+
+const BRIDGE_ARMED_CLASSES: Record<BridgeDocumentKind, string> = {
+  home: 'home-bridge-armed',
+  portal: 'portal-bridge-armed',
+};
+
+const BRIDGE_ENTERING_CLASSES: Record<BridgeDocumentKind, string> = {
+  home: 'home-transition-entering',
+  portal: 'portal-transition-entering',
+};
+
+// Elements whose transforms carry the approved choreography.
+const BRIDGE_MOTION_TARGETS: Record<BridgeDocumentKind, string> = {
+  home: '.transition-copy-char, .transition-copy-decoration',
+  portal: '.route-reveal-line, .role-letter, .row-title .letter',
+};
+
+const PORTAL_DOCUMENT_EXIT_TARGETS = `${BRIDGE_MOTION_TARGETS.portal}, .project-row .preview-veil, .project-row .preview-veil img`;
+
+const MOTION_PROPERTIES = new Set(['transform', 'translate']);
+
+/**
+ * Runs `mutate` and returns only the CSS transitions it started on `selector`
+ * targets: transitions that existed before, other properties, other elements,
+ * and idle/finished (cancelled) transitions are excluded.
+ */
+export function collectNewTransitions(selector: string, mutate: () => void): CSSTransition[] {
+  const targets = Array.from(document.querySelectorAll(selector));
+  const targetSet = new Set<Element>(targets);
+  const before = new Set<Animation>(targets.flatMap((element) => element.getAnimations()));
+
+  mutate();
+  void document.documentElement.offsetHeight;
+
+  const started: CSSTransition[] = [];
+  for (const element of targets) {
+    for (const animation of element.getAnimations()) {
+      if (!(animation instanceof CSSTransition) || before.has(animation)) continue;
+      if (!MOTION_PROPERTIES.has(animation.transitionProperty)) continue;
+      if (animation.playState === 'idle' || animation.playState === 'finished') continue;
+      const target = (animation.effect as KeyframeEffect | null)?.target;
+      if (!target || !targetSet.has(target)) continue;
+      started.push(animation);
+    }
+  }
+  return started;
+}
+
+/** Longest remaining time in ms (delay + duration − elapsed) of the given animations. */
+export function remainingMs(animations: readonly Animation[]): number {
+  let longest = 0;
+  for (const animation of animations) {
+    const end = Number(animation.effect?.getComputedTiming().endTime ?? 0);
+    const elapsed = Number(animation.currentTime ?? 0);
+    longest = Math.max(longest, end - elapsed);
+  }
+  return Math.max(0, Math.ceil(longest));
+}
+
+function cancelAnimations(animations: readonly Animation[]): void {
+  for (const animation of animations) {
+    try {
+      animation.cancel();
+    } catch {
+      // Already finished or removed.
+    }
+  }
+}
+
+/** Actual canvas colour of the Portal for the current mood. */
+export function currentMoodColor(): string {
+  return getMoodColor(document.documentElement.dataset.mood ?? 'dark');
+}
+
+/** Starts the approved Portal leaving choreography for a Vite document navigation. */
+export function beginPortalDocumentExit(): CSSTransition[] {
+  const root = document.documentElement;
+  return collectNewTransitions(PORTAL_DOCUMENT_EXIT_TARGETS, () => {
+    root.classList.add('portal-transition-leaving', PORTAL_DOCUMENT_EXIT_CLASS);
+  });
+}
+
+/**
+ * Puts an incoming document into the approved entering pre-state without
+ * visible motion (the transitions created by arming are cancelled at once).
+ */
+export function armBridgeEnter(kind: BridgeDocumentKind): void {
+  const root = document.documentElement;
+  if (kind === 'home') prepareHomeText(document);
+  const created = collectNewTransitions(BRIDGE_MOTION_TARGETS[kind], () => {
+    root.classList.add(BRIDGE_ENTERING_CLASSES[kind], BRIDGE_ARMED_CLASSES[kind]);
+  });
+  cancelAnimations(created);
+}
+
+/** Releases the entering pre-state; returns the approved enter transitions. */
+export function releaseBridgeEnter(kind: BridgeDocumentKind): CSSTransition[] {
+  const root = document.documentElement;
+  if (!root.classList.contains(BRIDGE_ARMED_CLASSES[kind])) return [];
+  return collectNewTransitions(BRIDGE_MOTION_TARGETS[kind], () => {
+    root.classList.remove(BRIDGE_ENTERING_CLASSES[kind]);
+  });
+}
+
+/** Removes the bridge arming markers once the enter has finished. */
+export function clearBridgeEnter(): void {
+  document.documentElement.classList.remove(BRIDGE_ARMED_CLASSES.home, BRIDGE_ARMED_CLASSES.portal);
+}
+
+/**
+ * Restores the resting state instantly after bfcache restore or a stalled
+ * navigation: bridge-only state is removed, the shared route state is reset,
+ * and transitions started by the reset are cancelled (no visible motion).
+ */
+export function recoverBridgeDocumentState(): void {
+  const root = document.documentElement;
+  const created = collectNewTransitions(
+    `${PORTAL_DOCUMENT_EXIT_TARGETS}, ${BRIDGE_MOTION_TARGETS.home}`,
+    () => {
+      root.classList.remove(
+        PORTAL_DOCUMENT_EXIT_CLASS,
+        BRIDGE_ARMED_CLASSES.home,
+        BRIDGE_ARMED_CLASSES.portal,
+        BRIDGE_ENTERING_CLASSES.home,
+        BRIDGE_ENTERING_CLASSES.portal,
+      );
+      root.style.removeProperty('--transition-exit-fallback-ms');
+      finishTransitionState();
+      releaseInteractionLock();
+    },
+  );
+  cancelAnimations(created);
 }

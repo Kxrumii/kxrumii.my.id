@@ -9,6 +9,10 @@ export interface PortalPreview {
 export interface PortalProject {
   number: string;
   href: string;
+  /** Shared Transition Bridge page id of the destination app. */
+  transitionPage: string;
+  /** Destination canvas colour used until that app has published its own. */
+  canvasFallback: string;
   title: Record<PortalLanguage, string>;
   category: Record<PortalLanguage, string>;
   previews: [PortalPreview, PortalPreview];
@@ -18,6 +22,8 @@ export const portalProjects: PortalProject[] = [
   {
     number: '01',
     href: '/tugas/pertemuan-1/',
+    transitionPage: 'task-1',
+    canvasFallback: '#eff1f5',
     title: { id: 'Profil', en: 'Profile' },
     category: { id: '[HTML5]', en: '[HTML5]' },
     previews: [
@@ -28,6 +34,8 @@ export const portalProjects: PortalProject[] = [
   {
     number: '06',
     href: '/tugas/pertemuan-6/',
+    transitionPage: 'task-6',
+    canvasFallback: '#10110f',
     title: { id: 'Task Manager', en: 'Task Manager' },
     category: { id: '[TypeScript · Vite]', en: '[TypeScript · Vite]' },
     previews: [
@@ -38,6 +46,8 @@ export const portalProjects: PortalProject[] = [
   {
     number: '07',
     href: '/tugas/pertemuan-7/',
+    transitionPage: 'task-7',
+    canvasFallback: '#10110f',
     title: { id: 'Portofolio', en: 'Portfolio' },
     category: { id: '[Karya Kreatif · React]', en: '[Creative Work · React]' },
     previews: [
@@ -48,6 +58,8 @@ export const portalProjects: PortalProject[] = [
   {
     number: '08',
     href: '/tugas/pertemuan-8/',
+    transitionPage: 'task-8',
+    canvasFallback: '#10110f',
     title: { id: 'Arsip Musik', en: 'Music Archive' },
     category: { id: '[Vinyl · React Router]', en: '[Vinyl · React Router]' },
     previews: [

@@ -1,7 +1,9 @@
 ---
+import '@kxrumii/transition-bridge/transition-bridge.css';
 import '../styles/global.css';
 import '../styles/page-transitions.css';
 import { ClientRouter } from 'astro:transitions';
+import TransitionBootstrap from '../components/TransitionBootstrap.astro';
 
 interface Props {
   title: string;
@@ -13,6 +15,7 @@ const { title } = Astro.props;
 <html lang="id" class="home-document" transition:animate="none">
   <head>
     <meta charset="utf-8" />
+    <TransitionBootstrap />
     <link
       rel="icon"
       type="image/svg+xml"
@@ -31,6 +34,7 @@ const { title } = Astro.props;
     <slot />
     <script>
       import '../scripts/page-transitions';
+      import '../scripts/transition-bridge';
     </script>
   </body>
 </html>

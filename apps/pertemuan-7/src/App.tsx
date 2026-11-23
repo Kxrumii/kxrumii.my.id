@@ -3,6 +3,7 @@ import { AppHeader } from './components/AppHeader';
 import { CounterCard } from './components/CounterCard';
 import { FeatureCard } from './components/FeatureCard';
 import { StatusBadge } from './components/StatusBadge';
+import { transitionIndex, usePageReady } from './transition';
 
 const foundationFeatures = [
   'Component-based UI',
@@ -12,10 +13,12 @@ const foundationFeatures = [
 ];
 
 export default function App() {
+  usePageReady();
+
   return (
     <main className="page-shell">
       <AppHeader />
-      <section className="hero-block">
+      <section className="hero-block" data-transition-exit="" data-transition-enter="" style={transitionIndex(1)}>
         <p className="eyebrow">PAW / PERTEMUAN 07</p>
         <h1>React workspace.</h1>
         <p className="hero-copy">
@@ -24,7 +27,7 @@ export default function App() {
         </p>
         <StatusBadge label="Foundation ready" />
       </section>
-      <section className="feature-grid" aria-label="Fondasi React">
+      <section className="feature-grid" aria-label="Fondasi React" data-transition-exit="" data-transition-enter="" style={transitionIndex(2)}>
         {foundationFeatures.map((feature) => (
           <FeatureCard key={feature} title={feature} />
         ))}

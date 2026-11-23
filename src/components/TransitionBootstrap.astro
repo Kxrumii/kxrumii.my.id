@@ -1,0 +1,12 @@
+---
+/*
+ * Shared transition bootstrap (single source: @kxrumii/transition-bridge).
+ * Must be the first element after <meta charset> so it runs before any
+ * stylesheet. The same text is injected into the four Vite apps by
+ * scripts/vite-transition-bootstrap.mjs and verified in CI.
+ */
+import bootstrap from '@kxrumii/transition-bridge/bootstrap.inline.js?raw';
+
+const code = bootstrap.trim();
+---
+<script is:inline data-transition-bootstrap="v4" set:html={`\n${code}\n`} />

@@ -32,8 +32,14 @@
         data-id="Untuk mengenal pemilik website dan karya kreatifnya:"
         data-en="To learn more about the creator and their creative work:"
       >Untuk mengenal pemilik website dan karya kreatifnya:</p>
+      <!--
+        Phase A exception: native document navigation only. The About panel has
+        no approved exit choreography, so this link is not handed to the
+        transition bridge; data-astro-reload avoids ClientRouter's extra fetch.
+      -->
       <a
         href="/tugas/pertemuan-7/"
+        data-astro-reload
         data-id="Lihat personal portfolio ↗"
         data-en="Explore personal portfolio ↗"
       >Lihat personal portfolio ↗</a>

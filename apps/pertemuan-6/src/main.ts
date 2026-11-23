@@ -1,3 +1,4 @@
+import { bridge } from './transition';
 import './style.css';
 
 // Contoh tipe dasar, interface, union type, array, dan generic untuk fondasi Tugas 6.
@@ -33,12 +34,12 @@ if (!app) {
 
 app.innerHTML = `
   <main class="shell">
-    <header class="topbar">
-      <a class="brand" href="/">kxrumii<span>.my.id</span></a>
+    <header class="topbar" data-transition-exit data-transition-enter style="--i:0">
+      <a class="brand" href="/tugas/" data-transition-link="document" data-transition-page="portal" data-transition-canvas="#0b0b0b">kxrumii<span>.my.id</span></a>
       <span class="eyebrow">PAW / PERTEMUAN 06</span>
     </header>
 
-    <section class="hero" aria-labelledby="page-title">
+    <section class="hero" aria-labelledby="page-title" data-transition-exit data-transition-enter style="--i:1">
       <p class="eyebrow">VANILLA TYPESCRIPT + VITE</p>
       <h1 id="page-title">${appName}</h1>
       <p class="intro">
@@ -51,7 +52,7 @@ app.innerHTML = `
       </div>
     </section>
 
-    <section class="preview" aria-labelledby="preview-title">
+    <section class="preview" aria-labelledby="preview-title" data-transition-exit data-transition-enter style="--i:2">
       <div class="section-heading">
         <div>
           <p class="eyebrow">DEVELOPMENT PREVIEW</p>
@@ -70,6 +71,9 @@ app.innerHTML = `
       </ul>
     </section>
 
-    <footer class="footer">TypeScript workspace · ${new Date().getFullYear()}</footer>
+    <footer class="footer" data-transition-exit data-transition-enter style="--i:3">TypeScript workspace · ${new Date().getFullYear()}</footer>
   </main>
 `;
+
+// The shell is now in the DOM: allow the incoming route transition to enter.
+bridge.markPageReady();
