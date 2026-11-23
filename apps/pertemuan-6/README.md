@@ -28,7 +28,7 @@ Fungsi inti Task Manager sudah terimplementasi di source: tambah, edit, hapus, d
 
 **Belum tersedia (direncanakan)**
 
-- Catatan teknis yang ditampilkan di dalam halaman aplikasi, termasuk penjelasan konsep compiler, transpiler, dan bundler.
+- Catatan teknis yang ditampilkan di dalam halaman aplikasi (Git, npm, TypeScript, Vite, environment variables, serta konsep compiler, transpiler, dan bundler) masih direncanakan. Ringkasan alur kerja Git sudah didokumentasikan di README ini pada bagian [Alur kerja Git](#alur-kerja-git).
 - Penyempurnaan tampilan responsif dan gerak (*motion*).
 
 ## Teknologi
@@ -142,6 +142,37 @@ Didefinisikan di `src/types.ts`:
 Unit test (`tests/tasks.test.ts`, `tests/validation.test.ts`, `tests/storage.test.ts`, dan `tests/filters.test.ts`) memakai `node:test` dan `node:assert/strict`, dijalankan Node.js langsung pada file `.ts`. Cakupan: pembuatan id, pembuatan/pembaruan/penghapusan tugas, pembalikan status dua arah beserta hitungan per status, `survivorId`, generic `updateById`, penanganan nilai teks berbahaya sebagai string biasa, `formatDeadline`, filter (tiap filter, urutan dan identitas objek, jumlah mengikuti tambah/ubah status/hapus), penyimpanan (envelope, JSON rusak, versi tidak didukung, tiap aturan validasi record, id ganda, campuran valid/tidak valid, `getItem`/`setItem` yang melempar error, round-trip), serta validasi (judul/mata kuliah kosong atau hanya spasi, tenggat kosong, tanggal kalender tidak ada seperti `2026-02-30`, format salah, trim, dan pelestarian `id`/status saat edit). Folder `tests/` berada di luar `include` TypeScript sehingga tidak ikut `tsc` maupun bundle.
 
 Checkbox status, dialog, fokus, dan pencegahan XSS pada lapisan render (`src/render.ts`, `src/task-dialog.ts`, `src/delete-dialog.ts`) belum memiliki test otomatis di repository; pemeriksaannya dilakukan di browser.
+
+## Alur kerja Git
+
+Bagian ini menjelaskan alur kerja Git/GitHub yang dipakai untuk Tugas Pertemuan 6. Ini deskripsi alur yang **direncanakan**; bukti pelaksanaannya (riwayat commit, Pull Request, hasil merge, push, pull, dan screenshot) dikumpulkan terpisah dan tidak dicantumkan di sini.
+
+**Branch dan perannya**
+
+| Branch | Peran |
+|---|---|
+| `main` | Branch integrasi. Dilindungi: perubahan hanya masuk lewat Pull Request dan check CI `build-and-verify` harus lulus. |
+| `feature/pertemuan-6-task-manager` | Pengembangan aplikasi, dikerjakan bertahap dalam commit-commit kecil. |
+| `docs/pertemuan-6-notes` | Dokumentasi. Dibuat dari titik awal yang sama dengan branch fitur sehingga kedua branch dapat berkembang sendiri-sendiri lalu digabungkan. |
+
+**Commit.** Satu perubahan bermakna per commit, dengan pesan satu baris berformat `type: description` (huruf kecil, bahasa Inggris imperatif), misalnya `feat: ...` atau `docs: ...`.
+
+**Pull Request.** Penggabungan dilakukan lewat dua Pull Request:
+
+1. **PR A** — `docs/pertemuan-6-notes` → `feature/pertemuan-6-task-manager`.
+2. **PR B** — `feature/pertemuan-6-task-manager` → `main`.
+
+Keduanya direncanakan digabung dengan *merge commit* (bukan squash atau rebase) agar riwayat commit dan percabangan branch tetap terlihat.
+
+**Demonstrasi merge conflict (direncanakan).** Branch docs dan branch fitur sama-sama mengubah butir yang sama pada bagian *Status fitur* README ini, masing-masing dari titik awal yang sama. Karena kedua perubahan menyentuh baris yang sama dengan isi berbeda, Git melaporkan konflik saat kedua branch digabungkan. Konflik diselesaikan secara lokal di branch docs dengan menggabungkan isi kedua sisi (bukan memilih salah satu), lalu diverifikasi: tidak ada penanda konflik yang tersisa dan `git diff --check` bersih. Setelah itu PR A dapat digabungkan.
+
+**Push dan pull (direncanakan).**
+
+- Branch fitur dan branch docs di-*push* ke GitHub dengan `git push -u origin <branch>`.
+- Setelah PR A digabung di GitHub, branch fitur di-*pull* dengan `git pull --ff-only` untuk mengambil merge commit tersebut.
+- Setelah PR B digabung, `main` di-*pull* dengan `git pull --ff-only`.
+
+**`.gitignore`.** File `.env` lokal diabaikan Git; hanya `.env.example` yang di-commit (lihat bagian Environment variables).
 
 ## Output build
 
