@@ -1,0 +1,125 @@
+# College Task Manager — Tugas PAW Pertemuan 6
+
+Aplikasi pengelola tugas kuliah untuk Tugas PAW Pertemuan 6 (Git, npm, TypeScript, dan Vite). Aplikasi ini adalah salah satu workspace npm di monorepo `kxrumii.my.id` (`@kxrumii/pertemuan-6`) dan dikonfigurasi untuk menggunakan base path `/tugas/pertemuan-6/`.
+
+## Status fitur
+
+Aplikasi sedang dikembangkan secara bertahap. Dokumen ini hanya menjelaskan yang sudah ada di source.
+
+**Sudah tersedia**
+
+- Halaman statis (HTML semantik) dengan tampilan Editorial Task Ledger: header, ringkasan, dan daftar tugas.
+- Model data tugas bertipe (`Task`, `TaskDraft`, `TaskStatus`) dan operasi murni untuk membuat, mengubah, mengganti status, menghapus, serta menghitung tugas (`src/tasks.ts`).
+- Render daftar yang aman terhadap XSS: nilai tugas hanya ditulis lewat `textContent`, tanpa `innerHTML`.
+- Keadaan awal berupa daftar kosong ("Belum ada tugas") dan ringkasan `0 tugas · 0 selesai`.
+- Unit test untuk operasi tugas murni.
+- Integrasi Shared Transition Bridge (transisi antarhalaman dari/ke Portal `/tugas/`).
+
+**Belum tersedia (direncanakan)**
+
+- Form tambah dan edit tugas, hapus, serta pengubahan status lewat antarmuka. Tombol "Tambah tugas pertama" saat ini sengaja dinonaktifkan.
+- Penyimpanan data (`localStorage`); daftar tugas masih hanya ada di memori dan kosong saat halaman dimuat.
+- Filter Semua / Belum selesai / Selesai.
+- Penjelasan teknis di dalam halaman (Git, npm, TypeScript, Vite, environment variables).
+
+## Teknologi
+
+- TypeScript `^7.0.2` (mode `strict`, hanya pemeriksaan tipe lewat `tsc --noEmit`)
+- Vite `^8.3.8` (dev server dan production build)
+- Vanilla TypeScript, tanpa framework UI dan tanpa library runtime selain `@kxrumii/transition-bridge` (workspace internal, versi `0.4.0`)
+- Test runner bawaan Node.js (`node:test`)
+- npm workspaces (`npm@12.2.3` menurut `packageManager` di root)
+
+## Prasyarat dan setup
+
+- Node.js `26.13.1` (lihat `.nvmrc`; `engines` root mensyaratkan `>=26.13.1`)
+- npm `12.2.3`
+
+Dari root repository:
+
+```bash
+nvm use          # opsional, jika memakai nvm
+npm ci           # memasang dependensi seluruh workspace
+```
+
+## Perintah npm
+
+Dari root repository:
+
+| Perintah | Fungsi |
+|---|---|
+| `npm run dev:t6` | Menjalankan dev server Task 6 (`vite --host 127.0.0.1`). Buka `http://127.0.0.1:5173/tugas/pertemuan-6/` (port default Vite; lihat output terminal). |
+| `npm run check` | Pemeriksaan tipe seluruh workspace (`tsc --noEmit`). |
+| `npm run build` | Build penuh: bersihkan output, build semua aplikasi Vite, lalu build Astro ke `dist/`. |
+| `npm run preview` | Preview hasil build Astro (jalankan `npm run build` lebih dulu). |
+
+Khusus workspace Task 6:
+
+| Perintah | Fungsi |
+|---|---|
+| `npm run check --workspace=@kxrumii/pertemuan-6` | Pemeriksaan tipe Task 6 saja. |
+| `npm run test --workspace=@kxrumii/pertemuan-6` | Menjalankan unit test (`node --test "tests/**/*.test.ts"`). |
+| `npm run build --workspace=@kxrumii/pertemuan-6` | Pemeriksaan tipe lalu `vite build` untuk Task 6 saja. |
+
+## Environment variables
+
+File `.env.example` di folder ini adalah template konfigurasi non-rahasia yang ikut di-commit. File `.env` lokal **tidak** di-commit (diabaikan oleh `.gitignore`).
+
+Membuat konfigurasi lokal (dari folder `apps/pertemuan-6/`):
+
+```bash
+cp .env.example .env
+```
+
+Variabel yang dibaca aplikasi (`src/main.ts`, tipe di `src/vite-env.d.ts`):
+
+| Variabel | Fungsi | Nilai bawaan jika kosong |
+|---|---|---|
+| `VITE_APP_NAME` | Judul aplikasi pada halaman | `College Task Manager` |
+| `VITE_APP_VERSION` | Versi yang ditampilkan pada halaman | `1.0.0` |
+
+> **Peringatan:** semua variabel berawalan `VITE_` disisipkan ke dalam bundle dan dapat dibaca siapa pun di browser. Jangan pernah mengisinya dengan password, API key, token, atau data rahasia lain. Gunakan hanya untuk konfigurasi publik seperti nama atau versi aplikasi.
+
+## Struktur source
+
+```text
+apps/pertemuan-6/
+├── index.html          # Shell statis semantik, <template> baris tugas, empty state
+├── package.json        # Scripts dan dependensi workspace
+├── tsconfig.json       # Konfigurasi TypeScript (include: src)
+├── vite.config.ts      # base, plugin bootstrap transisi, output build
+├── .env.example        # Template environment variables (non-rahasia)
+├── src/
+│   ├── main.ts         # Inisialisasi: mengisi nilai env, render awal, menandai page-ready
+│   ├── types.ts        # Tipe data tugas dan label status
+│   ├── tasks.ts        # Operasi tugas murni (tanpa DOM) dan format tenggat
+│   ├── render.ts       # Render DOM aman (textContent), helper requireElement
+│   ├── transition.ts   # Pemasangan Shared Transition Bridge
+│   ├── style.css       # Gaya halaman dan variabel gerak transisi
+│   └── vite-env.d.ts   # Tipe variabel environment
+└── tests/
+    └── tasks.test.ts   # Unit test untuk src/tasks.ts
+```
+
+`src/transition.ts` terkait integrasi bridge bersama dan tidak terkait logika task manager.
+
+## Model data
+
+Didefinisikan di `src/types.ts`:
+
+- `TaskStatus` — union `'belum-selesai' | 'selesai'`.
+- `Task` — `{ id: number; title: string; course: string; deadline: string | null; status: TaskStatus }`. `deadline` berformat `YYYY-MM-DD` atau `null`.
+- `TaskDraft` — `{ title, course, deadline }`, data input sebelum menjadi `Task`.
+- `TaskList` — `readonly Task[]`.
+
+`src/tasks.ts` berisi fungsi murni yang tidak memutasi input: `createTask`, `updateTask`, `toggleStatus`, `removeTask`, `nextId`, `countByStatus`, `formatDeadline`, dan generic `updateById<T extends { id: number }>`.
+
+## Pengujian
+
+Unit test (`tests/tasks.test.ts`) memakai `node:test` dan `node:assert/strict`, dijalankan Node.js langsung pada file `.ts`. Cakupan: pembuatan id, pembuatan/pembaruan/penghapusan tugas, pembalikan status, hitungan per status, generic `updateById`, penanganan nilai teks berbahaya sebagai string biasa, dan `formatDeadline`. Folder `tests/` berada di luar `include` TypeScript sehingga tidak ikut `tsc` maupun bundle.
+
+Pencegahan XSS pada lapisan render (`src/render.ts`) belum memiliki test otomatis di repository; pemeriksaannya dilakukan manual di browser.
+
+## Output build
+
+`vite.config.ts` menetapkan `base: '/tugas/pertemuan-6/'` dan menulis hasil build ke `public/tugas/pertemuan-6/` di root repository (folder ini di-ignore Git). Saat `npm run build` di root, Astro menyalinnya ke `dist/tugas/pertemuan-6/`, yang menjadi URL publik `/tugas/pertemuan-6/`.
