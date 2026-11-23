@@ -33,13 +33,13 @@
               <p class="eyebrow">TASK LEDGER</p>
               <h2 id="ledger-title">Daftar tugas</h2>
             </div>
+            <button type="button" id="add-task-header" class="cta cta-small" hidden>Tambah tugas</button>
           </div>
           <ol id="task-list" class="task-list" hidden></ol>
           <div id="empty-state" class="empty-state">
             <p class="empty-title">Belum ada tugas.</p>
             <p class="empty-hint">Mulai dengan mencatat tugas kuliah pertama Anda.</p>
-            <button type="button" id="add-task-button" class="cta" disabled>Tambah tugas pertama</button>
-            <p class="empty-note">Form tambah tugas aktif pada langkah berikutnya.</p>
+            <button type="button" id="add-task-button" class="cta">Tambah tugas pertama</button>
           </div>
           <noscript><p class="empty-note">Aplikasi ini membutuhkan JavaScript untuk menampilkan dan mengelola daftar tugas.</p></noscript>
         </section>
@@ -56,8 +56,42 @@
           </div>
           <span class="task-deadline" data-slot="deadline"></span>
           <span class="task-status" data-slot="status"></span>
+          <div class="task-actions">
+            <button type="button" class="row-action" data-action="edit" data-slot="edit">Edit</button>
+          </div>
         </li>
       </template>
+      <dialog id="task-dialog" class="task-dialog" aria-labelledby="task-dialog-title">
+        <form id="task-form" class="task-form" novalidate>
+          <div>
+            <p class="eyebrow" id="task-dialog-eyebrow">TASK LEDGER</p>
+            <h2 id="task-dialog-title">Tambah tugas</h2>
+          </div>
+
+          <div class="field">
+            <label for="task-title">Judul tugas</label>
+            <input id="task-title" name="title" type="text" required autocomplete="off" aria-describedby="task-title-error" />
+            <p class="field-error" id="task-title-error" hidden></p>
+          </div>
+
+          <div class="field">
+            <label for="task-course">Mata kuliah</label>
+            <input id="task-course" name="course" type="text" required autocomplete="off" aria-describedby="task-course-error" />
+            <p class="field-error" id="task-course-error" hidden></p>
+          </div>
+
+          <div class="field">
+            <label for="task-deadline">Tenggat <span class="field-optional">(opsional)</span></label>
+            <input id="task-deadline" name="deadline" type="date" aria-describedby="task-deadline-error" />
+            <p class="field-error" id="task-deadline-error" hidden></p>
+          </div>
+
+          <div class="dialog-actions">
+            <button type="button" id="task-cancel" class="btn-secondary">Batal</button>
+            <button type="submit" class="cta">Simpan</button>
+          </div>
+        </form>
+      </dialog>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

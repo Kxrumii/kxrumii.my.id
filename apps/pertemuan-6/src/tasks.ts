@@ -54,15 +54,22 @@ export function countByStatus(tasks: TaskList): Record<TaskStatus, number> {
 
 const DEADLINE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-/** Memformat `YYYY-MM-DD` sebagai tanggal lokal (tanpa pergeseran UTC); `null`/tidak valid menjadi "—". */
-export function formatDeadline(deadline: string | null): string {
-  if (deadline === null) return '—';
-  const match = DEADLINE_PATTERN.exec(deadline);
-  if (!match) return '—';
+/** Mem-parse `YYYY-MM-DD` sebagai tanggal kalender lokal; `null` bila format salah atau tanggal tidak ada (mis. 2026-02-30). */
+export function parseCalendarDate(value: string): Date | null {
+  const match = DEADLINE_PATTERN.exec(value);
+  if (!match) return null;
   const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
   const date = new Date(year, month - 1, day);
   if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
-    return '—';
+    return null;
   }
+  return date;
+}
+
+/** Memformat `YYYY-MM-DD` sebagai tanggal lokal (tanpa pergeseran UTC); `null`/tidak valid menjadi "—". */
+export function formatDeadline(deadline: string | null): string {
+  if (deadline === null) return '—';
+  const date = parseCalendarDate(deadline);
+  if (date === null) return '—';
   return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
 }

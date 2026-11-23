@@ -37,6 +37,7 @@ export function createTaskRow(template: HTMLTemplateElement, task: Task, positio
   const status = slot(row, 'status');
   status.textContent = STATUS_LABELS[task.status];
   status.classList.add(task.status);
+  slot(row, 'edit').setAttribute('aria-label', `Edit tugas: ${task.title}`);
   return row;
 }
 
