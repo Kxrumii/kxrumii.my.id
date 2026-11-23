@@ -3,13 +3,14 @@ import './style.css';
 import { renderLedger, renderSummary, requireElement } from './render.ts';
 import { initDeleteDialog } from './delete-dialog.ts';
 import { initTaskDialog } from './task-dialog.ts';
+import { describeLoad, describeSaveFailure, getBrowserStorage, loadTasks, saveTasks } from './storage.ts';
 import { createTask, removeTask, survivorId, toggleStatus, updateTask } from './tasks.ts';
 import type { Task } from './types.ts';
 
 const appName: string = import.meta.env.VITE_APP_NAME || 'College Task Manager';
 const appVersion: string = import.meta.env.VITE_APP_VERSION || '1.0.0';
 
-// Daftar hanya ada di memori; persistensi ditambahkan pada milestone berikutnya.
+// State dipulihkan dari localStorage (divalidasi) sebelum render pertama; bila gagal, mulai kosong di memori.
 let tasks: Task[] = [];
 
 try {
@@ -24,6 +25,25 @@ try {
   const emptyAdd = requireElement(document, '#add-task-button', HTMLButtonElement);
   const headerAdd = requireElement(document, '#add-task-header', HTMLButtonElement);
   const liveStatus = requireElement(document, '#live-status', HTMLElement);
+  const storageNotice = requireElement(document, '#storage-notice', HTMLElement);
+
+  const storage = getBrowserStorage();
+  const loaded = loadTasks(storage);
+  tasks = loaded.tasks;
+  // Satu notifikasi terlihat: kegagalan simpan menggantikan pesan pemuatan; simpan yang berhasil menghapus keduanya.
+  let notice: string | null = describeLoad(loaded);
+
+  function showNotice(message: string | null): void {
+    notice = message;
+    storageNotice.textContent = message ?? '';
+    storageNotice.hidden = message === null;
+  }
+
+  // Dipanggil setelah state di memori diperbarui oleh aksi pengguna; kegagalan tidak membatalkan aksi.
+  function persist(): void {
+    const result = saveTasks(storage, tasks);
+    showNotice(result.ok ? null : describeSaveFailure(result.reason));
+  }
 
   function announce(message: string): void {
     liveStatus.textContent = message;
@@ -45,10 +65,18 @@ try {
   const dialog = initTaskDialog(document, {
     onCreate(draft) {
       tasks = createTask(tasks, draft);
+      persist();
       render();
     },
     onEdit(id, draft) {
+      const before = tasks.find((task) => task.id === id);
       tasks = updateTask(tasks, id, draft);
+      const unchanged =
+        before !== undefined &&
+        before.title === draft.title &&
+        before.course === draft.course &&
+        before.deadline === draft.deadline;
+      if (!unchanged) persist();
       render();
     },
   });
@@ -59,6 +87,7 @@ try {
   const deleteDialog = initDeleteDialog(document, (id) => {
     if (!tasks.some((task) => task.id === id)) return; // id usang: abaikan
     tasks = removeTask(tasks, id);
+    persist();
     render();
     pulseSummary();
     announce('Tugas dihapus.');
@@ -98,12 +127,14 @@ try {
     const task = taskFrom(target);
     if (!task) return;
     tasks = toggleStatus(tasks, task.id);
+    persist();
     render(task.id);
     pulseSummary();
     rowControl(task.id, 'toggle')?.focus();
     announce(task.status === 'selesai' ? 'Ditandai belum selesai.' : 'Ditandai selesai.');
   });
 
+  showNotice(notice);
   render();
 } finally {
   // The shell is in the DOM and initialisation has run: allow the incoming route transition to enter.

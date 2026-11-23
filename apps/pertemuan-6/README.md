@@ -18,13 +18,15 @@ Aplikasi sedang dikembangkan secara bertahap. Dokumen ini hanya menjelaskan yang
 - Dialog dapat ditutup dengan tombol Batal atau Escape tanpa mengubah data; fokus dikembalikan ke pemicu (tombol tambah atau tombol Edit baris yang sama). Pada layar sempit dialog tampil sebagai panel dari bawah; animasinya dimatikan pada `prefers-reduced-motion`.
 - **Ubah status** lewat checkbox pada setiap baris (Belum selesai ⇄ Selesai); label status dan ringkasan jumlah langsung diperbarui, fokus tetap pada checkbox tugas yang sama, dan judul tugas selesai tetap terbaca (dicoret tipis, kontras dijaga).
 - **Hapus tugas** lewat tombol "Hapus" pada setiap baris dengan dialog konfirmasi (`<dialog>` native). Hapus hanya terjadi setelah konfirmasi eksplisit; Batal dan Escape tidak menghapus. Fokus kembali ke tombol Hapus tugas yang sama saat batal, atau ke tugas terdekat (atau tombol "Tambah tugas pertama" bila daftar kosong) setelah hapus. Judul tugas di dialog ditulis sebagai teks literal.
+- **Penyimpanan di `localStorage`** (kunci `kxrumii:pertemuan-6:tasks:v1`). Format berupa envelope bernomor versi, `{ "version": 1, "tasks": [...] }`, bukan array polos. Data disimpan setelah setiap aksi yang mengubah data (tambah, edit yang benar-benar berubah, ubah status, hapus) dan dipulihkan sebelum render pertama. Ini penyimpanan lokal di peramban yang sama, bukan sinkronisasi backend atau cadangan cloud.
+- **Validasi data tersimpan**: isi `localStorage` diperlakukan sebagai data tidak tepercaya. Setiap record harus punya `id` bilangan bulat positif yang unik, `title` dan `course` tidak kosong, `deadline` `null` atau tanggal kalender `YYYY-MM-DD` yang valid, dan `status` tepat `'belum-selesai'` atau `'selesai'`. Record tidak valid atau ber-`id` ganda dilewati (jumlahnya dilaporkan) dan record valid lainnya tetap dipulihkan; tidak ada nilai yang ditebak atau dikoreksi otomatis.
+- **Kegagalan penyimpanan**: JSON rusak, struktur envelope salah, atau versi tidak didukung membuat daftar dimulai kosong dengan pesan peringatan yang terlihat, dan data lama **tidak ditimpa saat pemuatan**; data baru baru menimpanya ketika pengguna mengubah data. Bila `localStorage` tidak dapat diakses atau penulisan gagal (misalnya kuota penuh), aplikasi tetap dapat dipakai di memori dan menampilkan peringatan bahwa perubahan tidak tersimpan; peringatan hilang setelah penyimpanan berikutnya berhasil. Belum ada tombol reset atau sinkronisasi antar-tab.
 - Umpan balik singkat untuk perubahan status dan hapus (animasi ringan dan pengumuman `aria-live`), dimatikan pada `prefers-reduced-motion`.
 - Unit test untuk operasi tugas murni dan validasi form.
 - Integrasi Shared Transition Bridge (transisi antarhalaman dari/ke Portal `/tugas/`).
 
 **Belum tersedia (direncanakan)**
 
-- Penyimpanan data (`localStorage`). **Data tugas saat ini hanya disimpan di memori: semua tugas hilang saat halaman dimuat ulang.**
 - Filter Semua / Belum selesai / Selesai.
 - Penjelasan teknis di dalam halaman (Git, npm, TypeScript, Vite, environment variables).
 
@@ -103,12 +105,14 @@ apps/pertemuan-6/
 │   ├── validation.ts   # Validasi dan normalisasi input form (murni, tanpa DOM)
 │   ├── task-dialog.ts  # Controller dialog tambah/edit: validasi, pesan kesalahan, fokus
 │   ├── delete-dialog.ts # Controller dialog konfirmasi hapus (guard konfirmasi ganda, fokus)
+│   ├── storage.ts      # Baca/simpan localStorage: envelope versi, validasi runtime, pesan kegagalan
 │   ├── transition.ts   # Pemasangan Shared Transition Bridge
 │   ├── style.css       # Gaya halaman dan variabel gerak transisi
 │   └── vite-env.d.ts   # Tipe variabel environment
 └── tests/
     ├── tasks.test.ts       # Unit test untuk src/tasks.ts
-    └── validation.test.ts  # Unit test untuk src/validation.ts dan alur validasi + operasi tugas
+    ├── validation.test.ts  # Unit test untuk src/validation.ts dan alur validasi + operasi tugas
+    └── storage.test.ts     # Unit test untuk src/storage.ts (Storage palsu yang di-inject)
 ```
 
 `src/transition.ts` terkait integrasi bridge bersama dan tidak terkait logika task manager.
@@ -124,11 +128,13 @@ Didefinisikan di `src/types.ts`:
 
 `src/tasks.ts` berisi fungsi murni yang tidak memutasi input: `createTask`, `updateTask`, `toggleStatus`, `removeTask`, `nextId`, `countByStatus`, `formatDeadline`, `parseCalendarDate`, `survivorId` (tugas terdekat untuk target fokus setelah hapus), dan generic `updateById<T extends { id: number }>`.
 
+`src/storage.ts` menambahkan `loadTasks`, `saveTasks`, `isTask` (validasi runtime), dan `StorageLike` (subset `Storage` yang di-inject agar bisa diuji tanpa browser).
+
 `src/validation.ts` menambahkan `RawTaskDraft` (string mentah dari form), `Result<T, E>` (union diskriminasi `ok: true | false`), `DraftErrors`, serta `validateDraft` yang mengembalikan `TaskDraft` yang sudah di-trim dan dinormalkan atau daftar pesan kesalahan per field. Logika yang sama dipakai oleh mode tambah dan edit.
 
 ## Pengujian
 
-Unit test (`tests/tasks.test.ts` dan `tests/validation.test.ts`) memakai `node:test` dan `node:assert/strict`, dijalankan Node.js langsung pada file `.ts`. Cakupan: pembuatan id, pembuatan/pembaruan/penghapusan tugas, pembalikan status dua arah beserta hitungan per status, `survivorId`, generic `updateById`, penanganan nilai teks berbahaya sebagai string biasa, `formatDeadline`, serta validasi (judul/mata kuliah kosong atau hanya spasi, tenggat kosong, tanggal kalender tidak ada seperti `2026-02-30`, format salah, trim, dan pelestarian `id`/status saat edit). Folder `tests/` berada di luar `include` TypeScript sehingga tidak ikut `tsc` maupun bundle.
+Unit test (`tests/tasks.test.ts`, `tests/validation.test.ts`, dan `tests/storage.test.ts`) memakai `node:test` dan `node:assert/strict`, dijalankan Node.js langsung pada file `.ts`. Cakupan: pembuatan id, pembuatan/pembaruan/penghapusan tugas, pembalikan status dua arah beserta hitungan per status, `survivorId`, generic `updateById`, penanganan nilai teks berbahaya sebagai string biasa, `formatDeadline`, penyimpanan (envelope, JSON rusak, versi tidak didukung, tiap aturan validasi record, id ganda, campuran valid/tidak valid, `getItem`/`setItem` yang melempar error, round-trip), serta validasi (judul/mata kuliah kosong atau hanya spasi, tenggat kosong, tanggal kalender tidak ada seperti `2026-02-30`, format salah, trim, dan pelestarian `id`/status saat edit). Folder `tests/` berada di luar `include` TypeScript sehingga tidak ikut `tsc` maupun bundle.
 
 Checkbox status, dialog, fokus, dan pencegahan XSS pada lapisan render (`src/render.ts`, `src/task-dialog.ts`, `src/delete-dialog.ts`) belum memiliki test otomatis di repository; pemeriksaannya dilakukan di browser.
 
