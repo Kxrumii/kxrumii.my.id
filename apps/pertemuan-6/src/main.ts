@@ -1,6 +1,7 @@
 import { bridge } from './transition';
 import './style.css';
-import { renderLedger, renderSummary, requireElement } from './render.ts';
+import { FILTER_LABELS, filterCounts, filterTasks, isTaskFilter, type TaskFilter } from './filters.ts';
+import { filterButton, renderFilterBar, renderLedger, renderSummary, requireElement } from './render.ts';
 import { initDeleteDialog } from './delete-dialog.ts';
 import { initTaskDialog } from './task-dialog.ts';
 import { describeLoad, describeSaveFailure, getBrowserStorage, loadTasks, saveTasks } from './storage.ts';
@@ -12,6 +13,8 @@ const appVersion: string = import.meta.env.VITE_APP_VERSION || '1.0.0';
 
 // State dipulihkan dari localStorage (divalidasi) sebelum render pertama; bila gagal, mulai kosong di memori.
 let tasks: Task[] = [];
+// Filter adalah state tampilan sementara: tidak disimpan dan kembali ke 'all' saat halaman dimuat ulang.
+let filter: TaskFilter = 'all';
 
 try {
   requireElement(document, '#page-title', HTMLHeadingElement).textContent = appName;
@@ -26,6 +29,9 @@ try {
   const headerAdd = requireElement(document, '#add-task-header', HTMLButtonElement);
   const liveStatus = requireElement(document, '#live-status', HTMLElement);
   const storageNotice = requireElement(document, '#storage-notice', HTMLElement);
+  const filterBar = requireElement(document, '#filter-bar', HTMLElement);
+  const filterEmpty = requireElement(document, '#filter-empty', HTMLElement);
+  const showAll = requireElement(document, '#show-all-button', HTMLButtonElement);
 
   const storage = getBrowserStorage();
   const loaded = loadTasks(storage);
@@ -56,17 +62,31 @@ try {
     summary.classList.add('is-pulsing');
   }
 
+  // Tugas yang sedang tampil; `tasks` tetap seluruh koleksi (sumber ringkasan, jumlah filter, dan penyimpanan).
+  const visibleTasks = (): Task[] => filterTasks(tasks, filter);
+
   function render(changedId: number | null = null): void {
-    renderLedger(list, emptyState, template, tasks, changedId);
+    const visible = visibleTasks();
+    renderLedger(list, emptyState, template, visible, changedId);
+    // Dua keadaan kosong berbeda: belum ada tugas sama sekali vs. tidak ada yang cocok dengan filter.
+    emptyState.hidden = tasks.length > 0;
+    filterEmpty.hidden = !(tasks.length > 0 && visible.length === 0);
+    filterBar.hidden = tasks.length === 0;
+    renderFilterBar(filterBar, tasks, filter);
     renderSummary(summary, tasks);
     headerAdd.hidden = tasks.length === 0;
   }
+
+  // Target fokus bila kontrol baris sudah tidak tampil (disaring atau terhapus).
+  const fallbackFocus = (): HTMLElement =>
+    tasks.length === 0 ? emptyAdd : filterButton(filterBar, filter);
 
   const dialog = initTaskDialog(document, {
     onCreate(draft) {
       tasks = createTask(tasks, draft);
       persist();
       render();
+      if (filter === 'completed') announce('Tugas ditambahkan dengan status belum selesai; tidak tampil pada filter Selesai.');
     },
     onEdit(id, draft) {
       const before = tasks.find((task) => task.id === id);
@@ -113,10 +133,11 @@ try {
     if (edit) {
       dialog.openEdit(task, () => rowControl(task.id, 'edit') ?? visibleAddButton());
     } else {
-      const next = survivorId(tasks, task.id);
+      // Tetangga dicari pada daftar yang tampil agar fokus tidak jatuh ke baris yang tersaring.
+      const next = survivorId(visibleTasks(), task.id);
       deleteDialog.open(task, (deleted) => {
-        if (!deleted) return rowControl(task.id, 'delete') ?? visibleAddButton();
-        return (next === null ? null : rowControl(next, 'delete')) ?? visibleAddButton();
+        if (!deleted) return rowControl(task.id, 'delete') ?? fallbackFocus();
+        return (next === null ? null : rowControl(next, 'delete')) ?? fallbackFocus();
       });
     }
   });
@@ -126,12 +147,38 @@ try {
     if (!target?.matches('[data-action="toggle"]')) return;
     const task = taskFrom(target);
     if (!task) return;
+    const next = survivorId(visibleTasks(), task.id);
     tasks = toggleStatus(tasks, task.id);
     persist();
     render(task.id);
     pulseSummary();
-    rowControl(task.id, 'toggle')?.focus();
-    announce(task.status === 'selesai' ? 'Ditandai belum selesai.' : 'Ditandai selesai.');
+    const stillVisible = rowControl(task.id, 'toggle');
+    const message = task.status === 'selesai' ? 'Ditandai belum selesai.' : 'Ditandai selesai.';
+    if (stillVisible) {
+      stillVisible.focus();
+      announce(message);
+    } else {
+      // Tugas tersaring keluar dari tampilan: fokus ke tetangga terdekat, atau ke tombol filter aktif.
+      const neighbour = next === null ? null : rowControl(next, 'toggle');
+      (neighbour ?? fallbackFocus()).focus();
+      announce(`${message} Tugas tidak tampil pada filter ${FILTER_LABELS[filter]}.`);
+    }
+  });
+
+  filterBar.addEventListener('click', (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const value = target?.closest<HTMLElement>('[data-filter]')?.dataset.filter;
+    if (!isTaskFilter(value) || value === filter) return;
+    filter = value; // hanya mengubah tampilan: tidak ada penulisan ke storage
+    render();
+    announce(`Menampilkan ${FILTER_LABELS[filter]}: ${filterCounts(tasks)[filter]} tugas.`);
+  });
+
+  showAll.addEventListener('click', () => {
+    filter = 'all';
+    render();
+    filterButton(filterBar, 'all').focus();
+    announce(`Menampilkan semua: ${tasks.length} tugas.`);
   });
 
   showNotice(notice);

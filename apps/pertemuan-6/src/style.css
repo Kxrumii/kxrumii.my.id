@@ -73,6 +73,15 @@ h1 { margin: 18px 0; font-family: 'Space Grotesk', sans-serif; font-size: clamp(
   .task-dialog[open] { animation: none; }
 }
 
+/* Filters */
+.filter-bar { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 0; border-bottom: 1px solid #292b26; }
+.filter-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 16px; font: 500 11px 'DM Mono', monospace; letter-spacing: .06em; text-transform: uppercase; color: #b8baaf; background: transparent; border: 1px solid #3a3c36; border-radius: 99px; cursor: pointer; }
+.filter-btn:hover { color: #e8e6e1; border-color: #8d9184; }
+.filter-btn:focus-visible { outline: 2px solid #e8e6e1; outline-offset: 2px; }
+.filter-btn[aria-pressed='true'] { color: #10110f; background: #a3b18a; border-color: #a3b18a; }
+.filter-count { font-variant-numeric: tabular-nums; opacity: .8; }
+@media (max-width: 560px) { .filter-btn { flex: 1 1 auto; justify-content: center; padding: 8px 12px; } }
+
 /* Storage notice (persistent, non-modal) */
 .storage-notice { margin: 16px 0 0; padding: 12px 14px; font-size: 13px; line-height: 1.55; color: #e8e6e1; background: rgb(214 165 107 / .1); border: 1px solid #d6a56b; border-radius: 10px; overflow-wrap: anywhere; }
 

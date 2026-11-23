@@ -35,12 +35,21 @@
             </div>
             <button type="button" id="add-task-header" class="cta cta-small" hidden>Tambah tugas</button>
           </div>
+          <div id="filter-bar" class="filter-bar" role="group" aria-label="Filter tugas" hidden>
+            <button type="button" class="filter-btn" data-filter="all" aria-pressed="true">Semua <span class="filter-count" data-count>0</span></button>
+            <button type="button" class="filter-btn" data-filter="active" aria-pressed="false">Belum selesai <span class="filter-count" data-count>0</span></button>
+            <button type="button" class="filter-btn" data-filter="completed" aria-pressed="false">Selesai <span class="filter-count" data-count>0</span></button>
+          </div>
           <p id="storage-notice" class="storage-notice" role="status" hidden></p>
           <ol id="task-list" class="task-list" hidden></ol>
           <div id="empty-state" class="empty-state">
             <p class="empty-title">Belum ada tugas.</p>
             <p class="empty-hint">Mulai dengan mencatat tugas kuliah pertama Anda.</p>
             <button type="button" id="add-task-button" class="cta">Tambah tugas pertama</button>
+          </div>
+          <div id="filter-empty" class="empty-state" hidden>
+            <p class="empty-title">Tidak ada tugas pada filter ini.</p>
+            <button type="button" id="show-all-button" class="btn-secondary">Tampilkan semua</button>
           </div>
           <noscript><p class="empty-note">Aplikasi ini membutuhkan JavaScript untuk menampilkan dan mengelola daftar tugas.</p></noscript>
         </section>

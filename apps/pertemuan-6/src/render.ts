@@ -1,3 +1,4 @@
+import { FILTER_LABELS, TASK_FILTERS, filterCounts, isTaskFilter, type TaskFilter } from './filters.ts';
 import { countByStatus, formatDeadline } from './tasks.ts';
 import { STATUS_LABELS, type Task, type TaskList } from './types.ts';
 
@@ -62,4 +63,23 @@ export function renderLedger(
 export function renderSummary(target: HTMLElement, tasks: TaskList): void {
   const done = countByStatus(tasks).selesai;
   target.textContent = `${tasks.length} tugas · ${done} selesai`;
+}
+
+/** Memperbarui tombol filter: jumlah (dari seluruh daftar), `aria-pressed`, dan nama yang terbaca. */
+export function renderFilterBar(bar: HTMLElement, tasks: TaskList, active: TaskFilter): void {
+  const counts = filterCounts(tasks);
+  for (const button of bar.querySelectorAll<HTMLButtonElement>('[data-filter]')) {
+    const filter = button.dataset.filter;
+    if (!isTaskFilter(filter)) continue;
+    button.setAttribute('aria-pressed', String(filter === active));
+    const count = requireElement(button, '[data-count]', HTMLElement);
+    count.textContent = String(counts[filter]);
+    button.setAttribute('aria-label', `${FILTER_LABELS[filter]}: ${counts[filter]} tugas`);
+  }
+}
+
+/** Tombol filter untuk `filter`; dipakai sebagai target fokus. */
+export function filterButton(bar: ParentNode, filter: TaskFilter): HTMLButtonElement {
+  if (!TASK_FILTERS.includes(filter)) throw new Error(`Filter tidak dikenal: ${filter}`);
+  return requireElement(bar, `[data-filter="${filter}"]`, HTMLButtonElement);
 }
