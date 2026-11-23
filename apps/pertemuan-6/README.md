@@ -4,7 +4,7 @@ Aplikasi pengelola tugas kuliah untuk Tugas PAW Pertemuan 6 (Git, npm, TypeScrip
 
 ## Status fitur
 
-Aplikasi sedang dikembangkan secara bertahap. Dokumen ini hanya menjelaskan yang sudah ada di source.
+Fungsi inti Task Manager sudah terimplementasi di source: tambah, edit, hapus, dan ubah status tugas, penyimpanan di `localStorage`, serta filter Semua / Belum selesai / Selesai. Dokumen ini hanya menjelaskan yang sudah ada di source repository; tidak menyatakan bahwa versi ini sudah dipublikasikan di website.
 
 **Sudah tersedia**
 
@@ -23,12 +23,13 @@ Aplikasi sedang dikembangkan secara bertahap. Dokumen ini hanya menjelaskan yang
 - **Kegagalan penyimpanan**: JSON rusak, struktur envelope salah, atau versi tidak didukung membuat daftar dimulai kosong dengan pesan peringatan yang terlihat, dan data lama **tidak ditimpa saat pemuatan**; data baru baru menimpanya ketika pengguna mengubah data. Bila `localStorage` tidak dapat diakses atau penulisan gagal (misalnya kuota penuh), aplikasi tetap dapat dipakai di memori dan menampilkan peringatan bahwa perubahan tidak tersimpan; peringatan hilang setelah penyimpanan berikutnya berhasil. Belum ada tombol reset atau sinkronisasi antar-tab.
 - **Filter** Semua (`all`) / Belum selesai (`active`) / Selesai (`completed`) di atas daftar, dengan jumlah pada tiap tombol dan `aria-pressed` untuk filter terpilih. Jumlah dan ringkasan header (`X tugas · Y selesai`) selalu dihitung dari **seluruh** koleksi, bukan dari hasil filter. Filter hanya mengubah tampilan: tidak mengubah atau menghapus tugas, tidak menulis ke `localStorage`, dan kembali ke Semua saat halaman dimuat ulang. Bila ada tugas tetapi tidak ada yang cocok dengan filter, tampil pesan "Tidak ada tugas pada filter ini." dengan tombol "Tampilkan semua"; keadaan kosong awal ("Belum ada tugas") hanya tampil saat belum ada tugas sama sekali. Bila tugas keluar dari tampilan karena filter (mis. ditandai selesai pada filter Belum selesai), fokus pindah ke tugas terdekat yang masih tampil atau ke tombol filter aktif.
 - Umpan balik singkat untuk perubahan status dan hapus (animasi ringan dan pengumuman `aria-live`), dimatikan pada `prefers-reduced-motion`.
-- Unit test untuk operasi tugas murni dan validasi form.
+- Unit test otomatis untuk operasi tugas murni, validasi form, penyimpanan beserta validasi data tersimpan, serta filter dan jumlahnya. Rendering DOM, dialog, fokus, dan interaksi peramban lainnya diperiksa lewat pengecekan di browser, bukan test otomatis di repository.
 - Integrasi Shared Transition Bridge (transisi antarhalaman dari/ke Portal `/tugas/`).
 
 **Belum tersedia (direncanakan)**
 
-- Penjelasan teknis di dalam halaman (Git, npm, TypeScript, Vite, environment variables).
+- Catatan teknis yang ditampilkan di dalam halaman aplikasi, termasuk penjelasan konsep compiler, transpiler, dan bundler.
+- Penyempurnaan tampilan responsif dan gerak (*motion*).
 
 ## Teknologi
 
@@ -138,7 +139,7 @@ Didefinisikan di `src/types.ts`:
 
 ## Pengujian
 
-Unit test (`tests/tasks.test.ts`, `tests/validation.test.ts`, dan `tests/storage.test.ts`, dan `tests/filters.test.ts`) memakai `node:test` dan `node:assert/strict`, dijalankan Node.js langsung pada file `.ts`. Cakupan: pembuatan id, pembuatan/pembaruan/penghapusan tugas, pembalikan status dua arah beserta hitungan per status, `survivorId`, generic `updateById`, penanganan nilai teks berbahaya sebagai string biasa, `formatDeadline`, filter (tiap filter, urutan dan identitas objek, jumlah mengikuti tambah/ubah status/hapus), penyimpanan (envelope, JSON rusak, versi tidak didukung, tiap aturan validasi record, id ganda, campuran valid/tidak valid, `getItem`/`setItem` yang melempar error, round-trip), serta validasi (judul/mata kuliah kosong atau hanya spasi, tenggat kosong, tanggal kalender tidak ada seperti `2026-02-30`, format salah, trim, dan pelestarian `id`/status saat edit). Folder `tests/` berada di luar `include` TypeScript sehingga tidak ikut `tsc` maupun bundle.
+Unit test (`tests/tasks.test.ts`, `tests/validation.test.ts`, `tests/storage.test.ts`, dan `tests/filters.test.ts`) memakai `node:test` dan `node:assert/strict`, dijalankan Node.js langsung pada file `.ts`. Cakupan: pembuatan id, pembuatan/pembaruan/penghapusan tugas, pembalikan status dua arah beserta hitungan per status, `survivorId`, generic `updateById`, penanganan nilai teks berbahaya sebagai string biasa, `formatDeadline`, filter (tiap filter, urutan dan identitas objek, jumlah mengikuti tambah/ubah status/hapus), penyimpanan (envelope, JSON rusak, versi tidak didukung, tiap aturan validasi record, id ganda, campuran valid/tidak valid, `getItem`/`setItem` yang melempar error, round-trip), serta validasi (judul/mata kuliah kosong atau hanya spasi, tenggat kosong, tanggal kalender tidak ada seperti `2026-02-30`, format salah, trim, dan pelestarian `id`/status saat edit). Folder `tests/` berada di luar `include` TypeScript sehingga tidak ikut `tsc` maupun bundle.
 
 Checkbox status, dialog, fokus, dan pencegahan XSS pada lapisan render (`src/render.ts`, `src/task-dialog.ts`, `src/delete-dialog.ts`) belum memiliki test otomatis di repository; pemeriksaannya dilakukan di browser.
 
