@@ -25,6 +25,7 @@
     "build:apps": "npm run build --workspaces --if-present",
     "build": "npm run clean:generated && npm run build:apps && astro build",
     "preview": "astro preview",
+    "verify:transition": "node scripts/verify-transition-bootstrap.mjs",
     "astro": "astro"
   },
   "dependencies": {
