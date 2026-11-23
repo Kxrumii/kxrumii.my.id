@@ -981,3 +981,15 @@ body[data-page="portal"] {
   background: transparent !important;
   view-transition-name: none;
 }
+
+/* Previews never appear during a route transition (leaving, entering, the
+   post-swap entrance, or a bridge arrival). A preview already open from hover
+   or keyboard focus leaves with the existing hover-out motion, so nothing pops
+   when the document changes. Specificity beats the :hover/:focus-visible rules. */
+html:is(.portal-transition-leaving, .portal-transition-entering, [data-transition-lock], [data-transition-state='entering']) .project-row .preview-veil {
+  transform: translateY(calc(100% + 6px));
+}
+
+html:is(.portal-transition-leaving, .portal-transition-entering, [data-transition-lock], [data-transition-state='entering']) .project-row .preview-veil img {
+  transform: translateY(calc(-100% - 6px));
+}
