@@ -5,15 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Dokumentasi teknis College Task Manager untuk Tugas PAW Pertemuan 6: Git, npm, TypeScript, Vite, environment variables, serta compiler, transpiler, dan bundler." />
     <title>Dokumentasi — Task Manager Pertemuan 6</title>
+    <script>
+      // Terapkan tema sebelum paint agar tidak ada kilatan; mengikuti pilihan tersimpan atau sistem.
+      (function () {
+        var theme = 'dark';
+        try {
+          var stored = localStorage.getItem('kxrumii:pertemuan-6:theme');
+          theme = stored === 'light' || stored === 'dark' ? stored : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        } catch (e) {}
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
   </head>
   <body>
     <div id="app">
       <main class="shell docs-shell">
         <header class="topbar">
-          <a class="brand" href="/tugas/">kxrumii<span>.my.id</span></a>
+          <a class="toplink" href="/tugas/pertemuan-6/">← Kembali ke Task Manager</a>
           <div class="topbar-right">
-            <a class="toplink" href="/tugas/pertemuan-6/">← Kembali ke Task Manager</a>
-            <span class="eyebrow">PAW / PERTEMUAN 06</span>
+            <button type="button" id="theme-toggle" class="theme-toggle">Tema</button>
+            <span class="eyebrow">DOKUMENTASI · PERTEMUAN 06</span>
           </div>
         </header>
 

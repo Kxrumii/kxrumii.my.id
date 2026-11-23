@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   countByStatus,
+  deadlineLabel,
+  deadlineState,
   createTask,
   formatDeadline,
   nextId,
@@ -173,5 +175,65 @@ describe('toggleStatus dan ringkasan', () => {
     assert.deepEqual(countByStatus(done), { 'belum-selesai': 0, selesai: 2 });
     assert.equal(done[1]?.id, 4);
     assert.deepEqual(countByStatus(toggleStatus(done, 4)), { 'belum-selesai': 1, selesai: 1 });
+  });
+});
+
+describe('deadlineState', () => {
+  const at = (y: number, m: number, d: number, h = 12, min = 0) => new Date(y, m - 1, d, h, min);
+
+  it('kemarin → overdue, hari ini → today, besok → tomorrow, beberapa hari lagi → upcoming', () => {
+    const today = at(2026, 11, 23);
+    assert.equal(deadlineState('2026-11-22', 'belum-selesai', today), 'overdue');
+    assert.equal(deadlineState('2026-10-01', 'belum-selesai', today), 'overdue');
+    assert.equal(deadlineState('2026-11-23', 'belum-selesai', today), 'today');
+    assert.equal(deadlineState('2026-11-24', 'belum-selesai', today), 'tomorrow');
+    assert.equal(deadlineState('2026-11-25', 'belum-selesai', today), 'upcoming');
+    assert.equal(deadlineState('2027-06-01', 'belum-selesai', today), 'upcoming');
+  });
+
+  it('jam pada hari ini tidak memengaruhi hasil', () => {
+    assert.equal(deadlineState('2026-11-23', 'belum-selesai', at(2026, 11, 23, 0, 0)), 'today');
+    assert.equal(deadlineState('2026-11-23', 'belum-selesai', at(2026, 11, 23, 23, 59)), 'today');
+    assert.equal(deadlineState('2026-11-24', 'belum-selesai', at(2026, 11, 23, 23, 59)), 'tomorrow');
+  });
+
+  it('null, kosong, atau tidak valid → none', () => {
+    const today = at(2026, 11, 23);
+    assert.equal(deadlineState(null, 'belum-selesai', today), 'none');
+    assert.equal(deadlineState('', 'belum-selesai', today), 'none');
+    assert.equal(deadlineState('2026-02-30', 'belum-selesai', today), 'none');
+    assert.equal(deadlineState('besok', 'belum-selesai', today), 'none');
+  });
+
+  it('tugas selesai selalu none, termasuk yang lewat tenggat', () => {
+    const today = at(2026, 11, 23);
+    assert.equal(deadlineState('2026-11-01', 'selesai', today), 'none');
+    assert.equal(deadlineState('2026-11-23', 'selesai', today), 'none');
+    assert.equal(deadlineState('2026-11-24', 'selesai', today), 'none');
+  });
+
+  it('batas pergantian bulan, tahun, dan 29 Februari', () => {
+    assert.equal(deadlineState('2026-12-01', 'belum-selesai', at(2026, 11, 30)), 'tomorrow');
+    assert.equal(deadlineState('2026-11-29', 'belum-selesai', at(2026, 11, 30)), 'overdue');
+    assert.equal(deadlineState('2026-02-01', 'belum-selesai', at(2026, 1, 31)), 'tomorrow');
+    assert.equal(deadlineState('2027-01-01', 'belum-selesai', at(2026, 12, 31)), 'tomorrow');
+    assert.equal(deadlineState('2026-12-31', 'belum-selesai', at(2027, 1, 1)), 'overdue');
+    assert.equal(deadlineState('2028-02-29', 'belum-selesai', at(2028, 2, 28)), 'tomorrow');
+    assert.equal(deadlineState('2028-03-01', 'belum-selesai', at(2028, 2, 28)), 'upcoming');
+  });
+
+  it('melintasi pergeseran DST tetap menghitung selisih hari kalender', () => {
+    assert.equal(deadlineState('2026-03-09', 'belum-selesai', at(2026, 3, 8)), 'tomorrow');
+    assert.equal(deadlineState('2026-11-02', 'belum-selesai', at(2026, 11, 1)), 'tomorrow');
+  });
+});
+
+describe('deadlineLabel', () => {
+  it('label hanya untuk keadaan yang perlu ditandai', () => {
+    assert.equal(deadlineLabel('overdue'), 'Lewat tenggat');
+    assert.equal(deadlineLabel('today'), 'Hari ini');
+    assert.equal(deadlineLabel('tomorrow'), 'Besok');
+    assert.equal(deadlineLabel('upcoming'), '');
+    assert.equal(deadlineLabel('none'), '');
   });
 });

@@ -5,84 +5,190 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Aplikasi pengelola tugas kuliah untuk Tugas PAW Pertemuan 6." />
     <title>Task Manager — Pertemuan 6</title>
+    <script>
+      // Terapkan tema sebelum paint agar tidak ada kilatan; mengikuti pilihan tersimpan atau sistem.
+      (function () {
+        var theme = 'dark';
+        try {
+          var stored = localStorage.getItem('kxrumii:pertemuan-6:theme');
+          theme = stored === 'light' || stored === 'dark' ? stored : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        } catch (e) {}
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
   </head>
   <body>
     <div id="app">
-      <main class="shell app-shell">
+      <div class="stage-shell">
         <header class="topbar" data-transition-exit data-transition-enter style="--i:0">
           <a class="brand" href="/tugas/" data-transition-link="document" data-transition-page="portal" data-transition-canvas="#0b0b0b">kxrumii<span>.my.id</span></a>
+
+          <div id="filter-bar" class="filter-bar" role="group" aria-label="Filter tugas" hidden>
+            <button type="button" class="filter-btn" data-filter="all" aria-pressed="true">Semua <span class="filter-count" data-count>00</span></button>
+            <button type="button" class="filter-btn" data-filter="active" aria-pressed="false">Belum <span class="filter-count" data-count>00</span></button>
+            <button type="button" class="filter-btn" data-filter="completed" aria-pressed="false">Selesai <span class="filter-count" data-count>00</span></button>
+          </div>
+
           <div class="topbar-right">
-            <a class="toplink" href="/tugas/pertemuan-6/dokumentasi/">Dokumentasi →</a>
-            <span class="eyebrow">PAW / PERTEMUAN 06</span>
+            <button type="button" id="add-task-header" class="cta cta-small" hidden>+ Tambah</button>
           </div>
         </header>
 
-        <section class="hero" aria-labelledby="page-title" data-transition-exit data-transition-enter style="--i:1">
-          <p class="eyebrow">VANILLA TYPESCRIPT + VITE</p>
-          <h1 id="page-title">College Task Manager</h1>
-          <p class="intro">
-            Pengelola tugas kuliah: catat tugas, mata kuliah, tenggat, dan statusnya
-            dalam satu daftar yang mudah dipindai.
-          </p>
-          <div class="meta-row">
-            <span>Version <span id="app-version">1.0.0</span></span>
-            <span class="status"><i></i><span id="task-summary">0 tugas · 0 selesai</span></span>
-          </div>
-          <div id="filter-bar" class="filter-bar" role="group" aria-label="Filter tugas" hidden>
-            <button type="button" class="filter-btn" data-filter="all" aria-pressed="true">Semua <span class="filter-count" data-count>0</span></button>
-            <button type="button" class="filter-btn" data-filter="active" aria-pressed="false">Belum selesai <span class="filter-count" data-count>0</span></button>
-            <button type="button" class="filter-btn" data-filter="completed" aria-pressed="false">Selesai <span class="filter-count" data-count>0</span></button>
-          </div>
-        </section>
+        <main class="workspace" aria-labelledby="page-title" data-transition-exit data-transition-enter style="--i:1">
+          <h1 class="sr-only" id="page-title">College Task Manager</h1>
 
-        <section class="ledger" aria-labelledby="ledger-title" data-transition-exit data-transition-enter style="--i:2">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">TASK LEDGER</p>
-              <h2 id="ledger-title">Daftar tugas</h2>
-            </div>
-            <button type="button" id="add-task-header" class="cta cta-small" hidden>Tambah tugas</button>
-          </div>
           <p id="storage-notice" class="storage-notice" role="status" hidden></p>
-          <ol id="task-list" class="task-list" hidden></ol>
-          <div id="empty-state" class="empty-state">
-            <p class="empty-title">Belum ada tugas.</p>
-            <p class="empty-hint">Mulai dengan mencatat tugas kuliah pertama Anda.</p>
-            <button type="button" id="add-task-button" class="cta">Tambah tugas pertama</button>
+
+          <div id="view-notice" class="view-notice" role="status" hidden>
+            <span id="view-notice-text"></span>
+            <button type="button" id="view-orbit-force" class="inline-link">Buka mode Orbit (12 per halaman)</button>
           </div>
-          <div id="filter-empty" class="empty-state" hidden>
-            <p class="empty-title">Tidak ada tugas pada filter ini.</p>
-            <button type="button" id="show-all-button" class="btn-secondary">Tampilkan semua</button>
-          </div>
+
+          <section id="orbital-view" class="orbital-view" aria-label="Koleksi tugas orbital" hidden>
+            <div id="task-stage" class="task-stage"></div>
+            <div class="stage-bar">
+              <p id="stage-hint" class="stage-hint">Geser untuk jelajah. Ketuk kartu untuk detail.</p>
+              <div id="orbit-pager" class="orbit-pager" role="group" aria-label="Halaman orbital" hidden>
+                <button type="button" id="orbit-prev" class="pager-btn" aria-label="Halaman orbital sebelumnya">←</button>
+                <span id="orbit-page-label" class="pager-label">Hal 1 / 1</span>
+                <button type="button" id="orbit-next" class="pager-btn" aria-label="Halaman orbital berikutnya">→</button>
+              </div>
+            </div>
+          </section>
+
+          <section id="list-view" class="list-view" aria-label="Daftar tugas lengkap" hidden>
+            <div class="list-header" aria-hidden="true">
+              <span>NO</span>
+              <span>STATUS &amp; JUDUL</span>
+              <span>MATA KULIAH</span>
+              <span>TENGGAT</span>
+              <span>AKSI</span>
+            </div>
+            <ol id="task-list" class="task-list"></ol>
+          </section>
+
+          <section id="empty-state" class="empty-stage" aria-label="Keadaan kosong">
+            <article class="empty-print">
+              <p class="eyebrow">KOLEKSI KOSONG · PERTEMUAN 06</p>
+              <h2 class="empty-title">Belum ada tugas.</h2>
+              <p class="empty-hint">Catat tugas kuliah pertama Anda untuk mulai menyusun koleksi.</p>
+              <button type="button" id="add-task-button" class="cta">Tambah tugas pertama</button>
+            </article>
+          </section>
+
+          <section id="filter-empty" class="empty-stage" aria-label="Filter tanpa hasil" hidden>
+            <article class="empty-print">
+              <p class="eyebrow">FILTER AKTIF</p>
+              <h2 class="empty-title">Tidak ada tugas pada filter ini.</h2>
+              <p class="empty-hint">Ubah filter di bilah atas atau tampilkan kembali seluruh tugas.</p>
+              <button type="button" id="show-all-button" class="btn-secondary">Tampilkan semua</button>
+            </article>
+          </section>
+
           <noscript><p class="empty-note">Aplikasi ini membutuhkan JavaScript untuk menampilkan dan mengelola daftar tugas.</p></noscript>
-        </section>
+        </main>
 
-        <footer class="footer" data-transition-exit data-transition-enter style="--i:3">TypeScript workspace · <span id="current-year"></span></footer>
-      </main>
-
-      <template id="task-row-template">
-        <li class="task-item">
-          <span class="task-number" data-slot="number" aria-hidden="true"></span>
-          <div class="task-main">
-            <span class="task-title" data-slot="title"></span>
-            <span class="task-course" data-slot="course"></span>
+        <footer class="stage-footer" data-transition-exit data-transition-enter style="--i:2">
+          <div class="footer-group footer-primary">
+            <div class="footer-status">
+              <span id="range-index" class="range-index">00 · 0 TUGAS</span>
+              <span id="task-summary" class="sr-only">0 tugas · 0 selesai</span>
+            </div>
+            <div class="view-switch" role="group" aria-label="Mode tampilan">
+              <button type="button" id="view-orbit" class="view-btn" data-view="orbit" aria-pressed="true">Orbit</button>
+              <span class="view-sep" aria-hidden="true">/</span>
+              <button type="button" id="view-list" class="view-btn" data-view="list" aria-pressed="false">Daftar</button>
+            </div>
           </div>
-          <span class="task-deadline" data-slot="deadline"></span>
-          <label class="status-toggle">
-            <input type="checkbox" data-action="toggle" data-slot="toggle" />
-            <span class="task-status" data-slot="status"></span>
-          </label>
-          <div class="task-actions">
+
+          <div class="footer-group footer-utilities">
+            <a class="footer-link" href="/tugas/pertemuan-6/dokumentasi/">Dokumentasi ↗</a>
+            <div class="footer-actions">
+              <button type="button" id="theme-toggle" class="footer-btn">Tema</button>
+              <button type="button" id="stage-pause" class="pause-btn" aria-pressed="false" aria-label="Jeda gerak orbital" hidden>Ⅱ</button>
+            </div>
+          </div>
+        </footer>
+      </div>
+
+      <template id="task-box-template">
+        <button type="button" class="task-box">
+          <span class="box-print">
+            <small class="box-head" data-slot="head"></small>
+            <span class="box-cover-lines" data-slot="lines"></span>
+            <span class="box-foot">
+              <span class="box-deadline" data-slot="deadline"></span>
+              <span class="box-urgency" data-slot="urgency"></span>
+            </span>
+          </span>
+        </button>
+      </template>
+
+      <template id="task-list-row-template">
+        <li class="list-row">
+          <span class="list-number" data-slot="number" aria-hidden="true"></span>
+          <div class="list-main">
+            <label class="status-toggle">
+              <input type="checkbox" data-action="toggle" data-slot="toggle" />
+              <span class="sr-only" data-slot="status-sr"></span>
+            </label>
+            <button type="button" class="list-open" data-action="open" data-slot="open">
+              <span class="list-title" data-slot="title"></span>
+            </button>
+          </div>
+          <span class="list-course" data-slot="course"></span>
+          <span class="list-deadline">
+            <span class="deadline-date" data-slot="deadline"></span>
+            <span class="deadline-note" data-slot="deadline-note"></span>
+          </span>
+          <div class="list-actions">
+            <span class="list-status" data-slot="status"></span>
             <button type="button" class="row-action" data-action="edit" data-slot="edit">Edit</button>
             <button type="button" class="row-action row-action-danger" data-action="delete" data-slot="delete">Hapus</button>
           </div>
         </li>
       </template>
 
+      <dialog id="reader-dialog" class="reader-dialog" aria-labelledby="reader-title">
+        <div class="reader-bar">
+          <span id="reader-index" class="eyebrow">TUGAS 01 / 01</span>
+          <button type="button" id="reader-close" class="reader-close">Tutup ×</button>
+        </div>
+        <article class="reader-article">
+          <p class="eyebrow" id="reader-course"></p>
+          <h2 id="reader-title" class="reader-title"></h2>
+
+          <dl class="reader-meta">
+            <div>
+              <dt>Tenggat</dt>
+              <dd>
+                <span id="reader-deadline"></span>
+                <span id="reader-urgency" class="reader-urgency" hidden></span>
+              </dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd><span id="reader-status" class="reader-status"></span></dd>
+            </div>
+          </dl>
+
+          <div class="reader-actions">
+            <button type="button" id="reader-toggle" class="cta" aria-pressed="false">Tandai selesai</button>
+            <button type="button" id="reader-edit" class="btn-secondary">Edit tugas</button>
+            <button type="button" id="reader-delete" class="btn-secondary btn-danger">Hapus</button>
+          </div>
+
+          <nav class="reader-nav" aria-label="Navigasi tugas">
+            <button type="button" id="reader-prev" class="reader-nav-btn">← Sebelumnya</button>
+            <button type="button" id="reader-next" class="reader-nav-btn">Berikutnya →</button>
+          </nav>
+        </article>
+      </dialog>
+
       <dialog id="delete-dialog" class="task-dialog" aria-labelledby="delete-dialog-title" aria-describedby="delete-dialog-message">
         <form id="delete-form" class="task-form" novalidate>
           <div>
-            <p class="eyebrow">TASK LEDGER</p>
+            <p class="eyebrow">KOLEKSI TUGAS</p>
             <h2 id="delete-dialog-title">Hapus tugas?</h2>
           </div>
           <p class="delete-message" id="delete-dialog-message">Tugas <strong id="delete-dialog-task"></strong> akan dihapus. Tindakan ini tidak dapat dibatalkan.</p>
@@ -98,7 +204,7 @@
       <dialog id="task-dialog" class="task-dialog" aria-labelledby="task-dialog-title">
         <form id="task-form" class="task-form" novalidate>
           <div>
-            <p class="eyebrow" id="task-dialog-eyebrow">TASK LEDGER</p>
+            <p class="eyebrow" id="task-dialog-eyebrow">KOLEKSI TUGAS</p>
             <h2 id="task-dialog-title">Tambah tugas</h2>
           </div>
 

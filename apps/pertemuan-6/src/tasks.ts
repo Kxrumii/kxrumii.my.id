@@ -1,4 +1,4 @@
-import type { Task, TaskDraft, TaskList, TaskStatus } from './types.ts';
+import type { DeadlineState, Task, TaskDraft, TaskList, TaskStatus } from './types.ts';
 
 /** Mengganti item dengan `id` yang sama lewat `update`; item lain dan array asli tidak berubah. */
 export function updateById<T extends { id: number }>(
@@ -80,4 +80,38 @@ export function survivorId(tasks: TaskList, removedId: number): number | null {
   if (index === -1) return null;
   const neighbour = tasks[index + 1] ?? tasks[index - 1];
   return neighbour?.id ?? null;
+}
+
+/** Nomor hari kalender lokal (tanpa pengaruh jam, zona waktu, atau DST) untuk membandingkan tanggal. */
+function dayNumber(date: Date): number {
+  return Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000);
+}
+
+/**
+ * Urgensi tenggat berdasarkan kalender lokal `today` yang diinjeksi.
+ * Tugas selesai, tenggat kosong, atau tenggat tidak valid menghasilkan `'none'`.
+ */
+export function deadlineState(deadline: string | null, status: TaskStatus, today: Date): DeadlineState {
+  if (status === 'selesai' || deadline === null) return 'none';
+  const due = parseCalendarDate(deadline);
+  if (due === null) return 'none';
+  const diff = dayNumber(due) - dayNumber(today);
+  if (diff < 0) return 'overdue';
+  if (diff === 0) return 'today';
+  if (diff === 1) return 'tomorrow';
+  return 'upcoming';
+}
+
+/** Label tampilan; kosong untuk keadaan yang tidak perlu ditandai. */
+export function deadlineLabel(state: DeadlineState): string {
+  switch (state) {
+    case 'overdue':
+      return 'Lewat tenggat';
+    case 'today':
+      return 'Hari ini';
+    case 'tomorrow':
+      return 'Besok';
+    default:
+      return '';
+  }
 }
