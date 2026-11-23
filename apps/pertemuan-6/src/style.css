@@ -17,18 +17,29 @@ h1 { margin: 18px 0; font-family: 'Space Grotesk', sans-serif; font-size: clamp(
 .meta-row { justify-content: flex-start; gap: 22px; margin-top: 28px; }
 .status { display: inline-flex; align-items: center; gap: 8px; }
 .status i { width: 7px; height: 7px; border-radius: 99px; background: #a3b18a; box-shadow: 0 0 12px #a3b18a; }
-.preview { border: 1px solid #30312d; border-radius: 16px; padding: 24px; background: #171915; }
+[hidden] { display: none !important; }
+.ledger { border: 1px solid #30312d; border-radius: 16px; padding: 24px; background: #171915; }
 .section-heading { align-items: end; padding-bottom: 18px; border-bottom: 1px solid #30312d; }
 .section-heading h2 { margin: 8px 0 0; font: 600 24px 'Space Grotesk', sans-serif; letter-spacing: -.04em; }
 .task-list { list-style: none; margin: 0; padding: 0; }
 .task-item { min-height: 64px; gap: 14px; border-bottom: 1px solid #292b26; }
 .task-item:last-child { border-bottom: 0; }
-.task-title { flex: 1; color: #dedfd7; font-size: 14px; }
+.task-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 12px 0; }
+.task-title { color: #dedfd7; font-size: 14px; overflow-wrap: anywhere; }
+.task-course { color: #8d9184; font-size: 12px; overflow-wrap: anywhere; }
+.task-deadline { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: .04em; color: #8d9184; white-space: nowrap; }
+.empty-state { padding: 40px 0 16px; max-width: 460px; }
+.empty-title { margin: 0 0 6px; font: 600 20px 'Space Grotesk', sans-serif; letter-spacing: -.03em; }
+.empty-hint, .empty-note { margin: 0 0 18px; color: #b8baaf; font-size: 14px; line-height: 1.6; }
+.empty-note { margin: 14px 0 0; color: #8d9184; font-size: 12px; }
+.cta { font: 500 12px 'DM Mono', monospace; letter-spacing: .06em; text-transform: uppercase; color: #10110f; background: #a3b18a; border: 0; border-radius: 99px; padding: 12px 20px; cursor: pointer; }
+.cta:focus-visible { outline: 2px solid #e8e6e1; outline-offset: 3px; }
+.cta:disabled { cursor: not-allowed; opacity: .45; }
 .task-status { font-size: 10px; letter-spacing: .02em; text-transform: none; }
 .task-status.selesai { color: #a3b18a; }
 .task-status.belum-selesai { color: #d6a56b; }
 .footer { padding-top: 32px; color: #666b60; }
-@media (max-width: 560px) { .shell { width: min(100% - 28px, 960px); } .eyebrow { font-size: 9px; } .preview { padding: 18px; } .task-item { flex-wrap: wrap; padding: 14px 0; } .task-status { width: 100%; padding-left: 34px; } }
+@media (max-width: 560px) { .shell { width: min(100% - 28px, 960px); } .eyebrow { font-size: 9px; } .ledger { padding: 18px; } .task-item { flex-wrap: wrap; padding: 6px 0; } .task-deadline { order: 3; } .task-status { order: 4; width: 100%; padding-left: 34px; } }
 
 /* Placeholder page motion (POC v0.4 Task 6 values); final motion ships with the Task 6 design. */
 /* Timing values are unitless milliseconds: the bridge reads them with parseFloat, and CSS minification would rewrite `520ms` as `.52s`. */

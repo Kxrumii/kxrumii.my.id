@@ -7,7 +7,58 @@
     <title>Task Manager — Pertemuan 6</title>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <main class="shell">
+        <header class="topbar" data-transition-exit data-transition-enter style="--i:0">
+          <a class="brand" href="/tugas/" data-transition-link="document" data-transition-page="portal" data-transition-canvas="#0b0b0b">kxrumii<span>.my.id</span></a>
+          <span class="eyebrow">PAW / PERTEMUAN 06</span>
+        </header>
+
+        <section class="hero" aria-labelledby="page-title" data-transition-exit data-transition-enter style="--i:1">
+          <p class="eyebrow">VANILLA TYPESCRIPT + VITE</p>
+          <h1 id="page-title">College Task Manager</h1>
+          <p class="intro">
+            Pengelola tugas kuliah: catat tugas, mata kuliah, tenggat, dan statusnya
+            dalam satu daftar yang mudah dipindai.
+          </p>
+          <div class="meta-row">
+            <span>Version <span id="app-version">1.0.0</span></span>
+            <span class="status"><i></i><span id="task-summary">0 tugas · 0 selesai</span></span>
+          </div>
+        </section>
+
+        <section class="ledger" aria-labelledby="ledger-title" data-transition-exit data-transition-enter style="--i:2">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">TASK LEDGER</p>
+              <h2 id="ledger-title">Daftar tugas</h2>
+            </div>
+          </div>
+          <ol id="task-list" class="task-list" hidden></ol>
+          <div id="empty-state" class="empty-state">
+            <p class="empty-title">Belum ada tugas.</p>
+            <p class="empty-hint">Mulai dengan mencatat tugas kuliah pertama Anda.</p>
+            <button type="button" id="add-task-button" class="cta" disabled>Tambah tugas pertama</button>
+            <p class="empty-note">Form tambah tugas aktif pada langkah berikutnya.</p>
+          </div>
+          <noscript><p class="empty-note">Aplikasi ini membutuhkan JavaScript untuk menampilkan dan mengelola daftar tugas.</p></noscript>
+        </section>
+
+        <footer class="footer" data-transition-exit data-transition-enter style="--i:3">TypeScript workspace · <span id="current-year"></span></footer>
+      </main>
+
+      <template id="task-row-template">
+        <li class="task-item">
+          <span class="task-number" data-slot="number" aria-hidden="true"></span>
+          <div class="task-main">
+            <span class="task-title" data-slot="title"></span>
+            <span class="task-course" data-slot="course"></span>
+          </div>
+          <span class="task-deadline" data-slot="deadline"></span>
+          <span class="task-status" data-slot="status"></span>
+        </li>
+      </template>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
