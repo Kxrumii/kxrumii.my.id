@@ -106,3 +106,35 @@ html.home-transition-entering .transition-copy-decoration {
     translate: none !important;
   }
 }
+
+/* Shared Transition Bridge arrivals (document navigation from a Vite app).
+   Until the adapter arms the approved entering state, the incoming copy stays
+   hidden so it is never painted in its resting position first. Reduced motion
+   keeps everything visible. */
+@media (prefers-reduced-motion: no-preference) {
+  html.home-document[data-transition-state='entering']:not(.home-bridge-armed) :is([data-transition-copy], .transition-copy-decoration),
+  html.portal-document[data-transition-state='entering']:not(.portal-bridge-armed) :is(.site-header, .archive-main, .site-footer) {
+    visibility: hidden;
+  }
+}
+
+/* Transition interaction lock. While any route transition runs (Astro
+   leaving/entering, the post-swap entrance tracked by data-transition-lock, or
+   a Shared Transition Bridge state), elements that are not already hovered
+   stop receiving the pointer: no new hover effect can start, and an element
+   hovered when navigation began keeps its state instead of resetting. The
+   lock is transient; keyboard interaction is unaffected. */
+html:is([data-transition-lock], [data-transition-state], .home-transition-leaving, .home-transition-entering, .portal-transition-leaving, .portal-transition-entering) body :not(:hover) {
+  pointer-events: none !important;
+}
+
+/* The CTA arrow travels inside its own clipping mask, like the copy
+   characters, so it leaves and arrives hidden instead of stopping 118% lower
+   in view. Padding balanced by negative margins keeps the idle layout
+   unchanged and leaves room for the arrow's hover offset. */
+.transition-copy-decoration-mask {
+  display: inline-block;
+  overflow: hidden;
+  padding: .25rem .25rem .16em;
+  margin: -.25rem -.25rem -.16em;
+}
