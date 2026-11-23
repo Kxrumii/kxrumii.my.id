@@ -73,3 +73,11 @@ export function formatDeadline(deadline: string | null): string {
   if (date === null) return '—';
   return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
 }
+
+/** Id tugas yang tersisa dan paling dekat dengan posisi `removedId` (berikutnya, atau sebelumnya bila terakhir); `null` bila tidak ada. */
+export function survivorId(tasks: TaskList, removedId: number): number | null {
+  const index = tasks.findIndex((task) => task.id === removedId);
+  if (index === -1) return null;
+  const neighbour = tasks[index + 1] ?? tasks[index - 1];
+  return neighbour?.id ?? null;
+}

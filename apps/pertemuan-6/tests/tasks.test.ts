@@ -6,6 +6,7 @@ import {
   formatDeadline,
   nextId,
   removeTask,
+  survivorId,
   toggleStatus,
   updateById,
   updateTask,
@@ -143,5 +144,34 @@ describe('formatDeadline', () => {
   it('tanggal kalender tidak valid menjadi strip', () => {
     assert.equal(formatDeadline('2026-02-30'), '—');
     assert.equal(formatDeadline('bukan-tanggal'), '—');
+  });
+});
+
+describe('survivorId', () => {
+  const list = (): readonly Task[] => [
+    { id: 1, title: 'A', course: '', deadline: null, status: 'belum-selesai' },
+    { id: 4, title: 'B', course: '', deadline: null, status: 'belum-selesai' },
+    { id: 9, title: 'C', course: '', deadline: null, status: 'belum-selesai' },
+  ];
+
+  it('memilih tugas berikutnya, atau sebelumnya bila yang dihapus terakhir', () => {
+    assert.equal(survivorId(list(), 1), 4);
+    assert.equal(survivorId(list(), 4), 9);
+    assert.equal(survivorId(list(), 9), 4);
+  });
+
+  it('null bila tidak ada sisa atau id tidak dikenal', () => {
+    assert.equal(survivorId([list()[0] as Task], 1), null);
+    assert.equal(survivorId(list(), 99), null);
+  });
+});
+
+describe('toggleStatus dan ringkasan', () => {
+  it('hitungan per status mengikuti pembalikan dua arah dan id tetap', () => {
+    const base = sample();
+    const done = toggleStatus(base, 4);
+    assert.deepEqual(countByStatus(done), { 'belum-selesai': 0, selesai: 2 });
+    assert.equal(done[1]?.id, 4);
+    assert.deepEqual(countByStatus(toggleStatus(done, 4)), { 'belum-selesai': 1, selesai: 1 });
   });
 });

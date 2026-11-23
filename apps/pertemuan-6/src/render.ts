@@ -24,12 +24,13 @@ function slot(row: Element, name: string): HTMLElement {
 }
 
 /** Membuat satu baris dari `<template>`; `position` adalah nomor urut tampilan (mulai 1). */
-export function createTaskRow(template: HTMLTemplateElement, task: Task, position: number): HTMLLIElement {
+export function createTaskRow(template: HTMLTemplateElement, task: Task, position: number, changed = false): HTMLLIElement {
   const row = template.content.firstElementChild?.cloneNode(true);
   if (!(row instanceof HTMLLIElement)) {
     throw new Error('Template baris tugas harus berisi satu elemen <li>.');
   }
   row.dataset.taskId = String(task.id);
+  if (changed) row.classList.add('is-changed');
   slot(row, 'number').textContent = String(position).padStart(2, '0');
   slot(row, 'title').textContent = task.title;
   slot(row, 'course').textContent = task.course === '' ? 'Tanpa mata kuliah' : task.course;
@@ -37,7 +38,12 @@ export function createTaskRow(template: HTMLTemplateElement, task: Task, positio
   const status = slot(row, 'status');
   status.textContent = STATUS_LABELS[task.status];
   status.classList.add(task.status);
+  row.classList.toggle('is-done', task.status === 'selesai');
+  const toggle = requireElement(row, '[data-slot="toggle"]', HTMLInputElement);
+  toggle.checked = task.status === 'selesai';
+  toggle.setAttribute('aria-label', `Selesai: ${task.title}`);
   slot(row, 'edit').setAttribute('aria-label', `Edit tugas: ${task.title}`);
+  slot(row, 'delete').setAttribute('aria-label', `Hapus tugas: ${task.title}`);
   return row;
 }
 
@@ -46,8 +52,9 @@ export function renderLedger(
   emptyState: HTMLElement,
   template: HTMLTemplateElement,
   tasks: TaskList,
+  changedId: number | null = null,
 ): void {
-  list.replaceChildren(...tasks.map((task, index) => createTaskRow(template, task, index + 1)));
+  list.replaceChildren(...tasks.map((task, index) => createTaskRow(template, task, index + 1, task.id === changedId)));
   list.hidden = tasks.length === 0;
   emptyState.hidden = tasks.length > 0;
 }

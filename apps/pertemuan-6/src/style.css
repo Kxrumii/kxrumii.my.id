@@ -73,6 +73,32 @@ h1 { margin: 18px 0; font-family: 'Space Grotesk', sans-serif; font-size: clamp(
   .task-dialog[open] { animation: none; }
 }
 
+/* Status toggle, delete action, and feedback */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.status-toggle { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; cursor: pointer; }
+.status-toggle input { width: 18px; height: 18px; margin: 0; accent-color: #a3b18a; cursor: pointer; }
+.status-toggle input:focus-visible { outline: 2px solid #e8e6e1; outline-offset: 3px; }
+.task-actions { display: flex; gap: 8px; }
+.task-item.is-done .task-title { color: #a9ac9f; text-decoration: line-through; text-decoration-color: #6f7467; text-decoration-thickness: 1px; }
+.row-action-danger:hover, .row-action-danger:focus-visible { color: #e58f7b; border-color: #e58f7b; }
+.cta-danger { color: #10110f; background: #e58f7b; }
+.delete-message { margin: 0; color: #b8baaf; font-size: 15px; line-height: 1.6; overflow-wrap: anywhere; }
+.delete-message strong { color: #e8e6e1; font-weight: 600; }
+.task-item.is-changed .task-status { animation: status-in 220ms cubic-bezier(.16, 1, .3, 1); }
+@keyframes status-in { from { transform: translateY(5px); } to { transform: none; } }
+.status.is-pulsing #task-summary { animation: summary-pulse 360ms ease-out; }
+@keyframes summary-pulse { from { color: #a3b18a; } to { color: inherit; } }
+@media (max-width: 560px) {
+  .task-actions { order: 2; }
+  .task-actions .row-action { min-height: 44px; }
+  .task-deadline { order: 3; }
+  .status-toggle { order: 4; width: 100%; padding-left: 34px; }
+  .status-toggle .task-status { width: auto; padding-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .task-item.is-changed .task-status, .status.is-pulsing #task-summary { animation: none; }
+}
+
 /* Placeholder page motion (POC v0.4 Task 6 values); final motion ships with the Task 6 design. */
 /* Timing values are unitless milliseconds: the bridge reads them with parseFloat, and CSS minification would rewrite `520ms` as `.52s`. */
 [data-transition-exit] {

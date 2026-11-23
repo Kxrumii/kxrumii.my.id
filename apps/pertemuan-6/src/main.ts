@@ -1,8 +1,9 @@
 import { bridge } from './transition';
 import './style.css';
 import { renderLedger, renderSummary, requireElement } from './render.ts';
+import { initDeleteDialog } from './delete-dialog.ts';
 import { initTaskDialog } from './task-dialog.ts';
-import { createTask, updateTask } from './tasks.ts';
+import { createTask, removeTask, survivorId, toggleStatus, updateTask } from './tasks.ts';
 import type { Task } from './types.ts';
 
 const appName: string = import.meta.env.VITE_APP_NAME || 'College Task Manager';
@@ -22,9 +23,21 @@ try {
   const summary = requireElement(document, '#task-summary', HTMLElement);
   const emptyAdd = requireElement(document, '#add-task-button', HTMLButtonElement);
   const headerAdd = requireElement(document, '#add-task-header', HTMLButtonElement);
+  const liveStatus = requireElement(document, '#live-status', HTMLElement);
 
-  function render(): void {
-    renderLedger(list, emptyState, template, tasks);
+  function announce(message: string): void {
+    liveStatus.textContent = message;
+  }
+
+  // Umpan balik singkat pada ringkasan; dilewati oleh CSS bila reduced motion.
+  function pulseSummary(): void {
+    summary.classList.remove('is-pulsing');
+    void summary.offsetWidth;
+    summary.classList.add('is-pulsing');
+  }
+
+  function render(changedId: number | null = null): void {
+    renderLedger(list, emptyState, template, tasks, changedId);
     renderSummary(summary, tasks);
     headerAdd.hidden = tasks.length === 0;
   }
@@ -40,8 +53,16 @@ try {
     },
   });
 
-  const rowControl = (id: number) =>
-    list.querySelector<HTMLElement>(`[data-task-id="${id}"] [data-action="edit"]`);
+  const rowControl = (id: number, action: 'toggle' | 'edit' | 'delete') =>
+    list.querySelector<HTMLElement>(`[data-task-id="${id}"] [data-action="${action}"]`);
+
+  const deleteDialog = initDeleteDialog(document, (id) => {
+    if (!tasks.some((task) => task.id === id)) return; // id usang: abaikan
+    tasks = removeTask(tasks, id);
+    render();
+    pulseSummary();
+    announce('Tugas dihapus.');
+  });
 
   // Tombol tambah yang sedang terlihat; dievaluasi saat dialog menutup.
   const visibleAddButton = () => (tasks.length === 0 ? emptyAdd : headerAdd);
@@ -57,9 +78,30 @@ try {
   list.addEventListener('click', (event) => {
     const target = event.target instanceof Element ? event.target : null;
     const edit = target?.closest('[data-action="edit"]') ?? null;
-    const task = taskFrom(edit);
-    if (!task || !edit) return;
-    dialog.openEdit(task, () => rowControl(task.id) ?? visibleAddButton());
+    const remove = target?.closest('[data-action="delete"]') ?? null;
+    const task = taskFrom(edit ?? remove);
+    if (!task) return;
+    if (edit) {
+      dialog.openEdit(task, () => rowControl(task.id, 'edit') ?? visibleAddButton());
+    } else {
+      const next = survivorId(tasks, task.id);
+      deleteDialog.open(task, (deleted) => {
+        if (!deleted) return rowControl(task.id, 'delete') ?? visibleAddButton();
+        return (next === null ? null : rowControl(next, 'delete')) ?? visibleAddButton();
+      });
+    }
+  });
+
+  list.addEventListener('change', (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    if (!target?.matches('[data-action="toggle"]')) return;
+    const task = taskFrom(target);
+    if (!task) return;
+    tasks = toggleStatus(tasks, task.id);
+    render(task.id);
+    pulseSummary();
+    rowControl(task.id, 'toggle')?.focus();
+    announce(task.status === 'selesai' ? 'Ditandai belum selesai.' : 'Ditandai selesai.');
   });
 
   render();

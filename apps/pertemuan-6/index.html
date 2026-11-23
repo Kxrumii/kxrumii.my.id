@@ -55,12 +55,33 @@
             <span class="task-course" data-slot="course"></span>
           </div>
           <span class="task-deadline" data-slot="deadline"></span>
-          <span class="task-status" data-slot="status"></span>
+          <label class="status-toggle">
+            <input type="checkbox" data-action="toggle" data-slot="toggle" />
+            <span class="task-status" data-slot="status"></span>
+          </label>
           <div class="task-actions">
             <button type="button" class="row-action" data-action="edit" data-slot="edit">Edit</button>
+            <button type="button" class="row-action row-action-danger" data-action="delete" data-slot="delete">Hapus</button>
           </div>
         </li>
       </template>
+
+      <dialog id="delete-dialog" class="task-dialog" aria-labelledby="delete-dialog-title" aria-describedby="delete-dialog-message">
+        <form id="delete-form" class="task-form" novalidate>
+          <div>
+            <p class="eyebrow">TASK LEDGER</p>
+            <h2 id="delete-dialog-title">Hapus tugas?</h2>
+          </div>
+          <p class="delete-message" id="delete-dialog-message">Tugas <strong id="delete-dialog-task"></strong> akan dihapus. Tindakan ini tidak dapat dibatalkan.</p>
+          <div class="dialog-actions">
+            <button type="button" id="delete-cancel" class="btn-secondary">Batal</button>
+            <button type="submit" id="delete-confirm" class="cta cta-danger">Hapus</button>
+          </div>
+        </form>
+      </dialog>
+
+      <p id="live-status" class="sr-only" role="status" aria-live="polite"></p>
+
       <dialog id="task-dialog" class="task-dialog" aria-labelledby="task-dialog-title">
         <form id="task-form" class="task-form" novalidate>
           <div>
