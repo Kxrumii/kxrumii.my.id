@@ -24,7 +24,7 @@ Fungsi inti Task Manager sudah terimplementasi di source: tambah, edit, hapus, d
 - **Filter** Semua (`all`) / Belum selesai (`active`) / Selesai (`completed`) di atas daftar, dengan jumlah pada tiap tombol dan `aria-pressed` untuk filter terpilih. Jumlah dan ringkasan header (`X tugas · Y selesai`) selalu dihitung dari **seluruh** koleksi, bukan dari hasil filter. Filter hanya mengubah tampilan: tidak mengubah atau menghapus tugas, tidak menulis ke `localStorage`, dan kembali ke Semua saat halaman dimuat ulang. Bila ada tugas tetapi tidak ada yang cocok dengan filter, tampil pesan "Tidak ada tugas pada filter ini." dengan tombol "Tampilkan semua"; keadaan kosong awal ("Belum ada tugas") hanya tampil saat belum ada tugas sama sekali. Bila tugas keluar dari tampilan karena filter (mis. ditandai selesai pada filter Belum selesai), fokus pindah ke tugas terdekat yang masih tampil atau ke tombol filter aktif.
 - Umpan balik singkat untuk perubahan status dan hapus (animasi ringan dan pengumuman `aria-live`), dimatikan pada `prefers-reduced-motion`.
 - Unit test otomatis untuk operasi tugas murni, validasi form, penyimpanan beserta validasi data tersimpan, serta filter dan jumlahnya. Rendering DOM, dialog, fokus, dan interaksi peramban lainnya diperiksa lewat pengecekan di browser, bukan test otomatis di repository.
-- **Catatan Teknis** di halaman aplikasi: enam topik dalam elemen `<details>`/`<summary>` native (Git & GitHub, npm, TypeScript, Vite, environment variables, serta compiler/transpiler/bundler). Isinya merujuk ke file dan konfigurasi aktual repository, memuat tautan ke repository, PR #5, dan riwayat commit, serta menampilkan nama dan versi aplikasi dari `VITE_APP_NAME` dan `VITE_APP_VERSION` (lewat `textContent`, dengan nilai bawaan bila variabel tidak ada). Istilah tentang Vite 8 (Oxc sebagai transformer/compiler, Rolldown sebagai bundler, Vite tidak melakukan type checking) mengacu ke dokumentasi resmi Vite.
+- **Catatan Teknis** pada halaman terpisah `/tugas/pertemuan-6/dokumentasi/` (tautan `Dokumentasi →` di topbar, dan `← Kembali ke Task Manager` di halaman itu; navigasi native, tanpa Shared Transition Bridge): enam topik dalam elemen `<details>`/`<summary>` native (Git & GitHub, npm, TypeScript, Vite, environment variables, serta compiler/transpiler/bundler). Isinya merujuk ke file dan konfigurasi aktual repository, memuat tautan ke repository, PR #5, dan riwayat commit, serta menampilkan nama dan versi aplikasi dari `VITE_APP_NAME` dan `VITE_APP_VERSION` (lewat `textContent`, dengan nilai bawaan bila variabel tidak ada). Istilah tentang Vite 8 (Oxc sebagai transformer/compiler, Rolldown sebagai bundler, Vite tidak melakukan type checking) mengacu ke dokumentasi resmi Vite.
 - **Tata letak responsif**: di layar ≥768px baris ledger berupa kolom sejajar (nomor, judul + mata kuliah, tenggat, status, aksi); di bawah 768px setiap baris bertingkat tiga (nomor + checkbox + judul; mata kuliah + tenggat; status + aksi). Tombol Edit/Hapus selalu terlihat (tidak bergantung pada hover), target sentuh di layar sempit minimal 44px, checkbox status kustom yang kontras di tema gelap, dan dialog tambah/edit menjadi panel dari bawah pada layar ≤560px.
 - **Gerak**: umpan balik singkat saat tugas ditambahkan, status berubah, dan ringkasan diperbarui; seluruh gerak dekoratif aplikasi dimatikan oleh `prefers-reduced-motion`. Penghapusan tidak memakai animasi keluar.
 - Integrasi Shared Transition Bridge (transisi antarhalaman dari/ke Portal `/tugas/`).
@@ -95,12 +95,15 @@ Variabel yang dibaca aplikasi (`src/main.ts`, tipe di `src/vite-env.d.ts`):
 
 ```text
 apps/pertemuan-6/
-├── index.html          # Shell statis semantik, Catatan Teknis (<details>), <template> baris tugas, empty state, <dialog> tambah/edit
+├── index.html          # Shell statis semantik, <template> baris tugas, empty state, <dialog> tambah/edit
+├── dokumentasi/
+│   └── index.html      # Halaman Catatan Teknis (enam <details>), tanpa bootstrap bridge
 ├── package.json        # Scripts dan dependensi workspace
 ├── tsconfig.json       # Konfigurasi TypeScript (include: src)
 ├── vite.config.ts      # base, plugin bootstrap transisi, output build
 ├── .env.example        # Template environment variables (non-rahasia)
 ├── src/
+│   ├── docs.ts         # Halaman dokumentasi: nilai env dan tahun (textContent)
 │   ├── main.ts         # Inisialisasi, state tugas di memori, wiring tombol/dialog, menandai page-ready
 │   ├── types.ts        # Tipe data tugas dan label status
 │   ├── tasks.ts        # Operasi tugas murni (tanpa DOM) dan format tenggat

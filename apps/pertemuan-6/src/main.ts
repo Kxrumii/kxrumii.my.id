@@ -19,9 +19,6 @@ let filter: TaskFilter = 'all';
 try {
   requireElement(document, '#page-title', HTMLHeadingElement).textContent = appName;
   requireElement(document, '#app-version', HTMLElement).textContent = appVersion;
-  // Nilai env yang sama ditampilkan pada Catatan Teknis (selalu lewat textContent).
-  requireElement(document, '#env-app-name', HTMLElement).textContent = appName;
-  requireElement(document, '#env-app-version', HTMLElement).textContent = appVersion;
   requireElement(document, '#current-year', HTMLElement).textContent = String(new Date().getFullYear());
 
   const list = requireElement(document, '#task-list', HTMLOListElement);

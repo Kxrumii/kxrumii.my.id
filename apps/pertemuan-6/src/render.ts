@@ -73,7 +73,7 @@ export function renderFilterBar(bar: HTMLElement, tasks: TaskList, active: TaskF
     if (!isTaskFilter(filter)) continue;
     button.setAttribute('aria-pressed', String(filter === active));
     const count = requireElement(button, '[data-count]', HTMLElement);
-    count.textContent = String(counts[filter]);
+    count.textContent = String(counts[filter]).padStart(2, '0');
     button.setAttribute('aria-label', `${FILTER_LABELS[filter]}: ${counts[filter]} tugas`);
   }
 }
