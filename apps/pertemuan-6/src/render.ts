@@ -249,17 +249,33 @@ export function renderOrbitalStage(
   reconcileOrbitalStage(stage, template, tasks, startPosition, today, true);
 }
 
-/** Membuat satu baris daftar aksesibel untuk tampilan koleksi besar (>12 tugas) atau mode Daftar. */
-export function createListRow(
-  template: HTMLTemplateElement,
+export interface ListRowEntry {
+  id: number;
+  row: HTMLLIElement;
+}
+
+export interface ListReconcileResult {
+  entered: ListRowEntry[];
+  updated: ListRowEntry[];
+  removedCount: number;
+}
+
+/** Memperbarui isi & atribut baris daftar secara in-place tanpa mengganti node `<li>`. */
+export function updateListRow(
+  row: HTMLLIElement,
   task: Task,
   position: number,
   today: Date = new Date(),
-): HTMLLIElement {
-  const row = template.content.firstElementChild?.cloneNode(true);
-  if (!(row instanceof HTMLLIElement)) {
-    throw new Error('Template baris daftar harus berisi satu elemen <li>.');
+): void {
+  if (row.dataset.exiting === 'true') {
+    delete row.dataset.exiting;
+    row.removeAttribute('aria-hidden');
+    row.removeAttribute('inert');
+    for (const focusable of Array.from(row.querySelectorAll<HTMLElement>('button, input'))) {
+      focusable.tabIndex = 0;
+    }
   }
+
   const urgency = deadlineState(task.deadline, task.status, today);
   const isDone = task.status === 'selesai';
 
@@ -297,8 +313,87 @@ export function createListRow(
   );
   slot(row, 'edit').setAttribute('aria-label', `Edit tugas: ${task.title}`);
   slot(row, 'delete').setAttribute('aria-label', `Hapus tugas: ${task.title}`);
+}
 
+/** Membuat satu baris daftar aksesibel untuk tampilan koleksi besar (>12 tugas) atau mode Daftar. */
+export function createListRow(
+  template: HTMLTemplateElement,
+  task: Task,
+  position: number,
+  today: Date = new Date(),
+): HTMLLIElement {
+  const row = template.content.firstElementChild?.cloneNode(true);
+  if (!(row instanceof HTMLLIElement)) {
+    throw new Error('Template baris daftar harus berisi satu elemen <li>.');
+  }
+  updateListRow(row, task, position, today);
   return row;
+}
+
+/**
+ * Rekonsiliasi keyed daftar aksesibel berbasis `task.id`:
+ * node bertahan diperbarui di tempat (mempertahankan fokus kontrol seperti checkbox)
+ * dan hanya menyisipkan ulang jika posisi DOM berubah.
+ */
+export function reconcileAccessibleList(
+  list: HTMLOListElement,
+  template: HTMLTemplateElement,
+  tasks: TaskList,
+  today: Date = new Date(),
+): ListReconcileResult {
+  const existing = new Map<number, HTMLLIElement>();
+  let removedCount = 0;
+
+  for (const el of Array.from(list.children)) {
+    if (!(el instanceof HTMLLIElement)) {
+      el.remove();
+      removedCount += 1;
+      continue;
+    }
+    const id = Number(el.dataset.taskId);
+    if (!Number.isSafeInteger(id) || id <= 0 || existing.has(id)) {
+      el.remove();
+      removedCount += 1;
+      continue;
+    }
+    existing.set(id, el);
+  }
+
+  const entered: ListRowEntry[] = [];
+  const updated: ListRowEntry[] = [];
+  const ordered: HTMLLIElement[] = [];
+  const nextIds = new Set<number>();
+
+  tasks.forEach((task, index) => {
+    nextIds.add(task.id);
+    const existingRow = existing.get(task.id);
+    if (existingRow) {
+      updateListRow(existingRow, task, index + 1, today);
+      updated.push({ id: task.id, row: existingRow });
+      ordered.push(existingRow);
+    } else {
+      const row = createListRow(template, task, index + 1, today);
+      entered.push({ id: task.id, row });
+      ordered.push(row);
+    }
+  });
+
+  for (const [id, row] of existing.entries()) {
+    if (!nextIds.has(id)) {
+      row.remove();
+      removedCount += 1;
+    }
+  }
+
+  for (let i = 0; i < ordered.length; i += 1) {
+    const desired = ordered[i]!;
+    const current = list.children[i] ?? null;
+    if (current !== desired) {
+      list.insertBefore(desired, current);
+    }
+  }
+
+  return { entered, updated, removedCount };
 }
 
 export function renderAccessibleList(
@@ -307,9 +402,7 @@ export function renderAccessibleList(
   tasks: TaskList,
   today: Date = new Date(),
 ): void {
-  list.replaceChildren(
-    ...tasks.map((task, index) => createListRow(template, task, index + 1, today)),
-  );
+  reconcileAccessibleList(list, template, tasks, today);
 }
 
 /** Indeks rentang arsip di footer (mis. `01—08 · 3 SELESAI` atau `00 · 0 TUGAS`). */

@@ -2,11 +2,15 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   ORBIT_LIMIT,
+  ORBIT_REFLOW_POS_EPSILON,
+  ORBIT_REFLOW_SCALE_EPSILON,
   computeOrbitalPositions,
   paginateOrbit,
   resolveEffectiveView,
   shouldIdleDrift,
+  stepOrbitalCoord,
   type BoxMeasure,
+  type OrbitalCoord,
   type OrbitalDriftState,
 } from '../src/orbital-stage.ts';
 
@@ -147,5 +151,47 @@ describe('shouldIdleDrift', () => {
     for (const key of pauseKeys) {
       assert.equal(shouldIdleDrift({ ...baseState(), [key]: true }), false, `expected pause when ${key}=true`);
     }
+  });
+});
+
+describe('stepOrbitalCoord (CP1-D orbit layout reflow)', () => {
+  it('menginterpolasi koordinat secara bertahap menuju target dan snap persis saat konvergen', () => {
+    let coord: OrbitalCoord = { x: -120, y: 40, scale: 0.78, captionX: 20, captionY: 220 };
+    const target: OrbitalCoord = { x: 80, y: -15, scale: 1.02, captionX: 410, captionY: 310 };
+
+    // dtMs <= 0 aman dan tidak melompat
+    const zeroStep = stepOrbitalCoord(coord, target, 0);
+    assert.equal(zeroStep.settled, false);
+    assert.deepEqual(zeroStep.coord, coord);
+
+    let frames = 0;
+    let settled = false;
+    while (!settled && frames < 120) {
+      const prevDist = Math.hypot(target.x - coord.x, target.y - coord.y);
+      const step = stepOrbitalCoord(coord, target, 16);
+      coord = step.coord;
+      settled = step.settled;
+      const nextDist = Math.hypot(target.x - coord.x, target.y - coord.y);
+      assert.ok(nextDist <= prevDist);
+      frames += 1;
+    }
+
+    assert.equal(settled, true);
+    assert.ok(frames < 60);
+    assert.deepEqual(coord, target);
+  });
+
+  it('langsung snap ke target jika selisih sudah di bawah ambang konvergensi', () => {
+    const target: OrbitalCoord = { x: 10, y: 20, scale: 1, captionX: 100, captionY: 200 };
+    const near: OrbitalCoord = {
+      x: target.x + ORBIT_REFLOW_POS_EPSILON * 0.5,
+      y: target.y - ORBIT_REFLOW_POS_EPSILON * 0.5,
+      scale: target.scale + ORBIT_REFLOW_SCALE_EPSILON * 0.4,
+      captionX: target.captionX + ORBIT_REFLOW_POS_EPSILON * 0.5,
+      captionY: target.captionY,
+    };
+    const res = stepOrbitalCoord(near, target, 16);
+    assert.equal(res.settled, true);
+    assert.deepEqual(res.coord, target);
   });
 });

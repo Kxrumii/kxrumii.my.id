@@ -1,6 +1,9 @@
 import type { ViewMode, ViewPreference } from './types.ts';
 
 export const ORBIT_LIMIT = 12;
+export const ORBIT_REFLOW_TAU_MS = 65;
+export const ORBIT_REFLOW_POS_EPSILON = 0.35;
+export const ORBIT_REFLOW_SCALE_EPSILON = 0.002;
 const GOLDEN_ANGLE = 2.39996323;
 const INITIAL_AZIMUTH = -0.82;
 
@@ -29,8 +32,20 @@ export interface OrbitalPlacement {
   captionY: number;
 }
 
+export interface OrbitalCoord {
+  x: number;
+  y: number;
+  scale: number;
+  captionX: number;
+  captionY: number;
+}
+
+export interface OrbitalSyncOptions {
+  animateReflow?: boolean;
+}
+
 export interface OrbitalStageController {
-  sync(): void;
+  sync(options?: OrbitalSyncOptions): void;
   setActive(active: boolean): void;
   setPaused(paused: boolean): void;
   isPaused(): boolean;
@@ -104,6 +119,43 @@ export function paginateOrbit<T>(
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
+}
+
+function isCoordConverged(a: OrbitalCoord, b: OrbitalCoord): boolean {
+  return (
+    Math.abs(a.x - b.x) < ORBIT_REFLOW_POS_EPSILON &&
+    Math.abs(a.y - b.y) < ORBIT_REFLOW_POS_EPSILON &&
+    Math.abs(a.captionX - b.captionX) < ORBIT_REFLOW_POS_EPSILON &&
+    Math.abs(a.captionY - b.captionY) < ORBIT_REFLOW_POS_EPSILON &&
+    Math.abs(a.scale - b.scale) < ORBIT_REFLOW_SCALE_EPSILON
+  );
+}
+
+/** Menginterpolasi koordinat visual orbital satu langkah (`dtMs`) menuju target slot baru. */
+export function stepOrbitalCoord(
+  current: OrbitalCoord,
+  target: OrbitalCoord,
+  dtMs: number,
+  tauMs = ORBIT_REFLOW_TAU_MS,
+): { coord: OrbitalCoord; settled: boolean } {
+  if (isCoordConverged(current, target)) {
+    return { coord: { ...target }, settled: true };
+  }
+  if (dtMs <= 0) {
+    return { coord: { ...current }, settled: false };
+  }
+  const alpha = Math.min(1, 1 - Math.exp(-dtMs / Math.max(1, tauMs)));
+  const next: OrbitalCoord = {
+    x: current.x + (target.x - current.x) * alpha,
+    y: current.y + (target.y - current.y) * alpha,
+    scale: current.scale + (target.scale - current.scale) * alpha,
+    captionX: current.captionX + (target.captionX - current.captionX) * alpha,
+    captionY: current.captionY + (target.captionY - current.captionY) * alpha,
+  };
+  if (isCoordConverged(next, target)) {
+    return { coord: { ...target }, settled: true };
+  }
+  return { coord: next, settled: false };
 }
 
 /**
@@ -215,6 +267,8 @@ export function createOrbitalStage(
   let stageWidth = stageEl.clientWidth;
   let stageHeight = stageEl.clientHeight;
   let measures: BoxMeasure[] = [];
+  const displayCoords = new Map<number, OrbitalCoord>();
+  let settling = false;
 
   function fitBoxTitles(): void {
     for (const box of boxEls) {
@@ -242,13 +296,23 @@ export function createOrbitalStage(
 
   function measure(): void {
     boxEls = Array.from(stageEl.querySelectorAll<HTMLButtonElement>('.task-box:not([data-exiting="true"])'));
+    const activeIds = new Set<number>();
     captionEls = boxEls.map((box) => {
       const taskId = box.dataset.taskId;
       if (!taskId) return null;
+      const parsed = Number(taskId);
+      if (Number.isSafeInteger(parsed) && parsed > 0) {
+        activeIds.add(parsed);
+      }
       return stageEl.querySelector<HTMLElement>(
         `.box-caption[data-caption-for="${taskId}"]:not([data-exiting="true"])`,
       );
     });
+    for (const cachedId of Array.from(displayCoords.keys())) {
+      if (!activeIds.has(cachedId)) {
+        displayCoords.delete(cachedId);
+      }
+    }
     stageWidth = stageEl.clientWidth;
     stageHeight = stageEl.clientHeight;
     measures = boxEls.map((box, index) => ({
@@ -259,7 +323,18 @@ export function createOrbitalStage(
     }));
   }
 
-  function applyPositions(): void {
+  function canReflow(): boolean {
+    return (
+      active &&
+      !prefersReducedMotion() &&
+      !document.hidden &&
+      !isAnyDialogOpen() &&
+      !isRouteTransitionActive() &&
+      pointer === null
+    );
+  }
+
+  function applyPositions(dtMs = 0): void {
     if (!active || boxEls.length === 0) return;
     const placements = computeOrbitalPositions(
       boxEls.length,
@@ -269,19 +344,55 @@ export function createOrbitalStage(
       azimuth,
       pitch,
     );
+    if (settling && !canReflow()) {
+      settling = false;
+    }
+
+    let anyUnsettled = false;
     const activeEl = document.activeElement;
     for (const p of placements) {
       const box = boxEls[p.index];
       const cap = captionEls[p.index];
       if (!box) continue;
-      box.style.transform = `translate(-50%, -50%) translate3d(${p.x.toFixed(2)}px, ${p.y.toFixed(2)}px, 0) scale(${p.scale.toFixed(4)})`;
+
+      const taskId = Number(box.dataset.taskId);
+      const target: OrbitalCoord = {
+        x: p.x,
+        y: p.y,
+        scale: p.scale,
+        captionX: p.captionX,
+        captionY: p.captionY,
+      };
+
+      let coord = target;
+      if (settling && Number.isSafeInteger(taskId) && taskId > 0 && displayCoords.has(taskId)) {
+        const prev = displayCoords.get(taskId)!;
+        if (dtMs > 0) {
+          const step = stepOrbitalCoord(prev, target, dtMs);
+          coord = step.coord;
+          if (!step.settled) anyUnsettled = true;
+        } else if (!isCoordConverged(prev, target)) {
+          coord = prev;
+          anyUnsettled = true;
+        }
+      }
+
+      if (Number.isSafeInteger(taskId) && taskId > 0) {
+        displayCoords.set(taskId, coord);
+      }
+
+      box.style.transform = `translate(-50%, -50%) translate3d(${coord.x.toFixed(2)}px, ${coord.y.toFixed(2)}px, 0) scale(${coord.scale.toFixed(4)})`;
       const focused = box === activeEl && stageEl.matches(':focus-within');
       const z = focused ? '1900' : String(p.zIndex);
       box.style.zIndex = z;
       if (cap) {
-        cap.style.transform = `translate3d(${p.captionX.toFixed(2)}px, ${p.captionY.toFixed(2)}px, 0)`;
+        cap.style.transform = `translate3d(${coord.captionX.toFixed(2)}px, ${coord.captionY.toFixed(2)}px, 0)`;
         cap.style.zIndex = z;
       }
+    }
+
+    if (settling && !anyUnsettled) {
+      settling = false;
     }
   }
 
@@ -314,13 +425,13 @@ export function createOrbitalStage(
 
   function tick(now: number): void {
     rafId = 0;
-    const dt = lastFrame === 0 ? 16 : Math.min(40, now - lastFrame);
+    const dt = lastFrame === 0 ? 16 : Math.min(40, Math.max(0, now - lastFrame));
     lastFrame = now;
     if (canIdleDrift()) {
       azimuth += dt * 0.000045;
     }
-    applyPositions();
-    if (canIdleDrift() || pointer !== null) {
+    applyPositions(dt);
+    if (canIdleDrift() || pointer !== null || settling) {
       rafId = requestAnimationFrame(tick);
     } else {
       lastFrame = 0;
@@ -329,12 +440,15 @@ export function createOrbitalStage(
 
   function requestFrame(): void {
     if (!active || rafId !== 0) return;
+    if (!(canIdleDrift() || pointer !== null || settling)) return;
     rafId = requestAnimationFrame(tick);
   }
 
   function onPointerDown(event: PointerEvent): void {
     if (!active || event.button !== 0 || !event.isPrimary) return;
     suppressClick = false;
+    settling = false;
+    applyPositions(0);
     pointer = {
       id: event.pointerId,
       startX: event.clientX,
@@ -404,18 +518,23 @@ export function createOrbitalStage(
     if (!active) return;
     if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
       event.preventDefault();
+      settling = false;
       azimuth += event.key === 'ArrowLeft' ? -0.3 : 0.3;
-      applyPositions();
+      applyPositions(0);
     }
   }
 
   function onFocusChange(): void {
-    applyPositions();
+    applyPositions(0);
     requestFrame();
   }
 
   function onVisibilityChange(): void {
     if (document.hidden) {
+      if (settling) {
+        settling = false;
+        applyPositions(0);
+      }
       stopLoop();
     } else {
       requestFrame();
@@ -423,15 +542,20 @@ export function createOrbitalStage(
   }
 
   const ro = new ResizeObserver(() => {
+    settling = false;
     measure();
     fitBoxTitles();
-    applyPositions();
+    applyPositions(0);
     requestFrame();
   });
   ro.observe(stageEl);
 
   const transitionObserver = new MutationObserver(() => {
     if (isRouteTransitionActive()) {
+      if (settling) {
+        settling = false;
+        applyPositions(0);
+      }
       stopLoop();
     } else {
       requestFrame();
@@ -444,6 +568,10 @@ export function createOrbitalStage(
 
   const dialogObserver = new MutationObserver(() => {
     if (isAnyDialogOpen()) {
+      if (settling) {
+        settling = false;
+        applyPositions(0);
+      }
       stopLoop();
     } else {
       requestFrame();
@@ -456,8 +584,9 @@ export function createOrbitalStage(
   const motionQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
   const onMotionChange = (): void => {
     if (prefersReducedMotion()) {
+      settling = false;
       stopLoop();
-      applyPositions();
+      applyPositions(0);
     } else {
       requestFrame();
     }
@@ -477,24 +606,28 @@ export function createOrbitalStage(
   void document.fonts?.ready.then(() => {
     measure();
     fitBoxTitles();
-    applyPositions();
+    applyPositions(0);
   });
 
   return {
-    sync(): void {
+    sync(syncOptions?: OrbitalSyncOptions): void {
       measure();
       fitBoxTitles();
-      applyPositions();
+      settling = Boolean(syncOptions?.animateReflow) && canReflow();
+      applyPositions(0);
       requestFrame();
     },
     setActive(next: boolean): void {
+      if (active === next) return;
       active = next;
+      settling = false;
+      displayCoords.clear();
       if (!active) {
         stopLoop();
       } else {
         measure();
         fitBoxTitles();
-        applyPositions();
+        applyPositions(0);
         requestFrame();
       }
     },
@@ -502,6 +635,10 @@ export function createOrbitalStage(
       manualPaused = paused;
       options.onPauseChange?.(manualPaused);
       if (manualPaused) {
+        if (settling) {
+          settling = false;
+          applyPositions(0);
+        }
         stopLoop();
       } else {
         requestFrame();
@@ -511,9 +648,10 @@ export function createOrbitalStage(
       return manualPaused;
     },
     resetView(): void {
+      settling = false;
       azimuth = INITIAL_AZIMUTH;
       pitch = 0;
-      applyPositions();
+      applyPositions(0);
     },
     destroy(): void {
       stopLoop();

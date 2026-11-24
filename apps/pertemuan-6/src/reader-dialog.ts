@@ -6,8 +6,11 @@ import {
   animateElement,
   canAnimate,
   cancelMotionGroup,
+  computeViewportClipInset,
   resolveReaderBoundaryFocus,
   type AnimationLike,
+  type RectLike,
+  type ViewportClipInset,
 } from './motion.ts';
 import { requireElement } from './render.ts';
 import { deadlineLabel, deadlineState, formatDeadline } from './tasks.ts';
@@ -19,6 +22,7 @@ export interface ReaderDialogHandlers {
   onToggle(id: number): void;
   onEdit(task: Task, returnFocus: () => HTMLElement | null): void;
   onDelete(task: Task, returnFocus: () => HTMLElement | null): void;
+  getSourceElement?(taskId: number): HTMLElement | null;
 }
 
 export interface ReaderDialog {
@@ -43,6 +47,8 @@ export interface ReaderDialog {
  */
 export function initReaderDialog(root: ParentNode, handlers: ReaderDialogHandlers): ReaderDialog {
   const dialog = requireElement(root, '#reader-dialog', HTMLDialogElement);
+  const barNode = dialog.querySelector('.reader-bar');
+  const barEl = barNode instanceof HTMLElement ? barNode : null;
   const articleEl = requireElement(root, '.reader-article', HTMLElement);
   const indexEl = requireElement(root, '#reader-index', HTMLElement);
   const closeBtn = requireElement(root, '#reader-close', HTMLButtonElement);
@@ -69,6 +75,8 @@ export function initReaderDialog(root: ParentNode, handlers: ReaderDialogHandler
   let closeTimer = 0;
   let closeToken = 0;
   let activeCloseAnim: AnimationLike | null = null;
+  let activeCloseContentAnim: AnimationLike | null = null;
+  let activeCloseBarAnim: AnimationLike | null = null;
 
   function safeCancelAnimation(anim: AnimationLike | null | undefined): void {
     if (!anim) return;
@@ -81,15 +89,65 @@ export function initReaderDialog(root: ParentNode, handlers: ReaderDialogHandler
 
   function clearReaderAnimations(extra?: AnimationLike | null): void {
     const closeAnim = activeCloseAnim;
+    const closeContentAnim = activeCloseContentAnim;
+    const closeBarAnim = activeCloseBarAnim;
     activeCloseAnim = null;
+    activeCloseContentAnim = null;
+    activeCloseBarAnim = null;
+    delete dialog.dataset.readerClosing;
     cancelMotionGroup('reader');
     safeCancelAnimation(closeAnim);
-    if (extra && extra !== closeAnim) safeCancelAnimation(extra);
+    safeCancelAnimation(closeContentAnim);
+    safeCancelAnimation(closeBarAnim);
+    if (extra && extra !== closeAnim && extra !== closeContentAnim && extra !== closeBarAnim) {
+      safeCancelAnimation(extra);
+    }
     if (typeof dialog.getAnimations === 'function') {
       for (const anim of dialog.getAnimations()) {
         safeCancelAnimation(anim);
       }
     }
+    if (barEl && typeof barEl.getAnimations === 'function') {
+      for (const anim of barEl.getAnimations()) {
+        safeCancelAnimation(anim);
+      }
+    }
+    if (typeof articleEl.getAnimations === 'function') {
+      for (const anim of articleEl.getAnimations()) {
+        safeCancelAnimation(anim);
+      }
+    }
+  }
+
+  function readViewportRect(): RectLike | undefined {
+    if (
+      typeof window !== 'undefined' &&
+      Number.isFinite(window.innerWidth) &&
+      Number.isFinite(window.innerHeight) &&
+      window.innerWidth > 0 &&
+      window.innerHeight > 0
+    ) {
+      return { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+    }
+    return undefined;
+  }
+
+  function measureRect(el: HTMLElement | null | undefined): RectLike | null {
+    if (!el || el.hidden || typeof el.getBoundingClientRect !== 'function') {
+      return null;
+    }
+    const rect = el.getBoundingClientRect();
+    if (!rect || rect.width <= 0 || rect.height <= 0) {
+      return null;
+    }
+    return rect;
+  }
+
+  function resolveSourceClip(taskId: number, preMeasuredSource?: RectLike | null): ViewportClipInset | null {
+    const sourceRect = preMeasuredSource ?? measureRect(handlers.getSourceElement?.(taskId));
+    const dialogRect = measureRect(dialog);
+    if (!sourceRect || !dialogRect) return null;
+    return computeViewportClipInset(sourceRect, dialogRect, readViewportRect());
   }
 
   function populate(task: Task, visible: readonly Task[], today: Date): void {
@@ -153,7 +211,9 @@ export function initReaderDialog(root: ParentNode, handlers: ReaderDialogHandler
       return;
     }
 
+    clearReaderAnimations();
     closing = true;
+    dialog.dataset.readerClosing = 'true';
     const token = ++closeToken;
     let anim: AnimationLike | null = null;
     const finalize = (): void => {
@@ -164,21 +224,58 @@ export function initReaderDialog(root: ParentNode, handlers: ReaderDialogHandler
       clearReaderAnimations(anim);
     };
 
-    anim = animateElement(
-      'reader',
-      dialog,
-      [
-        { transform: 'translate3d(0, 0, 0)', opacity: 1 },
-        { transform: 'translate3d(0, 8px, 0)', opacity: 0 },
-      ],
-      { duration: 180, easing: EASE_EXIT, fill: 'forwards' },
-    );
+    const clip = openId !== null ? resolveSourceClip(openId) : null;
+    const closeDuration = clip ? 260 : 180;
+    const fallbackTimeout = clip ? Math.max(READER_CLOSE_FALLBACK_MS, closeDuration + 140) : READER_CLOSE_FALLBACK_MS;
+
+    if (clip) {
+      anim = animateElement(
+        'reader',
+        dialog,
+        [
+          { clipPath: 'inset(0px 0px 0px 0px)', opacity: 1 },
+          { opacity: 0.9, offset: 0.55 },
+          { clipPath: clip.clipPath, opacity: 0 },
+        ],
+        { duration: closeDuration, easing: EASE_OUT, fill: 'forwards' },
+      );
+      if (barEl) {
+        activeCloseBarAnim = animateElement(
+          'reader',
+          barEl,
+          [{ opacity: 1 }, { opacity: 0 }],
+          { duration: 130, easing: EASE_OUT, fill: 'forwards' },
+        );
+      }
+      activeCloseContentAnim = animateElement(
+        'reader',
+        articleEl,
+        [
+          { transform: 'translate3d(0, 0, 0) scale(1)', opacity: 1 },
+          {
+            transform: `translate3d(${(clip.contentDx * 0.75).toFixed(1)}px, ${(clip.contentDy * 0.75).toFixed(1)}px, 0) scale(0.985)`,
+            opacity: 0,
+          },
+        ],
+        { duration: 190, easing: EASE_OUT, fill: 'forwards' },
+      );
+    } else {
+      anim = animateElement(
+        'reader',
+        dialog,
+        [
+          { transform: 'translate3d(0, 0, 0)', opacity: 1 },
+          { transform: 'translate3d(0, 8px, 0)', opacity: 0 },
+        ],
+        { duration: closeDuration, easing: EASE_EXIT, fill: 'forwards' },
+      );
+    }
     activeCloseAnim = anim;
     if (!anim) {
       finalize();
       return;
     }
-    closeTimer = window.setTimeout(finalize, READER_CLOSE_FALLBACK_MS);
+    closeTimer = window.setTimeout(finalize, fallbackTimeout);
     void Promise.resolve(anim.finished).then(finalize, () => {});
   }
 
@@ -271,7 +368,13 @@ export function initReaderDialog(root: ParentNode, handlers: ReaderDialogHandler
     open(taskId, visibleTasks, allTasks, focus, today = new Date()): void {
       const task = allTasks.find((item) => item.id === taskId);
       if (!task) return;
+      const wasOpen = dialog.open;
       const wasClosing = closing;
+      const preOpenSourceRect =
+        (!wasOpen || wasClosing) && canAnimate()
+          ? measureRect(handlers.getSourceElement?.(task.id))
+          : null;
+
       window.clearTimeout(closeTimer);
       closing = false;
       closeToken += 1;
@@ -282,22 +385,46 @@ export function initReaderDialog(root: ParentNode, handlers: ReaderDialogHandler
       returnFocus = focus;
       suppressNextRestore = false;
       populate(task, visibleTasks, today);
-      const wasOpen = dialog.open;
       if (!wasOpen) {
         dialog.showModal();
       }
       dialog.scrollTop = 0;
       closeBtn.focus();
-      if (!wasOpen || wasClosing) {
-        animateElement(
-          'reader',
-          dialog,
-          [
-            { transform: 'translate3d(0, 12px, 0)', opacity: 0 },
-            { transform: 'translate3d(0, 0, 0)', opacity: 1 },
-          ],
-          { duration: 200, easing: EASE_OUT, fill: 'backwards' },
-        );
+      if ((!wasOpen || wasClosing) && canAnimate()) {
+        const clip = resolveSourceClip(task.id, preOpenSourceRect);
+        if (clip) {
+          animateElement(
+            'reader',
+            dialog,
+            [
+              { clipPath: clip.clipPath, opacity: 0.92 },
+              { clipPath: 'inset(0px 0px 0px 0px)', opacity: 1 },
+            ],
+            { duration: 300, easing: EASE_OUT, fill: 'backwards' },
+          );
+          animateElement(
+            'reader',
+            articleEl,
+            [
+              {
+                transform: `translate3d(${clip.contentDx.toFixed(1)}px, ${clip.contentDy.toFixed(1)}px, 0) scale(0.985)`,
+                opacity: 0,
+              },
+              { transform: 'translate3d(0, 0, 0) scale(1)', opacity: 1 },
+            ],
+            { duration: 240, delay: 40, easing: EASE_OUT, fill: 'backwards' },
+          );
+        } else {
+          animateElement(
+            'reader',
+            dialog,
+            [
+              { transform: 'translate3d(0, 12px, 0)', opacity: 0 },
+              { transform: 'translate3d(0, 0, 0)', opacity: 1 },
+            ],
+            { duration: 200, easing: EASE_OUT, fill: 'backwards' },
+          );
+        }
       }
     },
     refresh(visibleTasks, allTasks, today = new Date()): void {

@@ -21,7 +21,7 @@
     <div id="app">
       <div class="stage-shell">
         <header class="topbar" data-transition-exit data-transition-enter style="--i:0">
-          <a class="brand" href="/tugas/" data-transition-link="document" data-transition-page="portal" data-transition-canvas="#0b0b0b">kxrumii<span>.my.id</span></a>
+          <a class="brand" href="/tugas/" data-transition-link="document" data-transition-page="portal" data-transition-canvas="#0b0b0b" aria-label="Task Manager — Kembali ke Portal Tugas">Task Manager</a>
 
           <div class="topbar-right">
             <button type="button" id="add-task-header" class="cta cta-small" hidden>+ Tambah</button>
@@ -29,7 +29,7 @@
         </header>
 
         <main class="workspace" aria-labelledby="page-title" data-transition-exit data-transition-enter style="--i:1">
-          <h1 class="sr-only" id="page-title">College Task Manager</h1>
+          <h1 class="sr-only" id="page-title">Task Manager</h1>
 
           <div id="utility-bar" class="utility-bar" hidden>
             <div id="filter-bar" class="filter-bar" role="group" aria-label="Filter tugas">
@@ -103,7 +103,7 @@
           </div>
 
           <div class="footer-group footer-utilities">
-            <a class="footer-link" href="/tugas/pertemuan-6/dokumentasi/">Dokumentasi ↗</a>
+            <a class="footer-link" href="/tugas/pertemuan-6/dokumentasi/" data-transition-link="document" data-transition-page="task-6-docs" data-transition-canvas="#10110f">Dokumentasi ↗</a>
             <div class="footer-actions">
               <button type="button" id="theme-toggle" class="footer-btn">Tema</button>
               <button type="button" id="stage-pause" class="pause-btn" aria-pressed="false" aria-label="Jeda gerak orbital" hidden>Ⅱ</button>

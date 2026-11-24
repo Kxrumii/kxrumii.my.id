@@ -10,16 +10,19 @@ import {
   bindBridgeCancellation,
   canAnimate,
   cancelMotionGroup,
+  computeFlipDelta,
   computeStaggerDelays,
   createDeleteCoordinator,
+  intersectsViewport,
   registerTransitionFlush,
+  type RectLike,
 } from './motion.ts';
 import { ORBIT_LIMIT, createOrbitalStage, paginateOrbit, resolveEffectiveView } from './orbital-stage.ts';
 import { initReaderDialog } from './reader-dialog.ts';
 import {
   filterButton,
+  reconcileAccessibleList,
   reconcileOrbitalStage,
-  renderAccessibleList,
   renderFilterBar,
   renderRangeIndex,
   renderSummary,
@@ -40,7 +43,7 @@ import {
 import { createTask, removeTask, survivorId, toggleStatus, updateTask } from './tasks.ts';
 import type { Task, ViewMode } from './types.ts';
 
-const appName: string = import.meta.env.VITE_APP_NAME || 'College Task Manager';
+const appName: string = import.meta.env.VITE_APP_NAME || 'Task Manager';
 
 // State dipulihkan dari localStorage (divalidasi) sebelum render pertama; bila gagal, mulai kosong di memori.
 let tasks: Task[] = [];
@@ -136,11 +139,61 @@ try {
     return filterButton(filterBar, filter);
   };
 
-  type RenderReason = 'init' | 'filter' | 'add' | 'status' | 'edit' | 'delete-complete' | 'view';
+  type RenderReason = 'init' | 'search' | 'filter' | 'add' | 'status' | 'edit' | 'delete-complete' | 'view';
+
+  interface RenderContext {
+    reason?: RenderReason;
+    taskId?: number;
+    prevView?: ViewMode;
+    prevRects?: Map<number, RectLike>;
+    pageChanged?: boolean;
+  }
 
   let nodeGenCounter = 0;
   const orbitExitTimers = new Map<HTMLElement, number>();
   const deleteCoordinator = createDeleteCoordinator();
+
+  function ensureListRowVisible(container: HTMLElement, row: HTMLElement): void {
+    const bounds = container.getBoundingClientRect();
+    const rect = row.getBoundingClientRect();
+    if (bounds.height <= 0 || rect.height <= 0) return;
+    if (rect.bottom > bounds.bottom) {
+      container.scrollTop += rect.bottom - bounds.bottom + 16;
+    } else if (rect.top < bounds.top) {
+      container.scrollTop -= bounds.top - rect.top + 16;
+    }
+  }
+
+  function captureVisibleListRects(): Map<number, RectLike> {
+    const rects = new Map<number, RectLike>();
+    if (listView.hidden) return rects;
+    const bounds = listView.getBoundingClientRect();
+    for (const row of Array.from(listEl.querySelectorAll<HTMLElement>('.list-row[data-task-id]:not([data-exiting="true"])'))) {
+      const id = Number(row.dataset.taskId);
+      if (!Number.isSafeInteger(id) || id <= 0) continue;
+      const rect = row.getBoundingClientRect();
+      if (intersectsViewport(rect, bounds)) {
+        rects.set(id, rect);
+      }
+    }
+    return rects;
+  }
+
+  function captureActiveOrbitRects(): Map<number, RectLike> {
+    const rects = new Map<number, RectLike>();
+    if (orbitalView.hidden) return rects;
+    const bounds = stageEl.getBoundingClientRect();
+    for (const box of Array.from(stageEl.querySelectorAll<HTMLElement>('.task-box[data-task-id]:not([data-exiting="true"])'))) {
+      const id = Number(box.dataset.taskId);
+      const printEl = box.querySelector<HTMLElement>('.box-print');
+      if (!Number.isSafeInteger(id) || id <= 0 || !printEl) continue;
+      const rect = printEl.getBoundingClientRect();
+      if (intersectsViewport(rect, bounds)) {
+        rects.set(id, rect);
+      }
+    }
+    return rects;
+  }
 
   const nextGen = (el: HTMLElement): string => {
     const gen = String(++nodeGenCounter);
@@ -178,6 +231,30 @@ try {
     if (readerDialog.isOpen()) readerDialog.close(false);
   });
 
+  function resolveReaderSource(taskId: number): HTMLElement | null {
+    if (!Number.isSafeInteger(taskId) || taskId <= 0) return null;
+    if (!orbitalView.hidden) {
+      const box = stageEl.querySelector<HTMLElement>(
+        `.task-box[data-task-id="${taskId}"]:not([data-exiting="true"])`,
+      );
+      const target = box?.querySelector<HTMLElement>('.box-print') ?? box ?? null;
+      if (!target || target.hidden) return null;
+      return intersectsViewport(target.getBoundingClientRect(), stageEl.getBoundingClientRect())
+        ? target
+        : null;
+    }
+    if (!listView.hidden) {
+      const row = listEl.querySelector<HTMLElement>(
+        `.list-row[data-task-id="${taskId}"]:not([data-exiting="true"])`,
+      );
+      if (!row || row.hidden) return null;
+      return intersectsViewport(row.getBoundingClientRect(), listView.getBoundingClientRect())
+        ? row
+        : null;
+    }
+    return null;
+  }
+
   const readerDialog = initReaderDialog(document, {
     onToggle(id) {
       handleToggle(id, true);
@@ -188,6 +265,7 @@ try {
     onDelete(task, returnFocus) {
       openDeleteFor(task, returnFocus);
     },
+    getSourceElement: resolveReaderSource,
   });
 
   const stage = createOrbitalStage(stageEl, {
@@ -205,7 +283,7 @@ try {
     pauseBtn.setAttribute('aria-label', paused ? 'Lanjutkan gerak orbital' : 'Jeda gerak orbital');
   }
 
-  function render(context: { reason?: RenderReason; taskId?: number } = {}): void {
+  function render(context: RenderContext = {}): void {
     const reason: RenderReason = context.reason ?? 'init';
     const visible = visibleTasks();
     const today = new Date();
@@ -229,6 +307,8 @@ try {
       flushExitingOrbitNodes();
       cancelMotionGroup('orbit-enter');
       cancelMotionGroup('list-stagger');
+      cancelMotionGroup('list-reflow');
+      cancelMotionGroup('view-switch');
       orbitalView.hidden = true;
       listView.hidden = true;
       viewNotice.hidden = true;
@@ -265,18 +345,29 @@ try {
     if (effectiveView === 'orbit') {
       const pageData = paginateOrbit(visible, orbitPage, ORBIT_LIMIT);
       orbitPage = pageData.page;
+      const wasOrbitVisible = !orbitalView.hidden;
+      const isViewSwitch = canAnimate() && reason === 'view' && context.prevView === 'list' && !wasOrbitVisible;
 
       listView.hidden = true;
       orbitalView.hidden = false;
       viewNotice.hidden = true;
       cancelMotionGroup('list-stagger');
+      cancelMotionGroup('list-reflow');
+      cancelMotionGroup('view-switch');
 
-      const animateFilterWave = canAnimate() && reason === 'filter';
-      const animateAdd = canAnimate() && reason === 'add';
+      const animateFilterWave = !isViewSwitch && canAnimate() && (reason === 'filter' || reason === 'search');
+      const animateAdd = !isViewSwitch && canAnimate() && reason === 'add';
+      const animateReflow =
+        !isViewSwitch &&
+        !context.pageChanged &&
+        wasOrbitVisible &&
+        canAnimate() &&
+        (reason === 'filter' || reason === 'search' || reason === 'add' || reason === 'status' || reason === 'delete-complete');
+
       if (!animateFilterWave) {
         flushExitingOrbitNodes();
       }
-      if (reason === 'filter' || reason === 'view') {
+      if (reason === 'filter' || reason === 'search' || reason === 'view') {
         cancelMotionGroup('orbit-enter');
       }
 
@@ -302,10 +393,98 @@ try {
       }
 
       stage.setActive(true);
-      stage.sync();
+      stage.sync({ animateReflow });
 
-      if (animateFilterWave) {
-        const exitDelays = computeStaggerDelays(diff.exiting.length, STAGGER_STEP_MS, STAGGER_MAX_ITEMS);
+      if (isViewSwitch) {
+        const activePairs = [...diff.entered, ...diff.updated, ...diff.restored];
+        const stageBounds = stageEl.getBoundingClientRect();
+        const prevRects = context.prevRects;
+        const viewSwitchPlan = activePairs.map((pair) => {
+          const printEl = pair.box.querySelector<HTMLElement>('.box-print');
+          const boxRect = pair.box.getBoundingClientRect();
+          const lastRect = printEl?.getBoundingClientRect() ?? null;
+          const parentScaleX = pair.box.offsetWidth > 0 ? boxRect.width / pair.box.offsetWidth : 1;
+          const parentScaleY = pair.box.offsetHeight > 0 ? boxRect.height / pair.box.offsetHeight : 1;
+          const firstRect = prevRects?.get(pair.id) ?? null;
+          const visibleOnStage = lastRect !== null && intersectsViewport(lastRect, stageBounds);
+          return {
+            pair,
+            printEl,
+            lastRect,
+            parentScaleX,
+            parentScaleY,
+            firstRect,
+            visibleOnStage,
+          };
+        });
+
+        let unpairedCount = 0;
+        for (const item of viewSwitchPlan) {
+          if (!item.printEl || !item.lastRect || !item.visibleOnStage) continue;
+          nextGen(item.pair.box);
+          if (item.firstRect) {
+            const delta = computeFlipDelta(item.firstRect, item.lastRect, {
+              parentScaleX: item.parentScaleX,
+              parentScaleY: item.parentScaleY,
+              includeScale: true,
+              minScale: 0.45,
+              maxScale: 1.85,
+            });
+            if (delta.moved || delta.scaled) {
+              animateElement(
+                'view-switch',
+                item.printEl,
+                [
+                  {
+                    transform: `translate3d(${delta.tx.toFixed(2)}px, ${delta.ty.toFixed(2)}px, 0) scale(${delta.sx.toFixed(3)}, ${delta.sy.toFixed(3)})`,
+                    opacity: 0.72,
+                  },
+                  {
+                    transform: 'translate3d(0, 0, 0) scale(1, 1)',
+                    opacity: 1,
+                  },
+                ],
+                { duration: 300, easing: EASE_OUT, fill: 'backwards' },
+              );
+              animateElement(
+                'view-switch',
+                item.pair.caption,
+                [{ opacity: 0 }, { opacity: 1 }],
+                { duration: 180, delay: 90, easing: EASE_OUT, fill: 'backwards' },
+              );
+              continue;
+            }
+          }
+
+          if (unpairedCount < STAGGER_MAX_ITEMS) {
+            const delay = unpairedCount * 16;
+            unpairedCount += 1;
+            animateElement(
+              'view-switch',
+              item.printEl,
+              [
+                { transform: 'scale(0.94)', opacity: 0 },
+                { transform: 'scale(1)', opacity: 1 },
+              ],
+              { duration: 220, delay, easing: EASE_OUT, fill: 'backwards' },
+            );
+            animateElement(
+              'view-switch',
+              item.pair.caption,
+              [{ opacity: 0 }, { opacity: 1 }],
+              { duration: 180, delay: delay + 40, easing: EASE_OUT, fill: 'backwards' },
+            );
+          }
+        }
+      } else if (animateFilterWave) {
+        const isSearch = reason === 'search';
+        const stepMs = isSearch ? 0 : STAGGER_STEP_MS;
+        const exitDuration = isSearch ? 140 : 180;
+        const captionExitDuration = isSearch ? 110 : 140;
+        const enterDuration = isSearch ? 180 : 240;
+        const captionEnterDuration = isSearch ? 150 : 200;
+
+        const exitDelays = computeStaggerDelays(diff.exiting.length, stepMs, STAGGER_MAX_ITEMS);
         diff.exiting.forEach((pair, idx) => {
           const delay = exitDelays[idx];
           if (delay === null || delay === undefined) {
@@ -329,7 +508,7 @@ try {
               { transform: 'scale(1)', opacity: 1, clipPath: 'inset(0 0 0 0)' },
               { transform: 'scale(0.92)', opacity: 0, clipPath: 'inset(0 0 100% 0)' },
             ],
-            { duration: 180, delay, easing: EASE_EXIT, fill: 'forwards' },
+            { duration: exitDuration, delay, easing: EASE_EXIT, fill: 'forwards' },
           );
           animateElement(
             'orbit-exit',
@@ -338,19 +517,19 @@ try {
               { opacity: 1, clipPath: 'inset(0 0 0 0)' },
               { opacity: 0, clipPath: 'inset(0 0 100% 0)' },
             ],
-            { duration: 140, delay, easing: EASE_EXIT, fill: 'forwards' },
+            { duration: captionExitDuration, delay, easing: EASE_EXIT, fill: 'forwards' },
           );
           if (!anim) {
             cleanup();
             return;
           }
-          const timerId = window.setTimeout(cleanup, 180 + delay + 140);
+          const timerId = window.setTimeout(cleanup, exitDuration + delay + 140);
           orbitExitTimers.set(pair.box, timerId);
           void Promise.resolve(anim.finished).then(cleanup, () => {});
         });
 
         const enteringPairs = [...diff.entered, ...diff.restored];
-        const enterDelays = computeStaggerDelays(enteringPairs.length, STAGGER_STEP_MS, STAGGER_MAX_ITEMS);
+        const enterDelays = computeStaggerDelays(enteringPairs.length, stepMs, STAGGER_MAX_ITEMS);
         enteringPairs.forEach((pair, idx) => {
           const delay = enterDelays[idx];
           if (delay === null || delay === undefined) return;
@@ -363,7 +542,7 @@ try {
               { transform: 'scale(0.94)', opacity: 0, clipPath: 'inset(100% 0 0 0)' },
               { transform: 'scale(1)', opacity: 1, clipPath: 'inset(0 0 0 0)' },
             ],
-            { duration: 240, delay, easing: EASE_OUT, fill: 'backwards' },
+            { duration: enterDuration, delay, easing: EASE_OUT, fill: 'backwards' },
           );
           animateElement(
             'orbit-enter',
@@ -372,21 +551,27 @@ try {
               { opacity: 0, clipPath: 'inset(100% 0 0 0)' },
               { opacity: 1, clipPath: 'inset(0 0 0 0)' },
             ],
-            { duration: 200, delay, easing: EASE_OUT, fill: 'backwards' },
+            { duration: captionEnterDuration, delay, easing: EASE_OUT, fill: 'backwards' },
           );
         });
       } else if (animateAdd && context.taskId !== undefined) {
         const added = diff.entered.find((pair) => pair.id === context.taskId);
         const printEl = added?.box.querySelector<HTMLElement>('.box-print');
-        if (printEl) {
+        if (printEl && added) {
           animateElement(
             'add',
             printEl,
             [
-              { transform: 'translate3d(0, 8px, 0)', clipPath: 'inset(100% 0 0 0)', opacity: 0.4 },
-              { transform: 'translate3d(0, 0, 0)', clipPath: 'inset(0 0 0 0)', opacity: 1 },
+              { transform: 'translate3d(0, 14px, 0) scale(0.88)', opacity: 0 },
+              { transform: 'translate3d(0, 0, 0) scale(1)', opacity: 1 },
             ],
-            { duration: 260, easing: EASE_OUT, fill: 'backwards' },
+            { duration: 300, easing: EASE_OUT, fill: 'backwards' },
+          );
+          animateElement(
+            'add',
+            added.caption,
+            [{ opacity: 0 }, { opacity: 1 }],
+            { duration: 200, delay: 90, easing: EASE_OUT, fill: 'backwards' },
           );
         }
       }
@@ -400,8 +585,16 @@ try {
       syncPauseButton(stage.isPaused());
       renderRangeIndex(rangeIndex, pageData.startIndex, pageData.endIndex, visible.length, tasks);
     } else {
+      const wasListVisible = !listView.hidden;
+      const isViewSwitch = canAnimate() && reason === 'view' && context.prevView === 'orbit' && !wasListVisible;
+      const shouldFlipReflow = canAnimate() && wasListVisible && reason !== 'init' && reason !== 'view';
+      const prevListRects = shouldFlipReflow ? captureVisibleListRects() : new Map<number, RectLike>();
+
       flushExitingOrbitNodes();
       cancelMotionGroup('orbit-enter');
+      cancelMotionGroup('view-switch');
+      cancelMotionGroup('list-reflow');
+      cancelMotionGroup('list-stagger');
       stage.setActive(false);
       orbitalView.hidden = true;
       listView.hidden = false;
@@ -410,37 +603,154 @@ try {
       viewNotice.hidden = true;
       void viewNoticeText;
 
-      renderAccessibleList(listEl, rowTemplate, visible, today);
+      const listDiff = reconcileAccessibleList(listEl, rowTemplate, visible, today);
+      const addedEntry =
+        reason === 'add' && context.taskId !== undefined
+          ? listDiff.entered.find((entry) => entry.id === context.taskId)
+          : undefined;
 
-      if (reason === 'filter' && canAnimate()) {
-        cancelMotionGroup('list-stagger');
-        const rows = Array.from(listEl.querySelectorAll<HTMLElement>('.list-row'));
-        const delays = computeStaggerDelays(rows.length, STAGGER_STEP_MS, STAGGER_MAX_ITEMS);
-        rows.forEach((row, idx) => {
-          const delay = delays[idx];
-          if (delay === null || delay === undefined) return;
-          animateElement(
-            'list-stagger',
-            row,
-            [
-              { transform: 'translate3d(0, 8px, 0)', opacity: 0 },
-              { transform: 'translate3d(0, 0, 0)', opacity: 1 },
-            ],
-            { duration: 220, delay, easing: EASE_OUT, fill: 'backwards' },
-          );
+      if (isViewSwitch) {
+        const listBounds = listView.getBoundingClientRect();
+        const prevRects = context.prevRects;
+        const entries = [...listDiff.entered, ...listDiff.updated].map((entry) => {
+          const lastRect = entry.row.getBoundingClientRect();
+          return {
+            entry,
+            lastRect,
+            firstRect: prevRects?.get(entry.id) ?? null,
+            isVisible: intersectsViewport(lastRect, listBounds),
+          };
         });
-      } else if (reason === 'add' && context.taskId !== undefined && canAnimate()) {
-        const addedRow = listEl.querySelector<HTMLElement>(`[data-task-id="${context.taskId}"]`);
-        if (addedRow) {
-          animateElement(
-            'add',
-            addedRow,
-            [
-              { transform: 'translate3d(0, 8px, 0)', clipPath: 'inset(100% 0 0 0)', opacity: 0.4 },
-              { transform: 'translate3d(0, 0, 0)', clipPath: 'inset(0 0 0 0)', opacity: 1 },
-            ],
-            { duration: 260, easing: EASE_OUT, fill: 'backwards' },
-          );
+
+        let unpairedCount = 0;
+        for (const item of entries) {
+          if (!item.isVisible) continue;
+          if (item.firstRect) {
+            const delta = computeFlipDelta(item.firstRect, item.lastRect, {
+              includeScale: true,
+              minScale: 0.45,
+              maxScale: 1.85,
+            });
+            if (delta.moved || delta.scaled) {
+              animateElement(
+                'view-switch',
+                item.entry.row,
+                [
+                  {
+                    transform: `translate3d(${delta.tx.toFixed(2)}px, ${delta.ty.toFixed(2)}px, 0) scale(${delta.sx.toFixed(3)}, ${delta.sy.toFixed(3)})`,
+                    opacity: 0.72,
+                  },
+                  {
+                    transform: 'translate3d(0, 0, 0) scale(1, 1)',
+                    opacity: 1,
+                  },
+                ],
+                { duration: 300, easing: EASE_OUT, fill: 'backwards' },
+              );
+              continue;
+            }
+          }
+
+          if (unpairedCount < STAGGER_MAX_ITEMS) {
+            const delay = unpairedCount * 16;
+            unpairedCount += 1;
+            animateElement(
+              'view-switch',
+              item.entry.row,
+              [
+                { transform: 'translate3d(0, 8px, 0)', opacity: 0 },
+                { transform: 'translate3d(0, 0, 0)', opacity: 1 },
+              ],
+              { duration: 200, delay, easing: EASE_OUT, fill: 'backwards' },
+            );
+          }
+        }
+      } else {
+        const canRunMotion = canAnimate();
+        const listBounds = listView.getBoundingClientRect();
+        const reflowTargets: Array<{ row: HTMLElement; tx: number; ty: number }> = [];
+
+        if (canRunMotion && shouldFlipReflow && prevListRects.size > 0) {
+          for (const entry of listDiff.updated) {
+            const firstRect = prevListRects.get(entry.id);
+            if (!firstRect) continue;
+            const lastRect = entry.row.getBoundingClientRect();
+            if (!intersectsViewport(firstRect, listBounds) && !intersectsViewport(lastRect, listBounds)) {
+              continue;
+            }
+            const delta = computeFlipDelta(firstRect, lastRect, { includeScale: false });
+            if (delta.moved) {
+              reflowTargets.push({ row: entry.row, tx: delta.tx, ty: delta.ty });
+            }
+          }
+        }
+
+        if (addedEntry && wasListVisible) {
+          ensureListRowVisible(listView, addedEntry.row);
+        }
+
+        if (canRunMotion) {
+          const enteringVisible: Array<{ id: number; row: HTMLElement }> = [];
+          if (reason === 'filter' || reason === 'search') {
+            for (const entry of listDiff.entered) {
+              const rect = entry.row.getBoundingClientRect();
+              if (intersectsViewport(rect, listBounds)) {
+                enteringVisible.push(entry);
+              }
+            }
+          }
+
+          const reflowDuration = reason === 'search' ? 160 : 220;
+          for (const item of reflowTargets) {
+            animateElement(
+              'list-reflow',
+              item.row,
+              [
+                { transform: `translate3d(${item.tx.toFixed(2)}px, ${item.ty.toFixed(2)}px, 0)` },
+                { transform: 'translate3d(0, 0, 0)' },
+              ],
+              { duration: reflowDuration, easing: EASE_OUT, fill: 'none' },
+            );
+          }
+
+          if (addedEntry) {
+            animateElement(
+              'add',
+              addedEntry.row,
+              [
+                { transform: 'translate3d(0, 12px, 0) scale(0.975)', opacity: 0 },
+                { transform: 'translate3d(0, 0, 0) scale(1)', opacity: 1 },
+              ],
+              { duration: 280, easing: EASE_OUT, fill: 'backwards' },
+            );
+          } else if (reason === 'search') {
+            enteringVisible.slice(0, STAGGER_MAX_ITEMS).forEach((entry) => {
+              animateElement(
+                'list-stagger',
+                entry.row,
+                [
+                  { transform: 'translate3d(0, 6px, 0)', opacity: 0 },
+                  { transform: 'translate3d(0, 0, 0)', opacity: 1 },
+                ],
+                { duration: 160, easing: EASE_OUT, fill: 'backwards' },
+              );
+            });
+          } else if (reason === 'filter') {
+            const delays = computeStaggerDelays(enteringVisible.length, STAGGER_STEP_MS, STAGGER_MAX_ITEMS);
+            enteringVisible.forEach((entry, idx) => {
+              const delay = delays[idx];
+              if (delay === null || delay === undefined) return;
+              animateElement(
+                'list-stagger',
+                entry.row,
+                [
+                  { transform: 'translate3d(0, 8px, 0)', opacity: 0 },
+                  { transform: 'translate3d(0, 0, 0)', opacity: 1 },
+                ],
+                { duration: 200, delay, easing: EASE_OUT, fill: 'backwards' },
+              );
+            });
+          }
         }
       }
 
@@ -452,11 +762,25 @@ try {
 
   function setViewMode(mode: ViewMode): void {
     deleteCoordinator.flush(false);
+    const prevEffective = resolveEffectiveView(visibleTasks().length, selectedView);
+    let prevView: ViewMode | undefined;
+    let prevRects: Map<number, RectLike> | undefined;
+
+    if (mode !== prevEffective && canAnimate()) {
+      if (prevEffective === 'list' && !listView.hidden) {
+        prevView = 'list';
+        prevRects = captureVisibleListRects();
+      } else if (prevEffective === 'orbit' && !orbitalView.hidden) {
+        prevView = 'orbit';
+        prevRects = captureActiveOrbitRects();
+      }
+    }
+
     savedPreference = mode;
     selectedView = mode;
     saveViewMode(storage, mode);
     orbitPage = 1;
-    render({ reason: 'view' });
+    render({ reason: 'view', prevView, prevRects });
     announce(mode === 'orbit' ? 'Menampilkan mode Orbit.' : 'Menampilkan mode Daftar.');
   }
 
@@ -468,10 +792,11 @@ try {
       const created = tasks[tasks.length - 1];
       const visible = visibleTasks();
       const effectiveView = resolveEffectiveView(visible.length, selectedView);
+      const prevOrbitPage = orbitPage;
       if (effectiveView === 'orbit' && visible.length > ORBIT_LIMIT) {
         orbitPage = Math.ceil(visible.length / ORBIT_LIMIT);
       }
-      render({ reason: 'add', taskId: created?.id });
+      render({ reason: 'add', taskId: created?.id, pageChanged: orbitPage !== prevOrbitPage });
       const shown = created !== undefined && visible.some((item) => item.id === created.id);
       if (!shown) {
         announce('Tugas baru ditambahkan, tetapi tidak tampil pada filter atau pencarian aktif.');
@@ -685,7 +1010,7 @@ try {
     deleteCoordinator.flush(false);
     searchQuery = searchInput.value;
     orbitPage = 1;
-    render({ reason: 'filter' });
+    render({ reason: 'search' });
     window.clearTimeout(searchAnnounceTimer);
     searchAnnounceTimer = window.setTimeout(() => {
       const count = visibleTasks().length;
@@ -703,7 +1028,7 @@ try {
     searchQuery = '';
     searchInput.value = '';
     orbitPage = 1;
-    render({ reason: 'filter' });
+    render({ reason: 'search' });
     searchInput.focus();
     announce(`Pencarian dihapus. Menampilkan ${visibleTasks().length} tugas.`);
   });

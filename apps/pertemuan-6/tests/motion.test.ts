@@ -5,9 +5,11 @@ import {
   STAGGER_MAX_ITEMS,
   STAGGER_STEP_MS,
   bindBridgeCancellation,
+  computeFlipDelta,
   computeStaggerDelays,
   createDeleteCoordinator,
   createMotionRegistry,
+  intersectsViewport,
   resolveReaderBoundaryFocus,
   shouldAnimate,
   taskDialogOpenKeyframes,
@@ -15,9 +17,11 @@ import {
 } from '../src/motion.ts';
 import {
   markOrbitNodeExiting,
+  reconcileAccessibleList,
   reconcileOrbitalStage,
   restoreOrbitNodeActive,
 } from '../src/render.ts';
+import { initTaskDialog } from '../src/task-dialog.ts';
 import type { Task } from '../src/types.ts';
 
 function deferredAnimation(): {
@@ -167,8 +171,14 @@ describe('bindBridgeCancellation (integrasi Shared Transition Bridge)', () => {
     assert.equal(flushCalls, 0);
 
     // Fase exit-start membatalkan semua dan memanggil semua flush
+    const viewAnim = deferredAnimation();
+    const reflowAnim = deferredAnimation();
+    registry.register('view-switch', viewAnim.anim);
+    registry.register('list-reflow', reflowAnim.anim);
     target.dispatchEvent(new CustomEvent('kxrumii:transition', { detail: { phase: 'exit-start' } }));
     assert.equal(anim.cancelled(), true);
+    assert.equal(viewAnim.cancelled(), true);
+    assert.equal(reflowAnim.cancelled(), true);
     assert.equal(registry.activeCount(), 0);
     assert.equal(flushCalls, 2);
 
@@ -334,6 +344,52 @@ describe('dialog motion & boundary focus helpers', () => {
   });
 });
 
+describe('CP1 FLIP & view-switch geometry helpers', () => {
+  it('intersectsViewport memeriksa irisan rect terhadap kontainer secara akurat', () => {
+    const bounds = { left: 0, top: 100, width: 1000, height: 600 };
+    assert.equal(intersectsViewport({ left: 20, top: 120, width: 200, height: 100 }, bounds), true);
+    assert.equal(intersectsViewport({ left: 20, top: 50, width: 200, height: 60 }, bounds), true);
+    assert.equal(intersectsViewport({ left: 20, top: 0, width: 200, height: 100 }, bounds), false);
+    assert.equal(intersectsViewport({ left: 20, top: 700, width: 200, height: 100 }, bounds), false);
+    assert.equal(intersectsViewport({ left: 20, top: 120, width: 0, height: 100 }, bounds), false);
+  });
+
+  it('computeFlipDelta menghitung delta pusat, mengkompensasi parentScale, mengekang skala, dan meredam sub-pixel <= 1px', () => {
+    // Sub-pixel threshold <= 1px dianggap tidak bergerak
+    const tiny = computeFlipDelta(
+      { left: 100, top: 200, width: 300, height: 120 },
+      { left: 100.8, top: 199.3, width: 300, height: 120 },
+      { includeScale: false },
+    );
+    assert.equal(tiny.moved, false);
+    assert.equal(tiny.tx, 0);
+    assert.equal(tiny.ty, 0);
+    assert.equal(tiny.sx, 1);
+    assert.equal(tiny.sy, 1);
+
+    // Kompensasi parentScale saat .box-print berada di dalam .task-box berskala 0.8
+    const scaled = computeFlipDelta(
+      { left: 100, top: 100, width: 400, height: 120 }, // center (300, 160)
+      { left: 420, top: 260, width: 160, height: 160 }, // center (500, 340) -> vx = -200, vy = -180
+      { parentScaleX: 0.8, parentScaleY: 0.8, includeScale: true, minScale: 0.45, maxScale: 1.85 },
+    );
+    assert.equal(scaled.moved, true);
+    assert.equal(scaled.scaled, true);
+    assert.ok(Math.abs(scaled.tx - -250) < 1e-9);
+    assert.ok(Math.abs(scaled.ty - -225) < 1e-9);
+    // 400/160 = 2.5 -> dikunci di maxScale 1.85
+    assert.equal(scaled.sx, 1.85);
+    assert.equal(scaled.sy, 0.75);
+
+    // Guard dimensi non-positif
+    const invalid = computeFlipDelta(
+      { left: 0, top: 0, width: 0, height: 100 },
+      { left: 10, top: 10, width: 100, height: 100 },
+    );
+    assert.deepEqual(invalid, { tx: 0, ty: 0, sx: 1, sy: 1, moved: false, scaled: false });
+  });
+});
+
 describe('reconcileOrbitalStage (keyed DOM & invariants)', () => {
   class MockElement {
     tagName: string;
@@ -346,6 +402,19 @@ describe('reconcileOrbitalStage (keyed DOM & invariants)', () => {
     disabled = false;
     tabIndex = 0;
     style: Record<string, string> = {};
+    hidden = false;
+    checked = false;
+    private classSet = new Set<string>();
+    classList = {
+      toggle: (name: string, force?: boolean): boolean => {
+        const next = force ?? !this.classSet.has(name);
+        if (next) this.classSet.add(name);
+        else this.classSet.delete(name);
+        this.className = Array.from(this.classSet).join(' ');
+        return next;
+      },
+      contains: (name: string): boolean => this.classSet.has(name),
+    };
 
     constructor(tagName: string) {
       this.tagName = tagName.toUpperCase();
@@ -373,6 +442,24 @@ describe('reconcileOrbitalStage (keyed DOM & invariants)', () => {
       }
     }
 
+    insertBefore(node: MockElement, ref: MockElement | null): MockElement {
+      if (node.parent) {
+        node.parent.children = node.parent.children.filter((c) => c !== node);
+      }
+      node.parent = this;
+      if (!ref) {
+        this.children.push(node);
+        return node;
+      }
+      const idx = this.children.indexOf(ref);
+      if (idx === -1) {
+        this.children.push(node);
+      } else {
+        this.children.splice(idx, 0, node);
+      }
+      return node;
+    }
+
     replaceChildren(...nodes: MockElement[]): void {
       for (const child of this.children) child.parent = null;
       this.children = [];
@@ -388,6 +475,9 @@ describe('reconcileOrbitalStage (keyed DOM & invariants)', () => {
     cloneNode(deep = false): MockElement {
       const copy = new (this.constructor as typeof MockElement)(this.tagName);
       copy.className = this.className;
+      for (const token of this.className.split(/\s+/).filter(Boolean)) {
+        copy.classList.toggle(token, true);
+      }
       copy.dataset = { ...this.dataset };
       copy.attributes = new Map(this.attributes);
       copy.textContent = this.textContent;
@@ -407,6 +497,9 @@ describe('reconcileOrbitalStage (keyed DOM & invariants)', () => {
       }
       if (selector === '.box-caption[data-caption-for]') {
         return this.className.split(/\s+/).includes('box-caption') && this.dataset.captionFor !== undefined;
+      }
+      if (selector === 'button, input') {
+        return this.tagName === 'BUTTON' || this.tagName === 'INPUT';
       }
       return false;
     }
@@ -432,10 +525,16 @@ describe('reconcileOrbitalStage (keyed DOM & invariants)', () => {
 
   class MockHTMLElement extends MockElement {}
   class MockHTMLButtonElement extends MockHTMLElement {}
+  class MockHTMLLIElement extends MockHTMLElement {}
+  class MockHTMLOListElement extends MockHTMLElement {}
+  class MockHTMLInputElement extends MockHTMLElement {}
 
   const savedGlobals = {
     HTMLElement: globalThis.HTMLElement,
     HTMLButtonElement: globalThis.HTMLButtonElement,
+    HTMLLIElement: globalThis.HTMLLIElement,
+    HTMLOListElement: globalThis.HTMLOListElement,
+    HTMLInputElement: globalThis.HTMLInputElement,
     document: globalThis.document,
   };
 
@@ -455,6 +554,35 @@ describe('reconcileOrbitalStage (keyed DOM & invariants)', () => {
     } as unknown as HTMLTemplateElement;
   }
 
+  function createListRowTemplate(): HTMLTemplateElement {
+    const row = new MockHTMLLIElement('li');
+    row.className = 'list-row';
+    for (const slotName of ['number', 'course', 'category', 'deadline', 'deadline-note', 'description', 'status']) {
+      const el = new MockHTMLElement('span');
+      el.setAttribute('data-slot', slotName);
+      row.append(el);
+    }
+    const openBtn = new MockHTMLButtonElement('button');
+    openBtn.setAttribute('data-slot', 'open');
+    const titleEl = new MockHTMLElement('span');
+    titleEl.setAttribute('data-slot', 'title');
+    openBtn.append(titleEl);
+    row.append(openBtn);
+
+    const toggle = new MockHTMLInputElement('input');
+    toggle.setAttribute('data-slot', 'toggle');
+    row.append(toggle);
+
+    for (const action of ['edit', 'delete']) {
+      const btn = new MockHTMLButtonElement('button');
+      btn.setAttribute('data-slot', action);
+      row.append(btn);
+    }
+    return {
+      content: { firstElementChild: row },
+    } as unknown as HTMLTemplateElement;
+  }
+
   const sampleTasks: readonly Task[] = [
     { id: 1, title: 'Basis Data', course: 'BD', deadline: null, status: 'belum-selesai' },
     { id: 2, title: 'Struktur Data', course: 'SD', deadline: null, status: 'belum-selesai' },
@@ -464,6 +592,9 @@ describe('reconcileOrbitalStage (keyed DOM & invariants)', () => {
   before(() => {
     (globalThis as Record<string, unknown>).HTMLElement = MockHTMLElement;
     (globalThis as Record<string, unknown>).HTMLButtonElement = MockHTMLButtonElement;
+    (globalThis as Record<string, unknown>).HTMLLIElement = MockHTMLLIElement;
+    (globalThis as Record<string, unknown>).HTMLOListElement = MockHTMLOListElement;
+    (globalThis as Record<string, unknown>).HTMLInputElement = MockHTMLInputElement;
     (globalThis as Record<string, unknown>).document = {
       createElement(tag: string) {
         return new MockHTMLElement(tag);
@@ -474,6 +605,9 @@ describe('reconcileOrbitalStage (keyed DOM & invariants)', () => {
   after(() => {
     (globalThis as Record<string, unknown>).HTMLElement = savedGlobals.HTMLElement;
     (globalThis as Record<string, unknown>).HTMLButtonElement = savedGlobals.HTMLButtonElement;
+    (globalThis as Record<string, unknown>).HTMLLIElement = savedGlobals.HTMLLIElement;
+    (globalThis as Record<string, unknown>).HTMLOListElement = savedGlobals.HTMLOListElement;
+    (globalThis as Record<string, unknown>).HTMLInputElement = savedGlobals.HTMLInputElement;
     (globalThis as Record<string, unknown>).document = savedGlobals.document;
   });
 
@@ -541,5 +675,208 @@ describe('reconcileOrbitalStage (keyed DOM & invariants)', () => {
     assert.equal(box.hasAttribute('aria-hidden'), false);
     assert.equal(box.hasAttribute('inert'), false);
     assert.equal(caption.dataset.exiting, undefined);
+  });
+
+  it('reconcileAccessibleList mempertahankan node bertahan, urutan tanpa duplikat, dan tidak melepas node fokus saat urutan tetap', () => {
+    const listMock = new MockHTMLOListElement('ol');
+    let insertCalls = 0;
+    const origInsert = listMock.insertBefore.bind(listMock);
+    listMock.insertBefore = (node: MockElement, ref: MockElement | null) => {
+      insertCalls += 1;
+      return origInsert(node, ref);
+    };
+
+    const list = listMock as unknown as HTMLOListElement;
+    const rowTemplate = createListRowTemplate();
+    const today = new Date(2026, 10, 24);
+
+    // Render awal 3 tugas
+    const r1 = reconcileAccessibleList(list, rowTemplate, sampleTasks, today);
+    assert.equal(r1.entered.length, 3);
+    assert.equal(r1.updated.length, 0);
+    assert.equal(insertCalls, 3);
+
+    const row1 = r1.entered[0]!.row;
+    const row2 = r1.entered[1]!.row;
+    const row3 = r1.entered[2]!.row;
+
+    // Simulasi pembaruan konten/status dengan urutan tetap -> 0 insertBefore (menjaga fokus checkbox)
+    insertCalls = 0;
+    const toggled: Task = { ...sampleTasks[0]!, status: 'selesai' };
+    const r2 = reconcileAccessibleList(list, rowTemplate, [toggled, sampleTasks[1]!, sampleTasks[2]!], today);
+    assert.equal(r2.entered.length, 0);
+    assert.equal(r2.updated.length, 3);
+    assert.equal(r2.updated[0]!.row, row1);
+    assert.equal(insertCalls, 0);
+    assert.equal((row1 as unknown as MockHTMLLIElement).classList.contains('is-done'), true);
+
+    // Filter / pencarian menyisakan tugas 1 dan 3; tugas 2 dihapus
+    const r3 = reconcileAccessibleList(list, rowTemplate, [toggled, sampleTasks[2]!], today);
+    assert.equal(r3.updated.length, 2);
+    assert.equal(r3.removedCount, 1);
+    assert.equal(r3.updated[0]!.row, row1);
+    assert.equal(r3.updated[1]!.row, row3);
+    assert.equal(listMock.children.length, 2);
+
+    // Pemulihan tugas 2 di tengah + reordering tanpa duplikasi node
+    const task4: Task = { id: 4, title: 'Kalkulus', course: 'MT', deadline: null, status: 'belum-selesai' };
+    const r4 = reconcileAccessibleList(list, rowTemplate, [sampleTasks[2]!, toggled, task4], today);
+    assert.equal(r4.entered.length, 1);
+    assert.equal(r4.entered[0]!.id, 4);
+    assert.equal(r4.updated.length, 2);
+    assert.equal(listMock.children.map((c) => c.dataset.taskId).join(','), '3,1,4');
+    assert.notEqual(row2, r4.entered[0]!.row);
+  });
+});
+
+describe('CP4-B initTaskDialog (tutup dialog sebelum onCreate & pemulihan fokus)', () => {
+  it('menutup #task-dialog terlebih dahulu sebelum onCreate berjalan agar Orbit reflow tidak terblokir', () => {
+    const listeners = new Map<string, Array<(ev: { preventDefault(): void }) => void>>();
+    let activeFocus: unknown = null;
+
+    class DialogMockEl {
+      id = '';
+      hidden = false;
+      textContent: string | null = '';
+      value = '';
+      open = false;
+      attributes = new Map<string, string>();
+      private evs = new Map<string, Array<(ev: { preventDefault(): void }) => void>>();
+      childrenBySel = new Map<string, DialogMockEl>();
+
+      setAttribute(name: string, value: string): void {
+        this.attributes.set(name, value);
+      }
+      removeAttribute(name: string): void {
+        this.attributes.delete(name);
+      }
+      addEventListener(type: string, fn: (ev: { preventDefault(): void }) => void): void {
+        const list = this.evs.get(type) ?? [];
+        list.push(fn);
+        this.evs.set(type, list);
+      }
+      emit(type: string): void {
+        for (const fn of this.evs.get(type) ?? []) {
+          fn({ preventDefault() {} });
+        }
+      }
+      focus(): void {
+        activeFocus = this;
+      }
+      showModal(): void {
+        this.open = true;
+      }
+      close(): void {
+        if (!this.open) return;
+        this.open = false;
+        this.emit('close');
+      }
+      querySelector(selector: string): DialogMockEl | null {
+        return this.childrenBySel.get(selector) ?? null;
+      }
+    }
+
+    class MockDialogEl extends DialogMockEl {}
+    class MockFormEl extends DialogMockEl {}
+    class MockInputEl extends DialogMockEl {}
+    class MockTextAreaEl extends DialogMockEl {}
+    class MockButtonEl extends DialogMockEl {}
+
+    const saved = {
+      HTMLElement: globalThis.HTMLElement,
+      HTMLDialogElement: globalThis.HTMLDialogElement,
+      HTMLFormElement: globalThis.HTMLFormElement,
+      HTMLInputElement: globalThis.HTMLInputElement,
+      HTMLTextAreaElement: globalThis.HTMLTextAreaElement,
+      HTMLButtonElement: globalThis.HTMLButtonElement,
+      window: globalThis.window,
+    };
+
+    const root = new DialogMockEl();
+    const dialog = new MockDialogEl();
+    const form = new MockFormEl();
+    const heading = new DialogMockEl();
+    const cancel = new MockButtonEl();
+    const titleInput = new MockInputEl();
+    const courseInput = new MockInputEl();
+    const categoryInput = new MockInputEl();
+    const descriptionInput = new MockTextAreaEl();
+    const deadlineInput = new MockInputEl();
+    const errTitle = new DialogMockEl();
+    const errCourse = new DialogMockEl();
+    const errDeadline = new DialogMockEl();
+    const emptyAdd = new MockButtonEl();
+    const headerAdd = new MockButtonEl();
+
+    root.childrenBySel.set('#task-dialog', dialog);
+    root.childrenBySel.set('#task-form', form);
+    root.childrenBySel.set('#task-dialog-title', heading);
+    root.childrenBySel.set('#task-cancel', cancel);
+    root.childrenBySel.set('#task-title', titleInput);
+    root.childrenBySel.set('#task-course', courseInput);
+    root.childrenBySel.set('#task-category', categoryInput);
+    root.childrenBySel.set('#task-description', descriptionInput);
+    root.childrenBySel.set('#task-deadline', deadlineInput);
+    root.childrenBySel.set('#task-title-error', errTitle);
+    root.childrenBySel.set('#task-course-error', errCourse);
+    root.childrenBySel.set('#task-deadline-error', errDeadline);
+
+    (globalThis as Record<string, unknown>).HTMLElement = DialogMockEl;
+    (globalThis as Record<string, unknown>).HTMLDialogElement = MockDialogEl;
+    (globalThis as Record<string, unknown>).HTMLFormElement = MockFormEl;
+    (globalThis as Record<string, unknown>).HTMLInputElement = MockInputEl;
+    (globalThis as Record<string, unknown>).HTMLTextAreaElement = MockTextAreaEl;
+    (globalThis as Record<string, unknown>).HTMLButtonElement = MockButtonEl;
+    (globalThis as Record<string, unknown>).window = {
+      matchMedia: () => ({ matches: true }),
+    };
+
+    try {
+      void listeners;
+      let taskCount = 0;
+      let dialogOpenDuringCreate: boolean | null = null;
+      let focusCount = 0;
+      const origHeaderFocus = headerAdd.focus.bind(headerAdd);
+      headerAdd.focus = () => {
+        focusCount += 1;
+        origHeaderFocus();
+      };
+
+      const taskDialog = initTaskDialog(root as unknown as ParentNode, {
+        onCreate() {
+          dialogOpenDuringCreate = dialog.open;
+          taskCount = 1;
+        },
+        onEdit() {},
+      });
+
+      const dynamicReturnFocus = () => (taskCount === 0 ? emptyAdd : headerAdd) as unknown as HTMLElement;
+      taskDialog.openCreate(dynamicReturnFocus);
+      assert.equal(dialog.open, true);
+
+      titleInput.value = 'Tugas Pertama';
+      courseInput.value = 'PAW';
+      form.emit('submit');
+
+      assert.equal(dialogOpenDuringCreate, false);
+      assert.equal(dialog.open, false);
+      assert.equal(activeFocus, headerAdd);
+      assert.equal(focusCount, 1);
+
+      // Batal memulihkan fokus normal tanpa memicu onCreate
+      activeFocus = null;
+      taskDialog.openCreate(dynamicReturnFocus);
+      cancel.emit('click');
+      assert.equal(dialog.open, false);
+      assert.equal(activeFocus, headerAdd);
+    } finally {
+      (globalThis as Record<string, unknown>).HTMLElement = saved.HTMLElement;
+      (globalThis as Record<string, unknown>).HTMLDialogElement = saved.HTMLDialogElement;
+      (globalThis as Record<string, unknown>).HTMLFormElement = saved.HTMLFormElement;
+      (globalThis as Record<string, unknown>).HTMLInputElement = saved.HTMLInputElement;
+      (globalThis as Record<string, unknown>).HTMLTextAreaElement = saved.HTMLTextAreaElement;
+      (globalThis as Record<string, unknown>).HTMLButtonElement = saved.HTMLButtonElement;
+      (globalThis as Record<string, unknown>).window = saved.window;
+    }
   });
 });

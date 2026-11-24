@@ -4,11 +4,52 @@ export type MotionGroup =
   | 'orbit-enter'
   | 'orbit-exit'
   | 'list-stagger'
+  | 'list-reflow'
+  | 'view-switch'
   | 'add'
   | 'status'
   | 'delete-exit'
   | 'reader'
-  | 'task-dialog';
+  | 'task-dialog'
+  | 'accordion';
+
+export interface RectLike {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  right?: number;
+  bottom?: number;
+}
+
+export interface FlipDelta {
+  tx: number;
+  ty: number;
+  sx: number;
+  sy: number;
+  moved: boolean;
+  scaled: boolean;
+}
+
+export interface FlipDeltaOptions {
+  parentScaleX?: number;
+  parentScaleY?: number;
+  includeScale?: boolean;
+  minScale?: number;
+  maxScale?: number;
+  moveThresholdPx?: number;
+  scaleThreshold?: number;
+}
+
+export interface ViewportClipInset {
+  clipPath: string;
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+  contentDx: number;
+  contentDy: number;
+}
 
 export const EASE_OUT = 'cubic-bezier(.16, 1, .3, 1)';
 export const EASE_EXIT = 'cubic-bezier(.45, 0, .2, 1)';
@@ -110,6 +151,160 @@ export function resolveReaderBoundaryFocus(
     return prevDisabled ? 'close' : 'prev';
   }
   return null;
+}
+
+function clampScale(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+/** Menentukan apakah `rect` beririsan dengan batas viewport/kontainer `bounds`. */
+export function intersectsViewport(rect: RectLike, bounds: RectLike): boolean {
+  if (rect.width <= 0 || rect.height <= 0 || bounds.width <= 0 || bounds.height <= 0) {
+    return false;
+  }
+  const rectRight = rect.right ?? rect.left + rect.width;
+  const rectBottom = rect.bottom ?? rect.top + rect.height;
+  const boundsRight = bounds.right ?? bounds.left + bounds.width;
+  const boundsBottom = bounds.bottom ?? bounds.top + bounds.height;
+  return (
+    rectRight > bounds.left &&
+    rect.left < boundsRight &&
+    rectBottom > bounds.top &&
+    rect.top < boundsBottom
+  );
+}
+
+/**
+ * Menghitung delta FLIP (First → Last) berbasis pusat elemen, dengan kompensasi skala parent
+ * agar animasi `.box-print` di dalam `.task-box` berskala tetap akurat.
+ */
+export function computeFlipDelta(
+  first: RectLike,
+  last: RectLike,
+  options: FlipDeltaOptions = {},
+): FlipDelta {
+  if (first.width <= 0 || first.height <= 0 || last.width <= 0 || last.height <= 0) {
+    return { tx: 0, ty: 0, sx: 1, sy: 1, moved: false, scaled: false };
+  }
+
+  const pScaleX = options.parentScaleX !== undefined && options.parentScaleX > 0 ? options.parentScaleX : 1;
+  const pScaleY = options.parentScaleY !== undefined && options.parentScaleY > 0 ? options.parentScaleY : 1;
+
+  const vx = first.left + first.width / 2 - (last.left + last.width / 2);
+  const vy = first.top + first.height / 2 - (last.top + last.height / 2);
+
+  let tx = vx / pScaleX;
+  let ty = vy / pScaleY;
+
+  const includeScale = options.includeScale ?? true;
+  const minScale = options.minScale ?? 0.45;
+  const maxScale = options.maxScale ?? 1.85;
+  const sx = includeScale ? clampScale(first.width / last.width, minScale, maxScale) : 1;
+  const sy = includeScale ? clampScale(first.height / last.height, minScale, maxScale) : 1;
+
+  const moveThresholdPx = options.moveThresholdPx ?? 1;
+  const scaleThreshold = options.scaleThreshold ?? 0.015;
+  const moved = Math.abs(tx) > moveThresholdPx || Math.abs(ty) > moveThresholdPx;
+  const scaled = Math.abs(sx - 1) > scaleThreshold || Math.abs(sy - 1) > scaleThreshold;
+
+  if (!moved) {
+    tx = 0;
+    ty = 0;
+  }
+
+  return { tx, ty, sx, sy, moved, scaled };
+}
+
+function isFinitePositiveRect(rect: RectLike | null | undefined): rect is RectLike {
+  if (!rect) return false;
+  return (
+    Number.isFinite(rect.left) &&
+    Number.isFinite(rect.top) &&
+    Number.isFinite(rect.width) &&
+    Number.isFinite(rect.height) &&
+    rect.width > 0 &&
+    rect.height > 0
+  );
+}
+
+/**
+ * Menghitung `clip-path: inset(...)` relatif terhadap `dialogRect` dari `sourceRect`
+ * yang beririsan dengan area pakai dialog & viewport. Mengembalikan `null` bila sumber
+ * di luar jangkauan atau tidak layak untuk transisi bersama.
+ */
+export function computeViewportClipInset(
+  sourceRect: RectLike,
+  dialogRect: RectLike,
+  viewport?: RectLike,
+): ViewportClipInset | null {
+  if (!isFinitePositiveRect(sourceRect) || !isFinitePositiveRect(dialogRect)) {
+    return null;
+  }
+  if (viewport !== undefined && !isFinitePositiveRect(viewport)) {
+    return null;
+  }
+
+  const dialogRight = dialogRect.right ?? dialogRect.left + dialogRect.width;
+  const dialogBottom = dialogRect.bottom ?? dialogRect.top + dialogRect.height;
+
+  let usableLeft = dialogRect.left;
+  let usableTop = dialogRect.top;
+  let usableRight = dialogRight;
+  let usableBottom = dialogBottom;
+
+  if (viewport) {
+    const vpRight = viewport.right ?? viewport.left + viewport.width;
+    const vpBottom = viewport.bottom ?? viewport.top + viewport.height;
+    usableLeft = Math.max(usableLeft, viewport.left);
+    usableTop = Math.max(usableTop, viewport.top);
+    usableRight = Math.min(usableRight, vpRight);
+    usableBottom = Math.min(usableBottom, vpBottom);
+  }
+
+  if (usableRight <= usableLeft || usableBottom <= usableTop) {
+    return null;
+  }
+
+  const sourceRight = sourceRect.right ?? sourceRect.left + sourceRect.width;
+  const sourceBottom = sourceRect.bottom ?? sourceRect.top + sourceRect.height;
+
+  const clippedLeft = Math.max(sourceRect.left, usableLeft);
+  const clippedTop = Math.max(sourceRect.top, usableTop);
+  const clippedRight = Math.min(sourceRight, usableRight);
+  const clippedBottom = Math.min(sourceBottom, usableBottom);
+
+  const visibleW = clippedRight - clippedLeft;
+  const visibleH = clippedBottom - clippedTop;
+  if (visibleW < 8 || visibleH < 8) {
+    return null;
+  }
+
+  const top = clampScale(clippedTop - dialogRect.top, 0, dialogRect.height);
+  const left = clampScale(clippedLeft - dialogRect.left, 0, dialogRect.width);
+  const bottom = clampScale(dialogBottom - clippedBottom, 0, dialogRect.height);
+  const right = clampScale(dialogRight - clippedRight, 0, dialogRect.width);
+
+  if (top + bottom >= dialogRect.height || left + right >= dialogRect.width) {
+    return null;
+  }
+
+  const srcCx = (clippedLeft + clippedRight) / 2;
+  const srcCy = (clippedTop + clippedBottom) / 2;
+  const dlgCx = dialogRect.left + dialogRect.width / 2;
+  const dlgCy = dialogRect.top + dialogRect.height / 2;
+
+  const contentDx = clampScale((srcCx - dlgCx) * 0.08, -28, 28);
+  const contentDy = clampScale((srcCy - dlgCy) * 0.08, -24, 24);
+
+  return {
+    clipPath: `inset(${top.toFixed(1)}px ${right.toFixed(1)}px ${bottom.toFixed(1)}px ${left.toFixed(1)}px)`,
+    top,
+    right,
+    bottom,
+    left,
+    contentDx,
+    contentDy,
+  };
 }
 
 function safeCancel(animation: AnimationLike): void {
