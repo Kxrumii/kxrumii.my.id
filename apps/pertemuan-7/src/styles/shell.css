@@ -30,7 +30,9 @@ button:disabled { cursor: default; }
 .gate-button-quiet { border-color: var(--line-strong); background: transparent; color: var(--ink); }
 .gate-button-quiet:hover { border-color: var(--ink); }
 .gate-hint { max-width: 32ch; }
-html[data-gate] .shell { visibility: hidden; }
+/* Descendants too: the spiral cards set an inline `visibility: visible`, which would otherwise override the inherited hidden and show through the gate. */
+html[data-gate] .shell,
+html[data-gate] .shell * { visibility: hidden !important; }
 
 /* Shell */
 .shell { position: relative; min-height: 100vh; }

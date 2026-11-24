@@ -1,16 +1,18 @@
 import type { KeyboardEvent, MouseEvent } from 'react';
+import { Link } from 'react-router';
 import { useSound } from '../audio/useSound';
 import { CATEGORY_LABELS } from '../data/works';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { useSpiral } from '../hooks/useSpiral';
 import type { Work } from '../types';
 import { cardFace } from '../utils/cardFace';
-import { TransitionLink } from './TransitionLink';
 
 interface SpiralViewProps {
   works: Work[];
   activeSlug: string | null;
   onActivate: (slug: string) => void;
+  /** True while the work sheet is open over the stage: drift, wheel and keys are suspended. */
+  paused: boolean;
 }
 
 /**
@@ -19,7 +21,7 @@ interface SpiralViewProps {
  * Nothing in that chain uses filter, clip-path or overflow, so no browser
  * flattens it. Cards use a roving tabindex; ←/→ move between them.
  */
-export function SpiralView({ works, activeSlug, onActivate }: SpiralViewProps) {
+export function SpiralView({ works, activeSlug, onActivate, paused }: SpiralViewProps) {
   const reducedMotion = useReducedMotion();
   const { play } = useSound();
   const activeIndex = Math.max(
@@ -31,6 +33,7 @@ export function SpiralView({ works, activeSlug, onActivate }: SpiralViewProps) {
     initialIndex: activeIndex,
     resetKey: works.map((work) => work.slug).join('|'),
     reducedMotion,
+    paused,
     onActiveChange: (index) => {
       const work = works[index];
       if (work) onActivate(work.slug);
@@ -90,9 +93,10 @@ export function SpiralView({ works, activeSlug, onActivate }: SpiralViewProps) {
                 data-work-slug={work.slug}
                 data-active={isActive ? 'true' : undefined}
               >
-                <TransitionLink
+                <Link
                   className="spiral-card-link"
                   to={`/work/${work.slug}`}
+                  state={{ fromStage: true, originMode: 'spiral' }}
                   tabIndex={isActive ? 0 : -1}
                   draggable={false}
                   style={{ background: face.background, color: face.ink }}
@@ -102,7 +106,7 @@ export function SpiralView({ works, activeSlug, onActivate }: SpiralViewProps) {
                   <span className="spiral-card-index">{String(index + 1).padStart(2, '0')}</span>
                   <span className="spiral-card-title">{work.title}</span>
                   <span className="spiral-card-meta">{CATEGORY_LABELS[work.category]}</span>
-                </TransitionLink>
+                </Link>
               </li>
             );
           })}

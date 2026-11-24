@@ -13,6 +13,7 @@
   --line-strong: rgba(236, 236, 236, 0.32);
   --surface: rgba(236, 236, 236, 0.05);
   --accent: #ff4949;
+  --sheet: #1b1c1a;
 
   --font-ui: 'Inter Tight', 'Inter Tight Fallback', 'Helvetica Neue', Arial, sans-serif;
   --font-display: 'Bricolage Grotesque', 'Bricolage Grotesque Fallback', 'Helvetica Neue', Arial, sans-serif;
@@ -47,6 +48,7 @@
   --line: rgba(24, 24, 24, 0.14);
   --line-strong: rgba(24, 24, 24, 0.3);
   --surface: rgba(24, 24, 24, 0.04);
+  --sheet: #f7f7f5;
   color-scheme: light;
 }
 

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSound } from '../audio/useSound';
 
 interface VideoEmbedProps {
   title: string;
@@ -13,9 +14,19 @@ interface VideoEmbedProps {
  *  3. no video, external URL -> link to the original platform
  *  4. neither                -> "video belum tersedia"
  * Re-key by work so the "playing" state never leaks between works.
+ *
+ * While a video plays the ambient pad is ducked; the cleanup lifts it again
+ * when playback ends or the embed unmounts (sheet closed, browser Back).
  */
 export function VideoEmbed({ title, youtubeVideoId, externalUrl }: VideoEmbedProps) {
   const [playing, setPlaying] = useState(false);
+  const { duck, unduck } = useSound();
+
+  useEffect(() => {
+    if (!playing) return;
+    duck();
+    return () => unduck();
+  }, [playing, duck, unduck]);
 
   if (youtubeVideoId) {
     return (

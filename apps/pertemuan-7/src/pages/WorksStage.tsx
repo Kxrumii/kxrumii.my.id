@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Outlet, useMatch } from 'react-router';
 import { useSound } from '../audio/useSound';
 import { EmptyState } from '../components/EmptyState';
 import { FilterBar } from '../components/FilterBar';
@@ -21,15 +22,24 @@ const categories = Array.from(new Set(works.map((work) => work.category)));
  * Works stage: Pacôme's spiral/list flow composed on Huy's grid
  * (filters on top, active-work metadata left, giant index bottom-left).
  * Filter, view and active work are plain useState; everything else is derived.
+ *
+ * It is also the parent route of `work/:slug`: the work sheet renders through
+ * <Outlet /> as an overlay, so opening or closing it never unmounts the stage
+ * and view mode, filters and the active work survive.
  */
 export function WorksStage() {
-  usePageTitle('Selected Work');
+  const sheetSlug = useMatch('/work/:slug')?.params.slug ?? null;
+  const sheetOpen = sheetSlug !== null;
+  const sheetWork = sheetSlug ? works.find((work) => work.slug === sheetSlug) ?? null : null;
+  // The stage owns document.title for itself and for the sheet, so the title is
+  // restored by construction when the sheet closes (Back included).
+  usePageTitle(sheetOpen ? (sheetWork ? sheetWork.title : 'Karya tidak ditemukan') : 'Selected Work');
   const { play } = useSound();
   const reducedMotion = useReducedMotion();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<CategoryFilter>('all');
   const [view, setView] = useState<WorksView>('spiral');
-  const [activeSlug, setActiveSlug] = useState<string | null>(works[0]?.slug ?? null);
+  const [activeSlug, setActiveSlug] = useState<string | null>(sheetWork?.slug ?? works[0]?.slug ?? null);
   const viewRef = useRef<HTMLDivElement>(null);
   const switching = useRef(false);
 
@@ -37,6 +47,12 @@ export function WorksStage() {
   // If the active work was filtered out, the first visible one takes over.
   const activeWork = visibleWorks.find((work) => work.slug === activeSlug) ?? visibleWorks[0] ?? null;
   const activeIndex = activeWork ? visibleWorks.indexOf(activeWork) : -1;
+
+  // Opening a work (link, Back/Forward) makes it the active one.
+  const sheetWorkSlug = sheetWork?.slug ?? null;
+  useEffect(() => {
+    if (sheetWorkSlug) setActiveSlug(sheetWorkSlug);
+  }, [sheetWorkSlug]);
 
   // One tick per real change of the active work (never per animation frame).
   const lastActive = useRef<string | null>(activeWork?.slug ?? null);
@@ -106,13 +122,19 @@ export function WorksStage() {
         ) : (
           <div className="works-view-inner" key={view} ref={viewRef}>
             {view === 'spiral' ? (
-              <SpiralView works={visibleWorks} activeSlug={activeWork?.slug ?? null} onActivate={setActiveSlug} />
+              <SpiralView
+                works={visibleWorks}
+                activeSlug={activeWork?.slug ?? null}
+                onActivate={setActiveSlug}
+                paused={sheetOpen}
+              />
             ) : (
               <ListView works={visibleWorks} activeSlug={activeWork?.slug ?? null} onActivate={setActiveSlug} />
             )}
           </div>
         )}
       </div>
+      <Outlet />
     </section>
   );
 }

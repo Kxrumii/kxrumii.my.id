@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Outlet, useLocation, useNavigationType } from 'react-router';
 import { useSound } from '../audio/useSound';
 import { profile } from '../data/profile';
 import { markGatePassed } from '../shell/gate';
+import { stagePath } from '../shell/navItems';
+import { ShellContext } from '../shell/shellContext';
 import { notifyRouteCommit, playGateHandOff, revealCanvas, transitionIndex, usePageReady } from '../transition';
 import { CopyEmailButton } from './CopyEmailButton';
 import { LocalClock } from './LocalClock';
@@ -41,14 +43,16 @@ export function AppShell() {
     if (gate === 'done') void revealCanvas();
   }, [gate]);
 
-  // After a route change, move focus to the content and reset scroll (Back/Forward keeps native restoration).
+  // After a stage change, move focus to the content and reset scroll (Back/Forward keeps native restoration).
+  // Opening or closing the work sheet (`/` <-> `/work/:slug`) is not a stage change: the sheet manages focus itself.
+  const stage = stagePath(pathname);
   useEffect(() => {
     const previous = previousPath.current;
-    previousPath.current = pathname;
-    if (previous === null || previous === pathname) return;
+    previousPath.current = stage;
+    if (previous === null || previous === stage) return;
     if (navigationType !== 'POP') window.scrollTo(0, 0);
     mainRef.current?.focus({ preventScroll: true });
-  }, [pathname, navigationType]);
+  }, [stage, navigationType]);
 
   const handleChoose = useCallback(
     (withSound: boolean) => {
@@ -63,16 +67,20 @@ export function AppShell() {
       setGate('leaving');
       void playGateHandOff(() => {
         setGate('done');
-        requestAnimationFrame(() => mainRef.current?.focus({ preventScroll: true }));
+        // A modal sheet that opened right after the gate keeps the focus.
+        requestAnimationFrame(() => {
+          if (!document.querySelector('dialog:modal')) mainRef.current?.focus({ preventScroll: true });
+        });
       });
     },
     [gate, enable, disable, play],
   );
 
   const locked = gate !== 'done';
+  const shellState = useMemo(() => ({ locked }), [locked]);
 
   return (
-    <>
+    <ShellContext.Provider value={shellState}>
       {gate !== 'done' ? <SoundGate onChoose={handleChoose} leaving={gate === 'leaving'} /> : null}
       <div className="shell" inert={locked}>
         <ShellRail />
@@ -98,6 +106,6 @@ export function AppShell() {
           <SoundToggle variant="round" />
         </div>
       </div>
-    </>
+    </ShellContext.Provider>
   );
 }

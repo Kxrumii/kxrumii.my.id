@@ -13,3 +13,13 @@ export const navItems: NavItem[] = [
 ];
 
 export const trimTrailingSlash = (pathname: string) => pathname.replace(/(.)\/+$/, '$1');
+
+/**
+ * Path of the *stage* that owns a URL. The work sheet (`/work/:slug`) is an
+ * overlay on the Works stage, so it shares the stage path `/` and opening or
+ * closing it must not count as a page change (no scroll reset, no focus move).
+ */
+export const stagePath = (pathname: string): string => {
+  const path = trimTrailingSlash(pathname);
+  return path.startsWith('/work/') ? '/' : path;
+};

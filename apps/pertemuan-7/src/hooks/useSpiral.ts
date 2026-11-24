@@ -9,7 +9,8 @@ import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
  *
  * - wheel (deltaMode-normalised), pointer drag / horizontal swipe, ←/→, prev/next
  * - friction 0.92 per 60 fps frame, then a spring snap to the nearest card
- * - slow auto-drift, paused on hover, focus, drag, hidden tab and reduced motion
+ * - slow auto-drift, paused on hover, keyboard focus, drag, hidden tab, reduced motion and
+ *   while `paused` (the work sheet is open); wheel/pointer input is ignored then too
  * - 0 items: nothing renders and no frame loop runs; 1–2 items never loop, so
  *   they always stay in front of the camera
  * - reduced motion: no requestAnimationFrame loop at all; steps jump instantly
@@ -35,6 +36,8 @@ export interface SpiralOptions {
   /** Changes whenever the item list changes (filter), so the spiral re-seats itself. */
   resetKey: string;
   reducedMotion: boolean;
+  /** Suspends drift and all input without losing the position. */
+  paused: boolean;
   onActiveChange: (index: number) => void;
 }
 
@@ -49,7 +52,7 @@ export interface SpiralApi {
 
 const finite = (value: number, fallback = 0) => (Number.isFinite(value) ? value : fallback);
 
-export function useSpiral({ count, initialIndex, resetKey, reducedMotion, onActiveChange }: SpiralOptions): SpiralApi {
+export function useSpiral({ count, initialIndex, resetKey, reducedMotion, paused, onActiveChange }: SpiralOptions): SpiralApi {
   const viewport = useRef<HTMLDivElement | null>(null);
   const cards = useRef<Array<HTMLElement | null>>([]);
   const state = useRef({
@@ -69,8 +72,8 @@ export function useSpiral({ count, initialIndex, resetKey, reducedMotion, onActi
     active: -1,
     geometry: { radius: 300, rise: 70, pxPerItem: 260 },
   });
-  const optionsRef = useRef({ count, reducedMotion, onActiveChange });
-  optionsRef.current = { count, reducedMotion, onActiveChange };
+  const optionsRef = useRef({ count, reducedMotion, paused, onActiveChange });
+  optionsRef.current = { count, reducedMotion, paused, onActiveChange };
 
   const loops = () => optionsRef.current.count >= 3;
 
@@ -123,6 +126,7 @@ export function useSpiral({ count, initialIndex, resetKey, reducedMotion, onActi
     return (
       loops() &&
       !optionsRef.current.reducedMotion &&
+      !optionsRef.current.paused &&
       !s.hover &&
       !s.focus &&
       !s.dragging &&
@@ -188,7 +192,7 @@ export function useSpiral({ count, initialIndex, resetKey, reducedMotion, onActi
     (index: number) => {
       const s = state.current;
       const n = optionsRef.current.count;
-      if (n <= 0) return;
+      if (n <= 0 || optionsRef.current.paused) return;
       const safe = Math.min(Math.max(Math.round(finite(index)), 0), n - 1);
       if (optionsRef.current.reducedMotion) {
         s.p = safe;
@@ -215,7 +219,7 @@ export function useSpiral({ count, initialIndex, resetKey, reducedMotion, onActi
   const step = useCallback(
     (direction: 1 | -1) => {
       const n = optionsRef.current.count;
-      if (n <= 0) return -1;
+      if (n <= 0 || optionsRef.current.paused) return -1;
       const current = activeIndexFor(state.current.p);
       const next = loops() ? (current + direction + n) % n : Math.min(Math.max(current + direction, 0), n - 1);
       goTo(next);
@@ -264,6 +268,7 @@ export function useSpiral({ count, initialIndex, resetKey, reducedMotion, onActi
     const s = state.current;
 
     const onWheel = (event: WheelEvent) => {
+      if (optionsRef.current.paused) return;
       const unit = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? LINE_PX : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? window.innerHeight : 1;
       const raw = Math.abs(event.deltaY) >= Math.abs(event.deltaX) ? event.deltaY : event.deltaX;
       const delta = Math.max(Math.min(finite(raw) * unit, 120), -120);
@@ -279,6 +284,7 @@ export function useSpiral({ count, initialIndex, resetKey, reducedMotion, onActi
     };
 
     const onPointerDown = (event: PointerEvent) => {
+      if (optionsRef.current.paused) return;
       if (event.pointerType === 'mouse' && event.button !== 0) return;
       s.dragging = true;
       s.dragged = false;
@@ -326,8 +332,11 @@ export function useSpiral({ count, initialIndex, resetKey, reducedMotion, onActi
       s.hover = false;
       kick();
     };
-    const onFocusIn = () => {
-      s.focus = true;
+    // Only keyboard focus holds the spiral still. Focus handed back by script after a mouse-closed sheet
+    // is not :focus-visible, so the drift can resume once the pointer leaves.
+    const onFocusIn = (event: FocusEvent) => {
+      const target = event.target as Element | null;
+      s.focus = target?.matches?.(':focus-visible') === true;
       kick();
     };
     const onFocusOut = (event: FocusEvent) => {
@@ -364,6 +373,11 @@ export function useSpiral({ count, initialIndex, resetKey, reducedMotion, onActi
       document.removeEventListener('visibilitychange', onVisibility);
     };
   }, [count, resetKey, kick, render, step]);
+
+  // Drift stops while paused (the loop settles and ends) and resumes when the sheet closes.
+  useEffect(() => {
+    kick();
+  }, [paused, kick]);
 
   const viewportRef = useCallback((node: HTMLDivElement | null) => {
     viewport.current = node;
