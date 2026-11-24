@@ -1,39 +1,25 @@
-import { AppFooter } from './components/AppFooter';
-import { AppHeader } from './components/AppHeader';
-import { CounterCard } from './components/CounterCard';
-import { FeatureCard } from './components/FeatureCard';
-import { StatusBadge } from './components/StatusBadge';
-import { transitionIndex, usePageReady } from './transition';
-
-const foundationFeatures = [
-  'Component-based UI',
-  'Props dan state',
-  'Event handling',
-  'Conditional dan list rendering',
-];
+import { BrowserRouter, Route, Routes } from 'react-router';
+import { SiteLayout } from './components/SiteLayout';
+import { AboutPage } from './pages/AboutPage';
+import { ContactPage } from './pages/ContactPage';
+import { NotFoundPage } from './pages/NotFoundPage';
+import { PlaygroundPage } from './pages/PlaygroundPage';
+import { WorkDetailPage } from './pages/WorkDetailPage';
+import { WorkPage } from './pages/WorkPage';
 
 export default function App() {
-  usePageReady();
-
   return (
-    <main className="page-shell">
-      <AppHeader />
-      <section className="hero-block" data-transition-exit="" data-transition-enter="" style={transitionIndex(1)}>
-        <p className="eyebrow">PAW / PERTEMUAN 07</p>
-        <h1>React workspace.</h1>
-        <p className="hero-copy">
-          Kerangka awal untuk aplikasi React. Tema dan fitur akhir akan ditentukan
-          pada tahap implementasi Tugas 7.
-        </p>
-        <StatusBadge label="Foundation ready" />
-      </section>
-      <section className="feature-grid" aria-label="Fondasi React" data-transition-exit="" data-transition-enter="" style={transitionIndex(2)}>
-        {foundationFeatures.map((feature) => (
-          <FeatureCard key={feature} title={feature} />
-        ))}
-      </section>
-      <CounterCard />
-      <AppFooter />
-    </main>
+    <BrowserRouter basename="/tugas/pertemuan-7">
+      <Routes>
+        <Route element={<SiteLayout />}>
+          <Route index element={<WorkPage />} />
+          <Route path="work/:slug" element={<WorkDetailPage />} />
+          <Route path="playground" element={<PlaygroundPage />} />
+          <Route path="about" element={<AboutPage />} />
+          <Route path="contact" element={<ContactPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
