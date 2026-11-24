@@ -1,76 +1,86 @@
-# College Task Manager — PAW Task 6
+# Task Manager — PAW Pertemuan 6
 
-A Vanilla TypeScript and Vite task manager built for **Tugas PAW Pertemuan 6** in the `kxrumii.my.id` monorepo (`@kxrumii/pertemuan-6`, base path `/tugas/pertemuan-6/`).
+Aplikasi pengelola tugas berbasis Vanilla TypeScript dan Vite untuk **Tugas PAW Pertemuan 6** pada monorepo `kxrumii.my.id` (`@kxrumii/pertemuan-6`, base path `/tugas/pertemuan-6/`).
 
-The application pairs two synchronized views over a single validated task store: a default, searchable two-column **Accessible List View** with independent vertical scrolling, and an interactive **Orbital Stage** spatial collection view with six deterministic typographic card archetypes.
-
----
-
-## Features
-
-- **Full Task CRUD:** Create and edit tasks via native `<dialog>` forms with inline validation (`title` and `course` required after trimming; optional `category`, `description`, and `YYYY-MM-DD` `deadline`), plus explicit delete confirmation.
-- **Status Management:** Bidirectional status toggling (`belum-selesai` ↔ `selesai`) from both the Accessible List View checkbox and the Reader Dialog, with synchronous updates and accessible live-region announcements.
-- **Unified Search & Status Filtering:** Real-time session-only search across `title`, `course`, `category`, and `description`, combined with `Semua`, `Belum`, and `Selesai` status filters. Filter counts and footer totals always reflect the full task collection.
-- **`localStorage` Persistence (Schema v1):** Versioned `{ version: 1, tasks }` envelope (`STORAGE_VERSION = 1`) with strict runtime validation, safe skipping of malformed/duplicate records, non-destructive load failure notices, and in-memory fallback if storage is unavailable or full.
-- **Orbit / List View Switching & Pagination:** Persisted `list` / `orbit` view preference (defaulting to Accessible List View on first visit), plus explicit Orbit pagination capped at 12 cards per page (`ORBIT_LIMIT = 12`).
-- **Accessible List View:** Responsive two-column editorial grid on desktop/tablet (`1` column on mobile) with independent vertical scroll containment while keeping the header, utility bar, and footer visible.
-- **Editorial Reader Dialog:** Full-viewport `<dialog>` sheet displaying full title, course, optional category/description, formatted deadline, urgency state, status toggle, Edit, Delete, Previous/Next task navigation, and a top-right `Tutup ×` exit control.
-- **Light & Dark Themes:** Pre-paint theme initialization in `<head>` with persistent theme toggle (`dark` default, or OS preference fallback) synchronized with the Shared Transition Bridge canvas color.
-- **Motion & Reduced-Motion Support:** Centralized WAAPI choreography registry with `prefers-reduced-motion: reduce` and active route-transition guards.
-- **Shared Route Transition Integration:** Vertical clip-hidden enter/exit coordination with `@kxrumii/transition-bridge` (`0.4.0`), including full motion cancellation and timer/dialog/DOM cleanup on `kxrumii:transition` (`exit-start`).
+Task Manager memadukan dua mode tampilan tersinkronisasi di atas satu store data tervalidasi: **Accessible List View** dua kolom sebagai tampilan bawaan dengan gulir vertikal mandiri, serta **Orbital Stage** spasial dengan enam arketipe kartu tipografis deterministik dan **Reader Dialog** full-sheet native `<dialog>`.
 
 ---
 
-## Technology Stack
+## Fitur Utama
 
-- **Language:** TypeScript `^7.0.2` (`strict` mode, checked via `tsc --noEmit`)
-- **Bundler & Dev Server:** Vite `^8.3.8`
-- **Runtime Dependencies:** Vanilla DOM / native `<dialog>` / Web Animations API + internal workspace `@kxrumii/transition-bridge` (`0.4.0`) — no UI framework or third-party runtime animation library
-- **Self-Hosted Fonts (SIL OFL 1.1):** 5 font families (`Newsreader`, `Archivo Black`, `DM Sans`, `Barlow Condensed`, `Source Code Pro`) served locally from `src/fonts/` (no Google Fonts runtime requests)
-- **Test Runner:** Node.js built-in test runner (`node:test`) and `node:assert/strict`
+- **Brand & Identitas Produk (`Task Manager`):** Header utama menampilkan brand `Task Manager` yang terhubung ke Portal Tugas (`/tugas/`), sementara halaman dokumentasi mempertahankan label akademik `DOKUMENTASI · PERTEMUAN 06`.
+- **Manajemen Tugas Penuh (CRUD):** Tambah dan edit tugas lewat form `<dialog>` native dengan validasi per field (`title` dan `course` wajib setelah trim; `category`, `description`, serta `deadline` berformat `YYYY-MM-DD` bersifat opsional), plus dialog konfirmasi hapus yang aman terhadap double-submit.
+- **Pembaruan Status & Aksesibilitas:** Pembalikan status dua arah (`belum-selesai` ↔ `selesai`) melalui checkbox di mode Daftar maupun tombol aksi di Reader Dialog, dengan pengumuman `aria-live="polite"` dan pemulihan fokus eksplisit.
+- **Pencarian Real-Time & Filter Status:** Pencarian per sesi pada `title`, `course`, `category`, dan `description` yang dipadukan dengan filter `Semua`, `Belum`, dan `Selesai`. Jumlah pada bilah filter dan footer selalu dihitung dari keseluruhan koleksi.
+- **Persistensi `localStorage` (Skema v1):** Disimpan dalam amplop `{ version: 1, tasks }` (`STORAGE_VERSION = 1`) dengan runtime type guard ketat, penyaringan record rusak/duplikat, peringatan non-destruktif saat data korup, serta fallback in-memory bila storage diblokir.
+- **Kontinuitas Tampilan & Tata Letak (M2.1 CP1):** Peralihan halus `List ↔ Orbit` berbasis `task.id` stabil, keyed List reconciliation (`reconcileAccessibleList`) tanpa flicker survivor saat mengetik pencarian, FLIP reflow untuk baris yang bergeser, interpolasi koordinat Orbital terpisah dari status jeda manual (`manualPaused`), dan mikrointeraksi CSS terkendali.
+- **Kontinuitas Kartu ↔ Reader Dialog (M2.1 CP2 & CP4-A):** Pembukaan Reader menganimasikan transisi spasial `clip-path` dari kartu Daftar atau `.box-print` Orbital menuju sheet penuh; penutupan menyelaraskan dialog, `.reader-bar`, `.reader-article`, dan fade CSS `::backdrop` kembali ke kartu tugas yang sedang aktif (termasuk setelah `Sebelumnya` / `Berikutnya`), dengan pembersihan animasi menyeluruh dan fallback M2.
+- **Koordinasi Tambah Tugas (M2.1 CP4-B):** Penyerahan form tambah menutup `#task-dialog` sebelum render agar reflow Orbital tidak terblokir, menggulir otomatis baris baru ke area pandang Daftar bila berada di luar viewport, serta menganimasikan kartu baru dan caption-nya di Orbital tanpa memicu reflow lintas halaman saat melewati batas 12 kartu (`12 → 13`).
+- **Halaman Dokumentasi & Accordion Progressive (M2.1 CP3 & CP4-C):** Halaman terpisah `/tugas/pertemuan-6/dokumentasi/` terhubung dua arah via `@kxrumii/transition-bridge`, memakai 9 topik `<details class="note">` native dengan animasi tinggi WAAPI yang aman terhadap interupsi, resize, keyboard, no-JS, dan reduced motion.
+
+---
+
+## Stack Teknologi
+
+- **Bahasa:** TypeScript `^7.0.2` (`strict` mode, pemeriksaan via `tsc --noEmit`)
+- **Bundler & Dev Server:** Vite `^8.3.8` (Oxc + Rolldown; konfigurasi multi-page di `vite.config.ts`)
+- **Dependensi Runtime:** Vanilla DOM / native `<dialog>` & `<details>` / Web Animations API + paket internal `@kxrumii/transition-bridge` (`0.4.0`) — tanpa UI framework atau library animasi eksternal
+- **Font Self-Hosted (SIL OFL 1.1):** 5 keluarga font lokal (`Newsreader`, `Archivo Black`, `DM Sans`, `Barlow Condensed`, `Source Code Pro`) di `src/fonts/` (tanpa request Google Fonts saat runtime)
+- **Test Runner:** Node.js built-in test runner (`node:test`) dan `node:assert/strict`
 - **Toolchain & Workspaces:** Node.js `26.13.1` (`.nvmrc`; root `engines.node >= 26.13.1`), `npm@12.2.3`
 
 ---
 
-## Project Structure
+## Struktur Proyek
 
 ```text
 apps/pertemuan-6/
-├── index.html                  # App shell, templates, empty states, Reader/Task/Delete <dialog>s
+├── index.html                  # Shell utama aplikasi, template kartu/baris, empty state, & <dialog>
 ├── dokumentasi/
-│   └── index.html              # Standalone technical notes page (native navigation, no bridge)
-├── package.json                # Workspace scripts and dependencies
-├── tsconfig.json               # Strict TypeScript config (checks src/)
-├── vite.config.ts              # /tugas/pertemuan-6/ base, app-only transition bootstrap, build outDir
-├── .env.example                # Non-secret public VITE_APP_NAME / VITE_APP_VERSION template
+│   └── index.html              # Halaman dokumentasi teknis (navigasi bridge dua arah & accordion)
+├── package.json                # Script workspace & dependensi @kxrumii/pertemuan-6
+├── tsconfig.json               # Konfigurasi TypeScript strict
+├── vite.config.ts              # Base /tugas/pertemuan-6/, multi-entry, injeksi bootstrap transisi v4
+├── .env.example                # Template environment variable publik (VITE_APP_NAME, VITE_APP_VERSION)
 ├── src/
-│   ├── main.ts                 # App initialization, in-memory state, DOM wiring, route exit flush hooks
-│   ├── types.ts                # Core interfaces/unions (Task, TaskDraft, TaskStatus, ViewMode, archetypes)
-│   ├── tasks.ts                # Pure task mutations, deadline states, cached id-ID date formatter
-│   ├── validation.ts           # Pure form normalization & field-level validation (Result<T, E>)
-│   ├── filters.ts              # Pure status filtering, full-collection counts, and search matching
-│   ├── storage.ts              # localStorage persistence, schema validation, and view-mode preference
-│   ├── render.ts               # XSS-safe DOM rendering (textContent only), List rows, keyed Orbit diff
-│   ├── orbital-stage.ts        # Orbital Fibonacci/equatorial projection, drag/tap/keyboard & drift loop
-│   ├── archetypes.ts           # Deterministic assignment of 6 box archetypes, proportions, and surfaces
-│   ├── motion.ts               # Centralized WAAPI registry, guards, stagger delays, delete coordinator
-│   ├── reader-dialog.ts        # Full-sheet Reader Dialog, animations, Prev/Next focus, Escape cleanup
-│   ├── task-dialog.ts          # Create/Edit <dialog> controller, error handling, focus restoration
-│   ├── delete-dialog.ts        # Delete confirmation <dialog> with double-submit guard
-│   ├── theme.ts                # Dark/Light theme resolution, persistence, and bridge canvas sync
-│   ├── transition.ts           # Shared Transition Bridge installation & theme color observer
-│   ├── docs.ts                 # Technical notes page runtime (reads public Vite env vars & year)
-│   ├── style.css               # Design tokens, Orbit/List/Dialog/Docs layout, vertical bridge tokens
-│   ├── fonts.css               # Local @font-face declarations for self-hosted OFL fonts
-│   └── vite-env.d.ts           # Vite client & import.meta.env type definitions
-└── tests/                      # 9 unit & integration test suites executed directly via node:test
+│   ├── main.ts                 # Inisialisasi aplikasi, state sesi, keyed DOM sync, flush bridge
+│   ├── types.ts                # Tipe inti (Task, TaskDraft, TaskStatus, ViewMode, archetypes)
+│   ├── tasks.ts                # Mutasi tugas murni, urgency tenggat, cache formatter tanggal id-ID
+│   ├── validation.ts           # Normalisasi & validasi form murni (Result<T, E>)
+│   ├── filters.ts              # Filter status murni, hitungan koleksi penuh, pencocokan search
+│   ├── storage.ts              # Persistensi localStorage, validasi skema v1, preferensi mode tampilan
+│   ├── render.ts               # Render aman (textContent), keyed reconciliation Daftar & Orbital
+│   ├── orbital-stage.ts        # Proyeksi Fibonacci/ekuatorial, drag/tap/keyboard, drift & coordinate reflow
+│   ├── archetypes.ts           # Penetapan deterministik 6 arketipe visual, proporsi, dan permukaan
+│   ├── motion.ts               # Registry WAAPI terpusat, guard canAnimate(), geometri FLIP & clip-path
+│   ├── reader-dialog.ts        # Full-sheet Reader Dialog, morph buka/tutup, Prev/Next, clearReaderAnimations()
+│   ├── task-dialog.ts          # Dialog tambah/edit native <dialog>, validasi, close-before-create fokus
+│   ├── delete-dialog.ts        # Konfirmasi hapus dengan double-submit guard
+│   ├── accordion.ts            # Progressive-enhancement WAAPI untuk <details class="note"> di Dokumentasi
+│   ├── theme.ts                # Resolusi tema Dark/Light, fallback storage, sinkronisasi warna bridge
+│   ├── transition.ts           # Instalasi Shared Transition Bridge & observer perubahan tema
+│   ├── docs.ts                 # Runtime halaman dokumentasi (env publik, tahun, accordion & exit flush)
+│   ├── style.css               # Token desain, layout Orbit/Daftar/Dialog/Docs, fade ::backdrop & bridge CSS
+│   ├── fonts.css               # Deklarasi @font-face lokal untuk 5 keluarga font OFL
+│   └── vite-env.d.ts           # Definisi tipe Vite client & import.meta.env
+└── tests/                      # 10 suite test (156 unit & integration test via node:test)
+    ├── accordion.test.ts
+    ├── archetypes.test.ts
+    ├── filters.test.ts
+    ├── motion.test.ts
+    ├── orbital-stage.test.ts
+    ├── reader-dialog.test.ts
+    ├── storage.test.ts
+    ├── tasks.test.ts
+    ├── theme.test.ts
+    └── validation.test.ts
 ```
 
 ---
 
-## Data Model & Persistence
+## Model Data & Persistensi
 
-Defined in `src/types.ts`:
+Didefinisikan pada `src/types.ts`:
 
 ```ts
 export type TaskStatus = 'belum-selesai' | 'selesai';
@@ -81,110 +91,98 @@ export interface Task {
   course: string;
   category?: string;
   description?: string;
-  /** Calendar date `YYYY-MM-DD`, or `null` when omitted. */
+  /** Tanggal kalender `YYYY-MM-DD`, atau `null` bila kosong. */
   deadline: string | null;
   status: TaskStatus;
 }
 ```
 
-- **Optional S2 fields:** `category` and `description` are trimmed on input and omitted from stored/returned objects when empty.
-- **Tasks storage (`kxrumii:pertemuan-6:tasks:v1`):** Stored as `{ "version": 1, "tasks": [...] }` (`STORAGE_VERSION = 1`). Legacy five-field v1 records without `category`/`description` remain valid. Malformed payloads trigger a visible non-destructive warning without overwriting existing storage until the user mutates tasks.
-- **View preference (`kxrumii-task6-view-mode`):** Persists `'list'` or `'orbit'`, defaulting to `'list'` on first visit.
-- **Theme preference (`kxrumii:pertemuan-6:theme`):** Persists `'dark'` or `'light'`.
-- **Session-only query state:** The search input (`searchQuery`) and active status filter (`filter`) live in memory for the current session so switching between List and Orbit preserves filtered results, resetting on full reload.
+- **Field opsional S2:** `category` dan `description` di-trim saat input dan tidak disertakan ke objek tersimpan bila kosong.
+- **Penyimpanan tugas (`kxrumii:pertemuan-6:tasks:v1`):** Disimpan sebagai `{ "version": 1, "tasks": [...] }` (`STORAGE_VERSION = 1`). Record v1 lama dengan lima field tetap valid; payload korup memunculkan peringatan non-destruktif tanpa menimpa data yang sudah ada sampai terjadi mutasi baru.
+- **Preferensi tampilan (`kxrumii-task6-view-mode`):** Menyimpan `'list'` atau `'orbit'`, default `'list'`.
+- **Preferensi tema (`kxrumii:pertemuan-6:theme`):** Menyimpan `'dark'` atau `'light'` (fallback mengikuti `prefers-color-scheme`, default `'dark'`).
+- **State pencarian & filter sesi:** `filter` dan `searchQuery` hidup di memori sesi aktif agar perpindahan `Daftar ↔ Orbit` tetap menjaga hasil saringan yang sama.
 
 ---
 
-## Views & Interaction
+## Mode Tampilan, Gerak & Transisi Rute
 
-### Accessible List View (Default)
-
-- Displays tasks in a responsive two-column grid (`> 1` column on desktop/tablet, `1` column on narrow screens).
-- Only the `.list-view` collection container scrolls vertically (`overflow-y: auto; overscroll-behavior: contain` inside the `100dvh` `.stage-shell`), keeping the header, utility bar (filters + search), and footer visible.
-- Status checkboxes sit directly alongside the status label (`Belum selesai` / `Selesai`), separate from the card title trigger (`open`), `Edit`, and `Hapus` controls.
+### Accessible List View (Bawaan)
+- Grid editorial responsif 2 kolom pada desktop/tablet dan 1 kolom pada layar mobile dengan gulir mandiri pada `.list-view` (`overflow-y: auto; overscroll-behavior: contain`).
+- `reconcileAccessibleList()` mempertahankan node `<li data-task-id>` yang bertahan agar fokus checkbox tidak hilang dan tidak ada flicker opacity saat mengetik pencarian; baris yang berpindah tempat dianimasikan dengan FLIP `transform`-only (`list-reflow`).
 
 ### Orbital Stage
+- Proyeksi adaptif: 1 kartu terpusat, 2–3 kartu membentuk busur ekuatorial, dan 4+ kartu tersebar pada bola Fibonacci dengan batas halaman `ORBIT_LIMIT = 12`.
+- Kepemilikan `transform` luar pada `.task-box` dan `.box-caption` sepenuhnya dipegang loop `requestAnimationFrame` `orbital-stage.ts`. Saat daftar berubah, `displayCoords` menginterpolasi slot baru secara internal tanpa memengaruhi status pause manual (`manualPaused`), dan otomatis berhenti saat idle drift nonaktif serta settling selesai.
+- Drag `> 6px` memutar panggung; tap `<= 6px` membuka Reader Dialog; pengguna keyboard dapat fokus dengan `Tab` (`z-index: 1900`) dan memutar panggung dengan `ArrowLeft` / `ArrowRight`.
 
-- **Adaptive projection (`computeOrbitalPositions`):** `1` task is centered, `2–3` tasks form a balanced equatorial arc, and `4+` tasks distribute onto a Fibonacci-sphere projection.
-- **Explicit pagination (`ORBIT_LIMIT = 12`):** Keeps up to 12 cards per Orbit page with `←` / `→` controls and `Hal X / Y` indicator.
-- **Pointer & keyboard input:** Dragging `> 6px` rotates azimuth/pitch; tapping `<= 6px` opens the Reader Dialog. Keyboard users can focus cards via `Tab`, elevate focused cards (`z-index: 1900`), and rotate the stage with `ArrowLeft` / `ArrowRight`.
-- **Idle drift & pause:** Pointer hover visually highlights `.box-print` without pausing orbital drift. Drift pauses automatically on manual `#stage-pause`, active drag, keyboard `:focus-visible` inside the stage, any open `<dialog>`, `document.hidden`, `prefers-reduced-motion: reduce`, or an active route transition (`data-transition-state`).
-
----
-
-## Motion & Accessibility
-
-- **Central Guard (`src/motion.ts`):** `canAnimate()` permits WAAPI animations only when `prefers-reduced-motion` is false, `data-transition-state` is absent, and `Element.prototype.animate` is supported.
-- **Strict Orbital Transform Ownership:** Outer `.task-box` and `.box-caption` `transform` properties are owned exclusively by the `requestAnimationFrame` orbital loop. Keyed DOM reconciliation (`reconcileOrbitalStage` + `data-caption-for`) preserves nodes across updates and animates filter/search/delete transitions only on the inner `.box-print` element while marking exiting nodes `inert` and `aria-hidden="true"`.
-- **List & Dialog Choreography:** Filter/search updates stagger up to 8 visible rows (`24ms` steps); adding/toggling tasks plays short entrance/status feedback; deletions persist synchronously first (`createDeleteCoordinator`) before a `180ms` exit animation with a `300ms` timeout fallback. Reader Dialog supports animated open/close, Escape / double-Escape instant dismissal, directional Prev/Next transitions (`±16px`), boundary focus handoff, and full cleanup of `fill: 'forwards'` animations on close/reopen.
-- **Route Transitions (`@kxrumii/transition-bridge`):**
-  - Task 6 defines unitless-millisecond CSS custom properties on `[data-transition-exit], [data-transition-enter]` in `src/style.css`:
-    - **Exit (`Task 6 → Portal`):** translates upward (`translate3d(0, -3vh, 0)`), clips upward from the bottom (`inset(0 0 100% 0)`), duration `360` ms, stagger `38` ms.
-    - **Enter (`Portal → Task 6`):** starts from `translate3d(0, -3vh, 0)` with `inset(0 0 100% 0)` and moves downward into place while revealing top-to-bottom over `600` ms (`delay: 0`).
-  - On `kxrumii:transition` (`phase: 'exit-start'`), Task 6 cancels all registered WAAPI groups, flushes pending delete coordinators without restoring focus, clears `searchAnnounceTimer`, removes exiting Orbit nodes, and immediately closes an open Reader Dialog (`close(false)`).
+### Sistem Gerak & `@kxrumii/transition-bridge`
+- Guard terpusat `canAnimate()` pada `src/motion.ts` menghentikan seluruh WAAPI ketika `prefers-reduced-motion: reduce` aktif atau atribut `data-transition-state` terpasang.
+- Konfigurasi CSS transisi rute (`[data-transition-exit], [data-transition-enter]` dalam `src/style.css`):
+  - **Exit (`360ms`, stagger `38ms`):** Bergerak naik `translate3d(0, -3vh, 0)` dengan klip `inset(0 0 100% 0)`.
+  - **Enter (`600ms`, delay `0`):** Masuk dari `translate3d(0, -3vh, 0)` dan `inset(0 0 100% 0)` menuju posisi akhir secara vertikal agar konsisten di kedua arah (`Portal ↔ Task 6` dan `Task 6 ↔ Dokumentasi`).
+- Ketika `kxrumii:transition` memancarkan `phase: 'exit-start'`, `bindBridgeCancellation()` membatalkan seluruh grup animasi aktif dan memanggil flush handler untuk menyelesaikan penghapusan tertunda, timer pencarian, node orbital keluar, accordion aktif, maupun menutup Reader Dialog secara bersih tanpa mencuri fokus.
 
 ---
 
-## Routes & Environment Variables
+## Rute & Environment Variables
 
-| Route | Document | Bridge Bootstrap | Purpose |
+| Rute | Dokumen Sumber | Bootstrap Bridge | Keterangan |
 |---|---|---|---|
-| `/tugas/pertemuan-6/` | `apps/pertemuan-6/index.html` | Yes (`1` inline v4 bootstrap via `vite.config.ts`) | Main College Task Manager application |
-| `/tugas/pertemuan-6/dokumentasi/` | `apps/pertemuan-6/dokumentasi/index.html` | No (`0`; native document navigation) | Technical documentation & runtime env display |
+| `/tugas/pertemuan-6/` | `apps/pertemuan-6/index.html` | Ya (`1` inline v4 bootstrap via `vite.config.ts`) | Aplikasi utama Task Manager (`pageId: "task-6"`) |
+| `/tugas/pertemuan-6/dokumentasi/` | `apps/pertemuan-6/dokumentasi/index.html` | Ya (`1` inline v4 bootstrap via `vite.config.ts`) | Dokumentasi arsitektur & catatan teknis (`pageId: "task-6-docs"`) |
 
-Create a local `.env` in `apps/pertemuan-6/` from `.env.example` if overriding defaults (`.env` is gitignored):
+`npm run verify:transition` memverifikasi keberadaan tepat satu bootstrap transisi v4 pada **7 dokumen aplikasi** di `dist/` (`index.html`, `tugas/index.html`, `tugas/pertemuan-1/index.html`, `tugas/pertemuan-6/index.html`, `tugas/pertemuan-6/dokumentasi/index.html`, `tugas/pertemuan-7/index.html`, `tugas/pertemuan-8/index.html`) serta memastikan `profil/index.html` tetap menjadi redirect tanpa bootstrap.
 
-| Variable | Purpose | Default |
+| Variabel | Fungsi | Default |
 |---|---|---|
-| `VITE_APP_NAME` | Application `<h1 id="page-title">` and docs display | `College Task Manager` |
-| `VITE_APP_VERSION` | Version displayed on the documentation page | `1.0.0` |
+| `VITE_APP_NAME` | Nilai `#page-title` (`sr-only`) dan tampilan nama env di dokumentasi | `Task Manager` |
+| `VITE_APP_VERSION` | Versi yang ditampilkan pada halaman dokumentasi | `1.0.0` |
 
-> Variables prefixed with `VITE_` are inlined into client bundles. Never store secrets, tokens, or credentials in `VITE_*` variables.
+Salin `apps/pertemuan-6/.env.example` menjadi `.env` (gitignored) bila membutuhkan override lokal. Jangan menyimpan secret atau credential pada variabel `VITE_*` karena nilainya di-inline ke bundle klien. *(Catatan: bila `.env` lokal masih berisi nilai lama seperti `College Task Manager`, build lokal akan membaca nilai `.env` lokal tersebut sebagai override `VITE_APP_NAME`, sementara header `.brand` tetap menampilkan `Task Manager`.)*
 
 ---
 
-## Development
+## Font Self-Hosted & Lisensi
 
-Run commands from the repository root (`Node.js >= 26.13.1`, `npm@12.2.3`):
+Seluruh font berada di `apps/pertemuan-6/src/fonts/` di bawah **SIL Open Font License, Version 1.1 (OFL-1.1)**. Rincian lengkap dan file lisensi resmi tersedia di [src/fonts/LICENSES.md](./src/fonts/LICENSES.md).
+
+| Keluarga Font | File `.woff2` | Bobot / Gaya | Atribusi Hulu |
+|---|---|---|---|
+| **Newsreader** | `newsreader-latin-var.woff2`, `newsreader-latin-italic-var.woff2` | 400–600 (normal & italic, variable) | Production Type (`github.com/productiontype/Newsreader`) |
+| **Archivo Black** | `archivo-black-latin-400.woff2` | 400 (normal) | Omnibus-Type (`github.com/Omnibus-Type/ArchivoBlack`) |
+| **DM Sans** | `dm-sans-latin-var.woff2` | 400–700 (normal, variable) | DM Sans Project Authors (`github.com/googlefonts/dm-fonts`) |
+| **Barlow Condensed** | `barlow-condensed-latin-700.woff2`, `barlow-condensed-latin-800.woff2` | 700, 800 (normal) | Jeremy Tribby (`github.com/jpt/barlow`) |
+| **Source Code Pro** | `source-code-pro-latin-var.woff2` | 300–600 (normal, variable) | Adobe Systems Incorporated (`github.com/adobe-fonts/source-code-pro`) |
+
+---
+
+## Pengembangan, Build & Verifikasi
+
+Jalankan dari root repository (`Node.js >= 26.13.1`, `npm@12.2.3`):
 
 ```bash
-npm ci                                            # Install monorepo workspace dependencies
-npm run dev:t6                                    # Start Task 6 Vite dev server (http://127.0.0.1:5173/tugas/pertemuan-6/)
-npm run check                                     # TypeScript check across all workspaces (tsc --noEmit)
-npm run test --workspace=@kxrumii/pertemuan-6     # Run Task 6 unit & integration tests (node:test)
-npm run build --workspace=@kxrumii/pertemuan-6    # Type-check & build Task 6 into public/tugas/pertemuan-6/
-npm run build                                     # Clean generated dirs, build all Vite apps, run Astro build -> dist/
-npm run verify:transition                         # Verify shared transition bootstrap & unitless timings in dist/
-npm run preview                                   # Preview full built Astro site from dist/
+npm ci                                            # Pasang dependency seluruh workspace
+npm run dev:t6                                    # Dev server Task Manager (base /tugas/pertemuan-6/)
+npm run check                                     # Pemeriksaan tipe TypeScript seluruh workspace (tsc --noEmit)
+npm run test --workspace=@kxrumii/pertemuan-6     # Jalankan 156 tes unit & integrasi Task 6 (51 suites)
+npm run build --workspace=@kxrumii/pertemuan-6    # Typecheck & build Vite ke public/tugas/pertemuan-6/
+npm run build                                     # Bersihkan artefak lama, build semua app Vite, lalu astro build -> dist/
+npm run verify:transition                         # Verifikasi bootstrap transisi v4 pada 7 dokumen di dist/
+npm run preview                                   # Pratinjau situs statis lengkap dari dist/
 ```
 
----
-
-## Build Output
-
-- Running `npm run build --workspace=@kxrumii/pertemuan-6` compiles Task 6 with `base: '/tugas/pertemuan-6/'` into `public/tugas/pertemuan-6/` (gitignored).
-- Running root `npm run build` cleans `public/tugas/` and `dist/`, builds all workspace apps (`pertemuan-1`, `pertemuan-6`, `pertemuan-7`, `pertemuan-8`), and executes `astro build` to produce the static production site in `dist/` (also gitignored).
-- Always run Task 6's Vite build followed by root `npm run build` before running `npm run verify:transition` so verification inspects freshly generated `dist/` output rather than stale artifacts.
+Catatan pipeline:
+- Selalu jalankan `npm run build --workspace=@kxrumii/pertemuan-6` (atau root `npm run build`) untuk menghasilkan `dist/` terbaru sebelum menjalankan `npm run verify:transition`.
+- Di lingkungan sandbox tanpa akses tulis ke `~/.config/astro`, build root dijalankan dengan `ASTRO_TELEMETRY_DISABLED=1 XDG_CONFIG_HOME=/tmp npm run build`.
 
 ---
 
-## Verification
+## Alur Git, Status Saat Ini & Keterbatasan
 
-Automated checks for Task 6 and the monorepo build pipeline:
-
-```bash
-npm run check
-npm run test --workspace=@kxrumii/pertemuan-6
-npm run build --workspace=@kxrumii/pertemuan-6
-npm run build
-npm run verify:transition
-```
-
-As of final M2 completion on `feature/pertemuan-6-visual-redesign`, the full CP3 check suite passed **139 / 139 tests** across **46 suites** (`0` failed, `0` skipped), followed by fresh Vite + Astro production builds, `npm run verify:transition`, and Zen (Firefox) / Brave (Chromium) verification after the final CSS enter-direction refinement. Future edits should re-run the full verification sequence above.
-
----
-
-## Current Status & Limitations
-
-- **Status:** M1 (Orbital Stage Core) and M2 (List View, S2 Schema, Search, Motion System, Reader Dialog fix, Shared Transition Bridge vertical alignment) are complete on the uncommitted feature branch `feature/pertemuan-6-visual-redesign` (HEAD `565b1e8`). Changes have not yet been committed, merged to `main`, or deployed to production.
-- **Storage scope:** Persistence uses browser-local `localStorage` only; there is no backend API, authentication, or cross-device synchronization.
+- **Alur integrasi:** Fitur dikembangkan pada feature branch dan digabungkan ke `main` melalui Pull Request. Workflow CI `.github/workflows/ci.yml` (`build-and-verify`) menjalankan `npm run check`, `npm audit --audit-level=moderate`, `npm run build`, pengecekan file halaman di `dist/`, dan `node scripts/verify-transition-bootstrap.mjs`.
+- **Riwayat integrasi `main`:**
+  - **PR #5** (`4ff59f3`, `b6ff182`): bukti penyelesaian merge conflict historis antara `feature/pertemuan-6-task-manager` dan `docs/pertemuan-6-notes`.
+  - **PR #7** (`ca21ef6`): penggabungan selesai milestone **M1** (Orbital Stage Core) dan **M2** (Accessible List View, skema S2, Search, Motion System, Reader Dialog fix, serta vertical Shared Transition Bridge) ke `main`.
+- **Status M2.1 & M3 saat ini:** Implementasi lengkap **M2.1** (`CP3` transisi rute Dokumentasi, `CP1` kontinuitas List ↔ Orbit & reflow, `CP2` morph Kartu ↔ Reader, `CP4` branding `Task Manager`, koordinasi tambah tugas, refinement close Reader, dan accordion Dokumentasi WAAPI) serta sinkronisasi dokumentasi **M3** saat ini berada pada working tree branch **`feature/pertemuan-6-m2-1-cp3-docs-transition`** (basis `ca21ef6`), **belum di-commit, belum di-merge ke `main`, dan belum di-deploy**.
+- **Keterbatasan penyimpanan:** Seluruh data tugas, tema, dan mode tampilan disimpan secara lokal di `localStorage` browser; aplikasi tidak memiliki backend API, akun pengguna, atau sinkronisasi antar perangkat.

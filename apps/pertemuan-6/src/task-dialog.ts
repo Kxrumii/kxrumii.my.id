@@ -42,6 +42,7 @@ export function initTaskDialog(root: ParentNode, handlers: TaskDialogHandlers): 
 
   let editingId: number | null = null;
   let returnFocus: FocusTarget = () => null;
+  let deferCloseFocus = false;
 
   function clearErrors(): void {
     for (const field of DRAFT_FIELD_ORDER) {
@@ -95,12 +96,17 @@ export function initTaskDialog(root: ParentNode, handlers: TaskDialogHandlers): 
       showErrors(result.errors);
       return;
     }
-    if (editingId === null) {
-      handlers.onCreate(result.value);
-    } else {
-      handlers.onEdit(editingId, result.value);
-    }
+    const isCreate = editingId === null;
+    const targetId = editingId;
+    const focusAfterSubmit = returnFocus;
+    deferCloseFocus = true;
     dialog.close();
+    if (isCreate) {
+      handlers.onCreate(result.value);
+    } else if (targetId !== null) {
+      handlers.onEdit(targetId, result.value);
+    }
+    focusAfterSubmit()?.focus();
   });
 
   cancel.addEventListener('click', () => dialog.close());
@@ -108,6 +114,10 @@ export function initTaskDialog(root: ParentNode, handlers: TaskDialogHandlers): 
   // Berlaku untuk simpan, batal, dan Escape. Fokus dipulihkan setelah daftar dirender ulang.
   dialog.addEventListener('close', () => {
     editingId = null;
+    if (deferCloseFocus) {
+      deferCloseFocus = false;
+      return;
+    }
     returnFocus()?.focus();
   });
 

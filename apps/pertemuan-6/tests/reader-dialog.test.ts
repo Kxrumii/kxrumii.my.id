@@ -4,8 +4,10 @@ import {
   READER_CLOSE_FALLBACK_MS,
   bindBridgeCancellation,
   canAnimate,
+  computeViewportClipInset,
   createDeleteCoordinator,
   createMotionRegistry,
+  type RectLike,
 } from '../src/motion.ts';
 import { initReaderDialog, type ReaderDialog } from '../src/reader-dialog.ts';
 import type { Task } from '../src/types.ts';
@@ -49,6 +51,19 @@ class MockElement {
   children: MockElement[] = [];
   listeners = new Map<string, Array<(event: MockEvent) => void>>();
   animations: TrackedAnimation[] = [];
+  rect: RectLike = { left: 0, top: 0, width: 0, height: 0, right: 0, bottom: 0 };
+
+  getBoundingClientRect(): RectLike {
+    const { left, top, width, height } = this.rect;
+    return {
+      left,
+      top,
+      width,
+      height,
+      right: this.rect.right ?? left + width,
+      bottom: this.rect.bottom ?? top + height,
+    };
+  }
 
   setAttribute(name: string, value: string): void {
     this.attributes.set(name, value);
@@ -179,11 +194,14 @@ let reducedMotionEnabled = false;
 let scheduledTimers: Array<{ id: number; fn: () => void; ms: number; cleared: boolean }> = [];
 let nextTimerId = 1;
 
-function createReaderFixture() {
+function createReaderFixture(options: { getSourceElement?: (taskId: number) => HTMLElement | null } = {}) {
   const root = new MockHTMLElement();
   const dialog = new MockHTMLDialogElement();
   dialog.id = 'reader-dialog';
   dialog.className = 'reader-dialog';
+
+  const bar = new MockHTMLElement();
+  bar.className = 'reader-bar';
 
   const article = new MockHTMLElement();
   article.className = 'reader-article';
@@ -226,7 +244,8 @@ function createReaderFixture() {
     prevBtn,
     nextBtn,
   );
-  dialog.children.push(indexEl, closeBtn, article);
+  bar.children.push(indexEl, closeBtn);
+  dialog.children.push(bar, article);
   root.children.push(dialog);
 
   const toggleCalls: number[] = [];
@@ -234,10 +253,12 @@ function createReaderFixture() {
     onToggle: (id) => toggleCalls.push(id),
     onEdit: () => {},
     onDelete: () => {},
+    getSourceElement: options.getSourceElement,
   });
 
   return {
     dialog,
+    bar,
     article,
     indexEl,
     closeBtn,
@@ -298,6 +319,8 @@ describe('initReaderDialog (reopen visibility, close animation cleanup & interac
     (globalThis as Record<string, unknown>).HTMLButtonElement = MockHTMLButtonElement;
     (globalThis as Record<string, unknown>).HTMLDialogElement = MockHTMLDialogElement;
     (globalThis as Record<string, unknown>).window = {
+      innerWidth: 1280,
+      innerHeight: 800,
       matchMedia: (query: string) => ({
         matches: query === '(prefers-reduced-motion: reduce)' ? reducedMotionEnabled : false,
       }),
@@ -600,6 +623,337 @@ describe('initReaderDialog (reopen visibility, close animation cleanup & interac
       assert.doesNotThrow(() => eventBus.dispatchEvent(exitEvent));
       assert.deepEqual(log, ['persist', 'delete-anim-cancel', 'render', 'announce']);
       assert.equal(restoreFocusCalled, 0);
+
+      unbind();
+    });
+  });
+
+  describe('CP2 Task Card <-> Reader Dialog Continuity', () => {
+    it('computeViewportClipInset menghitung inset terhadap dialogRect & viewport, serta menolak geometri tidak valid', () => {
+      const viewport = { left: 0, top: 0, width: 1280, height: 800 };
+      const dialogFull = { left: 0, top: 0, width: 1280, height: 800 };
+
+      // Rect valid standar
+      const valid = computeViewportClipInset(
+        { left: 100, top: 200, width: 400, height: 150 },
+        dialogFull,
+        viewport,
+      );
+      assert.ok(valid !== null);
+      assert.equal(valid.top, 200);
+      assert.equal(valid.left, 100);
+      assert.equal(valid.right, 780);
+      assert.equal(valid.bottom, 450);
+      assert.equal(valid.clipPath, 'inset(200.0px 780.0px 450.0px 100.0px)');
+
+      // Dialog yang tidak dimulai dari (0, 0)
+      const offsetDialog = { left: 100, top: 60, width: 900, height: 700 };
+      const offsetClip = computeViewportClipInset(
+        { left: 250, top: 160, width: 300, height: 200 },
+        offsetDialog,
+        viewport,
+      );
+      assert.ok(offsetClip !== null);
+      assert.equal(offsetClip.left, 150);
+      assert.equal(offsetClip.top, 100);
+      assert.equal(offsetClip.right, 450);
+      assert.equal(offsetClip.bottom, 400);
+
+      // Rect terpotong sebagian oleh batas atas viewport (top < 0)
+      const partial = computeViewportClipInset(
+        { left: 80, top: -40, width: 300, height: 160 },
+        dialogFull,
+        viewport,
+      );
+      assert.ok(partial !== null);
+      assert.equal(partial.top, 0);
+      assert.equal(partial.bottom, 680);
+
+      // Di luar viewport seluruhnya, ukuran 0, NaN, atau irisan terlalu tipis (< 8px) -> null
+      assert.equal(
+        computeViewportClipInset({ left: 80, top: 820, width: 300, height: 160 }, dialogFull, viewport),
+        null,
+      );
+      assert.equal(
+        computeViewportClipInset({ left: 80, top: 100, width: 0, height: 160 }, dialogFull, viewport),
+        null,
+      );
+      assert.equal(
+        computeViewportClipInset({ left: 80, top: 100, width: 300, height: 0 }, dialogFull, viewport),
+        null,
+      );
+      assert.equal(
+        computeViewportClipInset({ left: Number.NaN, top: 100, width: 200, height: 100 }, dialogFull, viewport),
+        null,
+      );
+      assert.equal(
+        computeViewportClipInset({ left: 80, top: -95, width: 200, height: 100 }, dialogFull, viewport),
+        null,
+      );
+    });
+
+    it('membuka dari List/Orbit memakai rect-to-sheet clip-path reveal dan membersihkan seluruh animasi saat selesai', async () => {
+      const source1 = new MockHTMLElement();
+      source1.rect = { left: 64, top: 180, width: 520, height: 140 };
+      const source2 = new MockHTMLElement();
+      source2.rect = { left: 720, top: 240, width: 180, height: 220 };
+
+      const sources = new Map<number, HTMLElement>([
+        [1, source1 as unknown as HTMLElement],
+        [2, source2 as unknown as HTMLElement],
+      ]);
+
+      const fix = createReaderFixture({
+        getSourceElement: (id) => sources.get(id) ?? null,
+      });
+      fix.dialog.rect = { left: 0, top: 0, width: 1280, height: 800 };
+
+      const today = new Date(2026, 10, 24);
+      fix.reader.open(1, sampleTasks, sampleTasks, () => source1 as unknown as HTMLElement, today);
+      assert.equal(fix.dialog.open, true);
+      assert.equal(recordedAnimations.length, 2);
+
+      const dlgOpenAnim = recordedAnimations[0]!;
+      const artOpenAnim = recordedAnimations[1]!;
+      assert.equal(dlgOpenAnim.target, fix.dialog);
+      assert.equal(
+        (dlgOpenAnim.keyframes as Keyframe[])[0]?.clipPath,
+        'inset(180.0px 696.0px 480.0px 64.0px)',
+      );
+      assert.equal((dlgOpenAnim.keyframes as Keyframe[])[1]?.clipPath, 'inset(0px 0px 0px 0px)');
+      assert.equal(artOpenAnim.target, fix.article);
+
+      await dlgOpenAnim.finishNow();
+      await artOpenAnim.finishNow();
+      assert.equal(fix.dialog.getAnimations().length, 0);
+      assert.equal(fix.article.getAnimations().length, 0);
+
+      // Tutup tugas 1 lalu buka & tutup dari kartu tugas 2 (dari Orbit)
+      fix.closeBtn.click();
+      await recordedAnimations[2]!.finishNow();
+      assert.equal(fix.dialog.open, false);
+
+      fix.reader.open(2, sampleTasks, sampleTasks, () => source2 as unknown as HTMLElement, today);
+      await recordedAnimations[5]!.finishNow();
+      await recordedAnimations[6]!.finishNow();
+
+      fix.closeBtn.click();
+      assert.equal(recordedAnimations.length, 10);
+      assert.equal(fix.dialog.dataset.readerClosing, 'true');
+      const dlgCloseAnim = recordedAnimations[7]!;
+      const barCloseAnim = recordedAnimations[8]!;
+      const artCloseAnim = recordedAnimations[9]!;
+      assert.equal(dlgCloseAnim.target, fix.dialog);
+      assert.equal(dlgCloseAnim.options.duration, 260);
+      assert.equal(
+        (dlgCloseAnim.keyframes as Keyframe[])[2]?.clipPath,
+        'inset(240.0px 380.0px 340.0px 720.0px)',
+      );
+      assert.equal(barCloseAnim.target, fix.bar);
+      assert.equal(artCloseAnim.target, fix.article);
+
+      await dlgCloseAnim.finishNow();
+      assert.equal(fix.dialog.open, false);
+      assert.equal(fix.dialog.dataset.readerClosing, undefined);
+      assert.equal(fix.dialog.getAnimations().length, 0);
+      assert.equal(fix.bar.getAnimations().length, 0);
+      assert.equal(fix.article.getAnimations().length, 0);
+      assert.equal(activeElementRef, source2);
+    });
+
+    it('setelah Prev/Next menargetkan kartu tugas baru saat ditutup, atau memakai fallback M2 bila sumber tidak tersedia', async () => {
+      const source1 = new MockHTMLElement();
+      source1.rect = { left: 64, top: 180, width: 520, height: 140 };
+      const source2 = new MockHTMLElement();
+      source2.rect = { left: 680, top: 180, width: 520, height: 140 };
+
+      const sources = new Map<number, HTMLElement>([
+        [1, source1 as unknown as HTMLElement],
+        [2, source2 as unknown as HTMLElement],
+      ]);
+
+      const fix = createReaderFixture({
+        getSourceElement: (id) => sources.get(id) ?? null,
+      });
+      fix.dialog.rect = { left: 0, top: 0, width: 1280, height: 800 };
+
+      const today = new Date(2026, 10, 24);
+      fix.reader.open(1, sampleTasks, sampleTasks, () => source1 as unknown as HTMLElement, today);
+      await recordedAnimations[0]!.finishNow();
+      await recordedAnimations[1]!.finishNow();
+
+      // Next ke tugas 2 (menjalankan animasi arah artikel, bukan morph dialog)
+      fix.nextBtn.click();
+      assert.equal(fix.reader.currentTaskId(), 2);
+      assert.equal(recordedAnimations[2]!.target, fix.article);
+      await recordedAnimations[2]!.finishNow();
+
+      // Close -> menargetkan rect tugas 2 (left: 680), bukan tugas 1!
+      fix.closeBtn.click();
+      const closeTo2 = recordedAnimations[3]!;
+      assert.equal(
+        (closeTo2.keyframes as Keyframe[])[2]?.clipPath,
+        'inset(180.0px 80.0px 480.0px 680.0px)',
+      );
+      await closeTo2.finishNow();
+      assert.equal(fix.dialog.open, false);
+      assert.equal(fix.bar.getAnimations().length, 0);
+      assert.equal(fix.article.getAnimations().length, 0);
+
+      // Buka tugas 1 lalu Next ke tugas 3 (tanpa sumber di Map) -> fallback M2 saat tutup
+      fix.reader.open(1, sampleTasks, sampleTasks, () => source1 as unknown as HTMLElement, today);
+      await recordedAnimations[6]!.finishNow();
+      await recordedAnimations[7]!.finishNow();
+      fix.nextBtn.click();
+      fix.nextBtn.click();
+      assert.equal(fix.reader.currentTaskId(), 3);
+      fix.closeBtn.click();
+      const fallbackClose = recordedAnimations[recordedAnimations.length - 1]!;
+      assert.equal(fallbackClose.target, fix.dialog);
+      assert.equal((fallbackClose.keyframes as Keyframe[])[1]?.transform, 'translate3d(0, 8px, 0)');
+      await fallbackClose.finishNow();
+      assert.equal(fix.dialog.open, false);
+    });
+
+    it('menangani 3x siklus buka/tutup, tutup saat opening, buka saat closing, double-Escape, fallback timer, exit-start, dan reduced motion', async () => {
+      const source1 = new MockHTMLElement();
+      source1.rect = { left: 80, top: 200, width: 420, height: 150 };
+      const fix = createReaderFixture({
+        getSourceElement: () => source1 as unknown as HTMLElement,
+      });
+      fix.dialog.rect = { left: 0, top: 0, width: 1280, height: 800 };
+      const today = new Date(2026, 10, 24);
+
+      // 1. 3x siklus open -> close -> reopen berturut-turut
+      for (let i = 0; i < 3; i += 1) {
+        fix.reader.open(1, sampleTasks, sampleTasks, () => source1 as unknown as HTMLElement, today);
+        assert.equal(fix.dialog.open, true);
+        assert.equal(fix.dialog.dataset.readerClosing, undefined);
+        const openDlg = recordedAnimations[recordedAnimations.length - 2]!;
+        const openArt = recordedAnimations[recordedAnimations.length - 1]!;
+        await openDlg.finishNow();
+        await openArt.finishNow();
+        fix.closeBtn.click();
+        assert.equal(fix.dialog.dataset.readerClosing, 'true');
+        const closeDlg = recordedAnimations[recordedAnimations.length - 3]!;
+        await closeDlg.finishNow();
+        assert.equal(fix.dialog.open, false);
+        assert.equal(fix.dialog.dataset.readerClosing, undefined);
+        assert.equal(fix.dialog.getAnimations().length, 0);
+        assert.equal(fix.bar.getAnimations().length, 0);
+        assert.equal(fix.article.getAnimations().length, 0);
+      }
+
+      // 2. Tutup saat animasi buka masih berjalan
+      fix.reader.open(1, sampleTasks, sampleTasks, () => source1 as unknown as HTMLElement, today);
+      const midOpenDlg = recordedAnimations[recordedAnimations.length - 2]!;
+      const midOpenArt = recordedAnimations[recordedAnimations.length - 1]!;
+      fix.closeBtn.click();
+      assert.equal(midOpenDlg.cancelled, true);
+      assert.equal(midOpenArt.cancelled, true);
+      const midCloseDlg = recordedAnimations[recordedAnimations.length - 3]!;
+      await midCloseDlg.finishNow();
+      assert.equal(fix.dialog.open, false);
+      assert.equal(fix.dialog.getAnimations().length, 0);
+      assert.equal(fix.bar.getAnimations().length, 0);
+      assert.equal(fix.article.getAnimations().length, 0);
+
+      // 3. Buka ulang saat animasi tutup bersama masih berjalan
+      fix.reader.open(1, sampleTasks, sampleTasks, () => source1 as unknown as HTMLElement, today);
+      fix.closeBtn.click();
+      const interruptedCloseDlg = recordedAnimations[recordedAnimations.length - 3]!;
+      const interruptedCloseBar = recordedAnimations[recordedAnimations.length - 2]!;
+      const interruptedCloseArt = recordedAnimations[recordedAnimations.length - 1]!;
+      fix.reader.open(2, sampleTasks, sampleTasks, () => source1 as unknown as HTMLElement, today);
+      assert.equal(interruptedCloseDlg.cancelled, true);
+      assert.equal(interruptedCloseBar.cancelled, true);
+      assert.equal(interruptedCloseArt.cancelled, true);
+      assert.equal(fix.dialog.dataset.readerClosing, undefined);
+      assert.equal(fix.dialog.open, true);
+      await interruptedCloseDlg.finishNow();
+      assert.equal(fix.dialog.open, true);
+
+      // 4. Double-Escape saat menutup
+      fix.dialog.dispatchEvent(new MockEvent('cancel'));
+      assert.equal(fix.dialog.open, true);
+      fix.dialog.dispatchEvent(new MockEvent('cancel'));
+      assert.equal(fix.dialog.open, false);
+      assert.equal(fix.dialog.dataset.readerClosing, undefined);
+      assert.equal(fix.dialog.getAnimations().length, 0);
+      assert.equal(fix.bar.getAnimations().length, 0);
+      assert.equal(fix.article.getAnimations().length, 0);
+
+      // 5. Fallback timer terikat (400ms >= 260ms) saat animasi tutup bersama macet
+      fix.reader.open(1, sampleTasks, sampleTasks, () => source1 as unknown as HTMLElement, today);
+      const timerCountBefore = scheduledTimers.length;
+      fix.closeBtn.click();
+      assert.equal(scheduledTimers.length, timerCountBefore + 1);
+      assert.equal(scheduledTimers[scheduledTimers.length - 1]!.ms, 400);
+      scheduledTimers[scheduledTimers.length - 1]!.fn();
+      assert.equal(fix.dialog.open, false);
+      assert.equal(fix.dialog.dataset.readerClosing, undefined);
+      assert.equal(fix.dialog.getAnimations().length, 0);
+      assert.equal(fix.bar.getAnimations().length, 0);
+      assert.equal(fix.article.getAnimations().length, 0);
+
+      // 6. Reduced motion: 0 animasi walau sumber valid
+      reducedMotionEnabled = true;
+      const animCountBeforeRm = recordedAnimations.length;
+      fix.reader.open(1, sampleTasks, sampleTasks, () => source1 as unknown as HTMLElement, today);
+      assert.equal(fix.dialog.open, true);
+      assert.equal(recordedAnimations.length, animCountBeforeRm);
+      fix.closeBtn.click();
+      assert.equal(fix.dialog.open, false);
+      assert.equal(recordedAnimations.length, animCountBeforeRm);
+      assert.equal(activeElementRef, source1);
+      reducedMotionEnabled = false;
+    });
+
+    it('exit-start selama opening atau closing bersama menutup Reader tanpa memulihkan fokus dan tanpa sisa animasi', () => {
+      class MockCustomEvent extends MockEvent {
+        detail: unknown;
+        constructor(type: string, init: { detail?: unknown } = {}) {
+          super(type);
+          this.detail = init.detail;
+        }
+      }
+
+      const source1 = new MockHTMLElement();
+      source1.rect = { left: 80, top: 200, width: 420, height: 150 };
+      const fix = createReaderFixture({
+        getSourceElement: () => source1 as unknown as HTMLElement,
+      });
+      fix.dialog.rect = { left: 0, top: 0, width: 1280, height: 800 };
+
+      const registry = createMotionRegistry();
+      const eventBus = new MockHTMLElement();
+      const unbind = bindBridgeCancellation(eventBus as unknown as EventTarget, registry, [
+        () => {
+          if (fix.reader.isOpen()) fix.reader.close(false);
+        },
+      ]);
+
+      const today = new Date(2026, 10, 24);
+      const trigger = new MockHTMLButtonElement();
+
+      // Kasus A: exit-start saat opening masih berjalan
+      activeElementRef = null;
+      fix.reader.open(1, sampleTasks, sampleTasks, () => trigger as unknown as HTMLElement, today);
+      eventBus.dispatchEvent(new MockCustomEvent('kxrumii:transition', { detail: { phase: 'exit-start' } }));
+      assert.equal(fix.dialog.open, false);
+      assert.equal(fix.dialog.getAnimations().length, 0);
+      assert.equal(fix.article.getAnimations().length, 0);
+      assert.notEqual(activeElementRef, trigger);
+
+      // Kasus B: exit-start saat closing bersama masih berjalan
+      activeElementRef = null;
+      fix.reader.open(1, sampleTasks, sampleTasks, () => trigger as unknown as HTMLElement, today);
+      fix.closeBtn.click();
+      eventBus.dispatchEvent(new MockCustomEvent('kxrumii:transition', { detail: { phase: 'exit-start' } }));
+      assert.equal(fix.dialog.open, false);
+      assert.equal(fix.dialog.getAnimations().length, 0);
+      assert.equal(fix.article.getAnimations().length, 0);
+      assert.notEqual(activeElementRef, trigger);
 
       unbind();
     });
