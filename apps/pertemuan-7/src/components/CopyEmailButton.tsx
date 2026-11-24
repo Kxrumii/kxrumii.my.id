@@ -5,12 +5,16 @@ interface CopyEmailButtonProps {
   email: string;
   label?: string;
   className?: string;
+  /** `display` sets the address in large type (Contact page). */
+  variant?: 'inline' | 'display';
+  /** Adds a plain mailto: link as the no-clipboard fallback. */
+  mailtoFallback?: boolean;
 }
 
 type CopyState = 'idle' | 'copied' | 'failed';
 
 /** Copies an address to the clipboard with a short, announced status (Huy's copy-email pattern). */
-export function CopyEmailButton({ email, label, className }: CopyEmailButtonProps) {
+export function CopyEmailButton({ email, label, className, variant = 'inline', mailtoFallback = false }: CopyEmailButtonProps) {
   const [state, setState] = useState<CopyState>('idle');
   const statusId = useId();
   const { play } = useSound();
@@ -32,7 +36,7 @@ export function CopyEmailButton({ email, label, className }: CopyEmailButtonProp
   }
 
   return (
-    <span className={['copy-email', className].filter(Boolean).join(' ')} data-copy-state={state}>
+    <span className={['copy-email', variant === 'display' ? 'copy-email-display' : '', className].filter(Boolean).join(' ')} data-copy-state={state}>
       {label ? <span className="ui-label">{label}</span> : null}
       <button type="button" className="copy-email-button" onClick={copy} aria-describedby={statusId}>
         {email}
@@ -40,6 +44,11 @@ export function CopyEmailButton({ email, label, className }: CopyEmailButtonProp
       <span id={statusId} className="copy-email-status" role="status">
         {state === 'copied' ? 'Tersalin' : state === 'failed' ? 'Gagal menyalin, salin manual' : ''}
       </span>
+      {mailtoFallback ? (
+        <a className="copy-email-mailto" href={`mailto:${email}`} onClick={() => play('click')}>
+          Kirim lewat aplikasi email ↗
+        </a>
+      ) : null}
     </span>
   );
 }

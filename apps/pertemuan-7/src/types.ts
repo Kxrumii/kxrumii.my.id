@@ -43,6 +43,11 @@ export interface Profile {
   email: string;
   tagline: string;
   intro: string;
+  /** null = belum diisi; hanya isi sesuai peran nyata. */
+  role: string | null;
+  /** Perangkat / software yang benar-benar dipakai; kosong = belum diisi. */
+  tools: string[];
+  availability: string;
   focus: string[];
   socials: SocialLink[];
   /** true selama nama, NIM, atau email masih placeholder. */

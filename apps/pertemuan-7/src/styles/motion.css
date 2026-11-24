@@ -46,3 +46,14 @@ html[data-route-scope='stage'][data-transition-state='entering'] [data-shell][da
 @media (prefers-reduced-motion: no-preference) {
   html[data-transition-state='entering'] [data-transition-motion='depth'] { opacity: 0; }
 }
+
+/* The desktop rail is rotated 180deg (see shell.css), so its local axes are flipped: mirror the motion
+   so it still travels up on exit / down into place on enter, and clips from the visual bottom. */
+@media (min-width: 900px) {
+  .shell-rail {
+    --transition-exit-transform: translate3d(0, 4vh, 0);
+    --transition-exit-clip: inset(100% 0 0 0);
+    --transition-enter-from-transform: translate3d(0, 3vh, 0);
+    --transition-enter-from-clip: inset(100% 0 0 0);
+  }
+}

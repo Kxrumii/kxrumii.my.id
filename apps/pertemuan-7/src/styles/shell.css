@@ -91,7 +91,8 @@ html[data-gate] .shell * { visibility: hidden !important; }
 
 /* Desktop rail: Huy's vertical wordmark, reading bottom-to-top, meta column beside it. */
 @media (min-width: 900px) {
-  .shell-rail { writing-mode: vertical-rl; transform: rotate(180deg); flex-direction: column; align-items: flex-end; gap: 8px; }
+  /* `rotate`, not `transform`: the transition bridge owns `transform` on animated elements and would un-rotate the rail mid-transition. */
+  .shell-rail { writing-mode: vertical-rl; rotate: 180deg; flex-direction: column; align-items: flex-end; gap: 8px; }
   .wordmark span { vertical-align: baseline; }
 }
 

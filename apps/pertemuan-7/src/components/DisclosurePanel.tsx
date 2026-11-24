@@ -3,11 +3,13 @@ import { useId, useState, type ReactNode } from 'react';
 interface DisclosurePanelProps {
   title: string;
   defaultOpen?: boolean;
+  /** Called after every toggle with the new state (e.g. to play a sound). */
+  onToggle?: (open: boolean) => void;
   children: ReactNode;
 }
 
 /** Show/hide section. The button owns `aria-expanded`; the panel stays in the DOM and toggles `hidden`. */
-export function DisclosurePanel({ title, defaultOpen = false, children }: DisclosurePanelProps) {
+export function DisclosurePanel({ title, defaultOpen = false, onToggle, children }: DisclosurePanelProps) {
   const [open, setOpen] = useState(defaultOpen);
   const panelId = useId();
 
@@ -19,7 +21,11 @@ export function DisclosurePanel({ title, defaultOpen = false, children }: Disclo
           className="disclosure-button"
           aria-expanded={open}
           aria-controls={panelId}
-          onClick={() => setOpen((value) => !value)}
+          onClick={() => {
+            const next = !open;
+            setOpen(next);
+            onToggle?.(next);
+          }}
         >
           <span>{title}</span>
           <span aria-hidden="true">{open ? '−' : '+'}</span>
