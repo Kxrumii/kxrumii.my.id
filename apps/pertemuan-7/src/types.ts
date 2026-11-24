@@ -1,5 +1,8 @@
 export type WorkCategory = 'film' | 'music-video' | 'commercial' | 'social' | 'experiment';
 
+/** Filter value of the Work index: one category, or every category. */
+export type CategoryFilter = WorkCategory | 'all';
+
 export interface Work {
   slug: string;
   title: string;
@@ -9,6 +12,8 @@ export interface Work {
   /** null = peran belum dikonfirmasi; hanya isi sesuai kontribusi nyata. */
   role: string | null;
   summary: string;
+  /** Production notes shown in the detail page's collapsible panel; null = not written yet. */
+  notes: string | null;
   thumbnail: string | null;
   youtubeVideoId: string | null;
   externalUrl: string | null;
