@@ -1,3 +1,4 @@
+import { animateTaskDialogOpen } from './motion.ts';
 import { requireElement } from './render.ts';
 import type { Task, TaskDraft } from './types.ts';
 import { DRAFT_FIELD_ORDER, firstInvalidField, validateDraft, type DraftErrors, type DraftField } from './validation.ts';
@@ -24,6 +25,9 @@ export function initTaskDialog(root: ParentNode, handlers: TaskDialogHandlers): 
   const form = requireElement(root, '#task-form', HTMLFormElement);
   const heading = requireElement(root, '#task-dialog-title', HTMLElement);
   const cancel = requireElement(root, '#task-cancel', HTMLButtonElement);
+
+  const categoryInput = requireElement(root, '#task-category', HTMLInputElement);
+  const descriptionInput = requireElement(root, '#task-description', HTMLTextAreaElement);
 
   const inputs: Record<DraftField, HTMLInputElement> = {
     title: requireElement(root, '#task-title', HTMLInputElement),
@@ -66,9 +70,15 @@ export function initTaskDialog(root: ParentNode, handlers: TaskDialogHandlers): 
     heading.textContent = title;
     inputs.title.value = values.title;
     inputs.course.value = values.course;
+    categoryInput.value = values.category ?? '';
+    descriptionInput.value = values.description ?? '';
     inputs.deadline.value = values.deadline ?? '';
     clearErrors();
-    dialog.showModal();
+    const wasOpen = dialog.open;
+    if (!wasOpen) {
+      dialog.showModal();
+      animateTaskDialogOpen(dialog);
+    }
     inputs.title.focus();
   }
 
@@ -77,6 +87,8 @@ export function initTaskDialog(root: ParentNode, handlers: TaskDialogHandlers): 
     const result = validateDraft({
       title: inputs.title.value,
       course: inputs.course.value,
+      category: categoryInput.value,
+      description: descriptionInput.value,
       deadline: inputs.deadline.value,
     });
     if (!result.ok) {
@@ -104,7 +116,18 @@ export function initTaskDialog(root: ParentNode, handlers: TaskDialogHandlers): 
       open('Tambah tugas', { title: '', course: '', deadline: null }, focus, null);
     },
     openEdit(task, focus) {
-      open('Edit tugas', { title: task.title, course: task.course, deadline: task.deadline }, focus, task.id);
+      open(
+        'Edit tugas',
+        {
+          title: task.title,
+          course: task.course,
+          category: task.category,
+          description: task.description,
+          deadline: task.deadline,
+        },
+        focus,
+        task.id,
+      );
     },
   };
 }

@@ -1,13 +1,18 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+  DEFAULT_VIEW_MODE,
   describeLoad,
   describeSaveFailure,
   isTask,
+  isViewMode,
   loadTasks,
+  loadViewMode,
   saveTasks,
+  saveViewMode,
   STORAGE_KEY,
   STORAGE_VERSION,
+  VIEW_MODE_KEY,
   type StorageLike,
 } from '../src/storage.ts';
 import type { Task } from '../src/types.ts';
@@ -186,5 +191,103 @@ describe('saveTasks', () => {
     const storage = memoryStorage(envelope([task()]));
     saveTasks(storage, []);
     assert.deepEqual(loadTasks(storage).tasks, []);
+  });
+});
+
+describe('skema S2 (category & description) dan kompatibilitas v1', () => {
+  it('STORAGE_VERSION tetap 1 dan record lama 5-field tetap termuat tanpa properti kosong tambahan', () => {
+    assert.equal(STORAGE_VERSION, 1);
+    const result = loadTasks(memoryStorage(envelope([task()])));
+    assert.equal(result.issue, null);
+    assert.deepEqual(Object.keys(result.tasks[0] as Task).sort(), ['course', 'deadline', 'id', 'status', 'title']);
+  });
+
+  it('mempertahankan category dan description non-kosong pada round-trip dan membuang nilai kosong/spasi', () => {
+    const storage = memoryStorage();
+    const rich: Task = {
+      id: 1,
+      title: 'Tugas',
+      course: 'PAW',
+      category: 'Praktikum',
+      description: 'Detail lengkap',
+      deadline: null,
+      status: 'belum-selesai',
+    };
+    saveTasks(storage, [rich]);
+    assert.deepEqual(loadTasks(storage).tasks[0], rich);
+
+    const blankOptional = memoryStorage(envelope([task({ category: '   ', description: '\t' })]));
+    assert.deepEqual(Object.keys(loadTasks(blankOptional).tasks[0] as Task).sort(), [
+      'course',
+      'deadline',
+      'id',
+      'status',
+      'title',
+    ]);
+  });
+
+  it('menolak record dengan category atau description bukan string', () => {
+    for (const override of [
+      { category: 123 },
+      { category: null },
+      { category: [] },
+      { description: 42 },
+      { description: { text: 'x' } },
+      { description: false },
+    ]) {
+      const result = loadTasks(memoryStorage(envelope([task(override)])));
+      assert.equal(result.tasks.length, 0);
+      assert.equal(result.skipped, 1);
+    }
+  });
+});
+
+describe('preferensi mode tampilan (kxrumii-task6-view-mode)', () => {
+  it('first visit tanpa nilai tersimpan menghasilkan list', () => {
+    assert.equal(VIEW_MODE_KEY, 'kxrumii-task6-view-mode');
+    assert.equal(DEFAULT_VIEW_MODE, 'list');
+    assert.equal(loadViewMode(memoryStorage()), 'list');
+  });
+
+  it('memulihkan nilai list dan orbit yang valid serta menolak nilai tidak valid ke list', () => {
+    const listStorage = memoryStorage();
+    listStorage.setItem(VIEW_MODE_KEY, 'list');
+    assert.equal(loadViewMode(listStorage), 'list');
+
+    const orbitStorage = memoryStorage();
+    orbitStorage.setItem(VIEW_MODE_KEY, 'orbit');
+    assert.equal(loadViewMode(orbitStorage), 'orbit');
+
+    for (const invalid of ['', 'auto', 'grid', 'ORBIT', 'List']) {
+      const bad = memoryStorage();
+      bad.setItem(VIEW_MODE_KEY, invalid);
+      assert.equal(loadViewMode(bad), 'list');
+      assert.equal(isViewMode(invalid), false);
+    }
+  });
+
+  it('aman saat storage null atau melempar error', () => {
+    assert.equal(loadViewMode(null), 'list');
+    assert.deepEqual(saveViewMode(null, 'orbit'), { ok: false, reason: 'unavailable' });
+
+    const throwing: StorageLike = {
+      getItem: () => {
+        throw new Error('SecurityError');
+      },
+      setItem: () => {
+        throw new Error('QuotaExceededError');
+      },
+    };
+    assert.equal(loadViewMode(throwing), 'list');
+    assert.deepEqual(saveViewMode(throwing, 'orbit'), { ok: false, reason: 'save-failed' });
+  });
+
+  it('saveViewMode menyimpan preferensi pada key yang tepat dan bertahan setelah load ulang', () => {
+    const storage = memoryStorage();
+    assert.deepEqual(saveViewMode(storage, 'orbit'), { ok: true });
+    assert.equal(storage.data.get(VIEW_MODE_KEY), 'orbit');
+    assert.equal(loadViewMode(storage), 'orbit');
+    assert.deepEqual(saveViewMode(storage, 'list'), { ok: true });
+    assert.equal(loadViewMode(storage), 'list');
   });
 });

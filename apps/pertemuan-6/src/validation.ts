@@ -5,10 +5,12 @@ import type { TaskDraft } from './types.ts';
 export interface RawTaskDraft {
   title: string;
   course: string;
+  category?: string;
+  description?: string;
   deadline: string;
 }
 
-export type DraftField = keyof TaskDraft;
+export type DraftField = 'title' | 'course' | 'deadline';
 export type DraftErrors = Partial<Record<DraftField, string>>;
 
 /** Hasil yang membawa nilai valid atau daftar kesalahan; dipakai bersama oleh mode tambah dan edit. */
@@ -31,6 +33,8 @@ export const ERROR_MESSAGES: Record<DraftField, string> = {
 export function validateDraft(raw: RawTaskDraft): Result<TaskDraft, DraftErrors> {
   const title = raw.title.trim();
   const course = raw.course.trim();
+  const category = (raw.category ?? '').trim();
+  const description = (raw.description ?? '').trim();
   const deadlineText = raw.deadline.trim();
 
   const errors: DraftErrors = {};
@@ -41,7 +45,14 @@ export function validateDraft(raw: RawTaskDraft): Result<TaskDraft, DraftErrors>
   if (Object.keys(errors).length > 0) {
     return { ok: false, errors };
   }
-  return { ok: true, value: { title, course, deadline: deadlineText === '' ? null : deadlineText } };
+  const value: TaskDraft = {
+    title,
+    course,
+    deadline: deadlineText === '' ? null : deadlineText,
+  };
+  if (category !== '') value.category = category;
+  if (description !== '') value.description = description;
+  return { ok: true, value };
 }
 
 /** Field invalid pertama menurut urutan form, atau `null` bila tidak ada kesalahan. */
