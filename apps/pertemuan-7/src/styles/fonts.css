@@ -1,0 +1,38 @@
+/*
+ * Self-hosted OFL fonts (see ../assets/fonts/OFL.txt). Latin subset, variable weight.
+ * The "Fallback" faces resize Arial to each font's measured metrics (measured in
+ * Chromium against Arial/Liberation Sans) so the swap does not shift the layout.
+ */
+@font-face {
+  font-family: 'Inter Tight';
+  src: url('../assets/fonts/InterTight-latin.woff2') format('woff2');
+  font-weight: 300 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  src: url('../assets/fonts/BricolageGrotesque-latin.woff2') format('woff2');
+  font-weight: 400 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Inter Tight Fallback';
+  src: local('Arial'), local('Liberation Sans'), local('Helvetica');
+  size-adjust: 96.12%;
+  ascent-override: 100.91%;
+  descent-override: 24.97%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Bricolage Grotesque Fallback';
+  src: local('Arial'), local('Liberation Sans'), local('Helvetica');
+  size-adjust: 89.42%;
+  ascent-override: 104%;
+  descent-override: 30.19%;
+  line-gap-override: 0%;
+}

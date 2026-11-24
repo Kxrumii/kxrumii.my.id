@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { EmptyState } from '../components/EmptyState';
 import { FilterBar } from '../components/FilterBar';
-import { Page } from '../components/Page';
+import { Stage } from '../components/Stage';
 import { WorkList } from '../components/WorkList';
 import { WorkPreview } from '../components/WorkPreview';
 import { works } from '../data/works';
@@ -26,7 +26,7 @@ export function WorkPage() {
   }
 
   return (
-    <Page name="work" title="Selected Work" eyebrow="WORK">
+    <Stage name="work" title="Selected Work" eyebrow="WORK">
       <FilterBar
         query={query}
         onQueryChange={setQuery}
@@ -48,6 +48,6 @@ export function WorkPage() {
           onAction={resetFilters}
         />
       )}
-    </Page>
+    </Stage>
   );
 }

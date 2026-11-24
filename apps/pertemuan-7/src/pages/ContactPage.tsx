@@ -1,10 +1,10 @@
 import { profile } from '../data/profile';
-import { Page } from '../components/Page';
+import { Stage } from '../components/Stage';
 
 export function ContactPage() {
   return (
-    <Page name="contact" title="Contact" eyebrow="CONTACT">
+    <Stage name="contact" title="Contact" eyebrow="CONTACT">
       <p className="page-copy">{profile.email}</p>
-    </Page>
+    </Stage>
   );
 }

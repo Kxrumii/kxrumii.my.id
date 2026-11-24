@@ -1,0 +1,61 @@
+/*
+ * Design tokens. Composition and type follow HuyML (UI grotesk 11–14px,
+ * uppercase display, label/value pairs); colours start on the dark landing
+ * canvas and switch to Huy's light palette when <html data-tone="light">.
+ * The canvas itself is painted by the transition bridge (--page-canvas).
+ */
+:root {
+  --canvas: #10110f;
+  --ink: #ececec;
+  --ink-soft: rgba(236, 236, 236, 0.78);
+  --muted: #8a8b85;
+  --line: rgba(236, 236, 236, 0.16);
+  --line-strong: rgba(236, 236, 236, 0.32);
+  --surface: rgba(236, 236, 236, 0.05);
+  --accent: #ff4949;
+
+  --font-ui: 'Inter Tight', 'Inter Tight Fallback', 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Bricolage Grotesque', 'Bricolage Grotesque Fallback', 'Helvetica Neue', Arial, sans-serif;
+
+  /* Huy: 12px mobile, 10px desktop (raised to 11px for legibility), 12px ≥1800, 14px ≥2200. */
+  --fs-ui: 12px;
+  --lh-ui: 1.3;
+  --ls-ui: 0.01em;
+  --fs-nav: clamp(18px, 1.65vw, 36px);
+  --fs-display: clamp(23px, 2.8vw, 80px);
+  --lh-display: 1.28;
+  --fs-accent: clamp(12px, 1.6vw, 38px);
+  --fs-numeral: clamp(120px, 17vw, 320px);
+
+  --margin: 20px;
+  --gutter: 16px;
+  --nav-start: 13.5vw;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Replaced at runtime by a generated spring `linear()` (src/motion/spring.ts). */
+  --ease-spring: var(--ease-out);
+
+  color-scheme: dark;
+}
+
+:root[data-tone='light'] {
+  --canvas: #ececec;
+  --ink: #181818;
+  --ink-soft: rgba(24, 24, 24, 0.78);
+  /* Huy uses #8c8c8c; darkened to keep ≥4.5:1 for small labels on #ececec. */
+  --muted: #6b6b6b;
+  --line: rgba(24, 24, 24, 0.14);
+  --line-strong: rgba(24, 24, 24, 0.3);
+  --surface: rgba(24, 24, 24, 0.04);
+  color-scheme: light;
+}
+
+@media (min-width: 1100px) {
+  :root { --fs-ui: 11px; }
+}
+@media (min-width: 1800px) {
+  :root { --fs-ui: 12px; }
+}
+@media (min-width: 2200px) {
+  :root { --fs-ui: 14px; }
+}

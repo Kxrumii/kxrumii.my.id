@@ -1,5 +1,5 @@
 import { BrowserRouter, Route, Routes } from 'react-router';
-import { SiteLayout } from './components/SiteLayout';
+import { AppShell } from './components/AppShell';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
 import { NotFoundPage } from './pages/NotFoundPage';
@@ -11,7 +11,7 @@ export default function App() {
   return (
     <BrowserRouter basename="/tugas/pertemuan-7">
       <Routes>
-        <Route element={<SiteLayout />}>
+        <Route element={<AppShell />}>
           <Route index element={<WorkPage />} />
           <Route path="work/:slug" element={<WorkDetailPage />} />
           <Route path="playground" element={<PlaygroundPage />} />

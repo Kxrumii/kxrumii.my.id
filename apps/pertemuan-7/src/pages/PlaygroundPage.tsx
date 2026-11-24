@@ -1,9 +1,9 @@
 import { KIND_LABELS, playgroundItems } from '../data/playground';
-import { Page } from '../components/Page';
+import { Stage } from '../components/Stage';
 
 export function PlaygroundPage() {
   return (
-    <Page name="playground" title="Playground" eyebrow="PLAYGROUND">
+    <Stage name="playground" title="Playground" eyebrow="PLAYGROUND">
       <ul className="stub-list">
         {playgroundItems.map((item) => (
           <li key={item.id}>
@@ -14,6 +14,6 @@ export function PlaygroundPage() {
           </li>
         ))}
       </ul>
-    </Page>
+    </Stage>
   );
 }
