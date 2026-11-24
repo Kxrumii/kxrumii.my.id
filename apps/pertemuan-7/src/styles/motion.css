@@ -6,16 +6,24 @@
  */
 [data-transition-exit],
 [data-transition-enter] {
-  --transition-exit-duration: 220;
-  --transition-stagger: 30;
+  --transition-exit-duration: 140;
+  --transition-stagger: 15;
   --transition-exit-ease: cubic-bezier(0.45, 0, 0.2, 1);
   --transition-exit-transform: translate3d(0, -4vh, 0);
   --transition-exit-clip: inset(0 0 100% 0);
-  --transition-enter-duration: 420;
+  --transition-enter-duration: 300;
   --transition-enter-delay: 0;
   --transition-enter-ease: var(--ease-spring);
   --transition-enter-from-transform: translate3d(0, -3vh, 0);
   --transition-enter-from-clip: inset(0 0 100% 0);
+}
+
+/* Stage-scoped route changes keep the same canvas colour, so the bridge's canvas tween (>= 240 ms by default)
+   would only stretch the exit phase. Collapse it: the exit then lasts exactly as long as the content motion.
+   Unitless milliseconds, like the other bridge timings. */
+html[data-route-scope='stage'] {
+  --transition-canvas-delay: 0;
+  --transition-canvas-duration: 1;
 }
 
 /* Stage-scoped route changes: the shell keeps its place instead of taking the enter pre-state. */

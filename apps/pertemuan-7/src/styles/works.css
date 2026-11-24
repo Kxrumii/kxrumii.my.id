@@ -8,6 +8,10 @@
 .stage-host:has(> .works-stage) { padding: 0; }
 
 .works-stage {
+  /* Left column (info + giant numeral) and the gap before the stage. The numeral is ~1.27em + 100px wide, so the
+     column can never be crossed by the spiral/list region, which starts after it. */
+  --works-col: calc(var(--fs-numeral) * 1.27 + 108px);
+  --works-gap: clamp(24px, 3vw, 56px);
   --stage-top: calc(var(--margin) + 22px + 4 * var(--fs-nav) * 1.12 + 28px);
   position: relative;
   max-width: none;
@@ -18,7 +22,7 @@
 /* Controls: search + category text-chips (Huy labels) and the view toggle. */
 .works-controls { position: absolute; top: var(--stage-top); left: var(--nav-start); right: var(--margin); z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 16px 32px; }
 .filter-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; }
-.filter-search input { width: 200px; border: 0; border-bottom: 1px solid var(--line-strong); border-radius: 0; padding: 6px 0; background: transparent; color: var(--ink); font: inherit; }
+.filter-search input { width: clamp(140px, 15vw, 200px); border: 0; border-bottom: 1px solid var(--line-strong); border-radius: 0; padding: 6px 0; background: transparent; color: var(--ink); font: inherit; }
 .filter-search input::placeholder { color: var(--muted); }
 .filter-chips { display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .chip { border: 0; padding: 4px 0; background: none; color: var(--muted); font: inherit; text-transform: uppercase; white-space: nowrap; }
@@ -32,7 +36,7 @@
 .view-toggle-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--ink); }
 
 /* Active work metadata (fixed box: swaps never move the layout). */
-.work-info { position: absolute; left: var(--nav-start); top: calc(var(--stage-top) + 96px); width: min(25vw, 380px); height: min(340px, 40vh); }
+.work-info { position: absolute; left: var(--nav-start); top: calc(var(--stage-top) + 96px); width: min(25vw, 380px, var(--works-col)); height: min(340px, 40vh); }
 .work-info-swap { animation: info-focus 0.5s var(--ease-out) both; }
 .work-info-title { display: -webkit-box; margin: 8px 0 2px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font: 400 var(--fs-display) / var(--lh-display) var(--font-display); letter-spacing: 0.01em; text-transform: uppercase; }
 .work-info-dash { display: block; color: var(--muted); }
@@ -56,7 +60,8 @@
 .index-digit-strip > span { height: 1em; line-height: 1; }
 
 /* Stage region holding the spiral or the list. */
-.works-view { position: absolute; top: calc(var(--stage-top) + 48px); bottom: 28px; left: 36vw; right: var(--margin); overflow: clip; }
+/* container-type lets the cards size themselves from the stage width (cqw), so side cards always fit inside it. */
+.works-view { position: absolute; top: calc(var(--stage-top) + 56px); bottom: 28px; left: calc(var(--nav-start) + var(--works-col) + var(--works-gap)); right: var(--margin); overflow: clip; container-type: inline-size; }
 .works-view-inner { position: absolute; inset: 0; animation: view-in 0.42s var(--ease-spring) both; }
 @keyframes view-in { from { opacity: 0; transform: scale(1.03); } to { opacity: 1; transform: none; } }
 .works-view .empty-state { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 6px; border: 1px dashed var(--line-strong); border-radius: 14px; text-align: center; }
@@ -70,11 +75,12 @@
 .spiral-viewport:active { cursor: grabbing; }
 /* The helix plane sits in front of the side cards (they rotate around an axis behind it), so it must not catch clicks. */
 .spiral-helix { position: absolute; inset: 0; margin: 0; padding: 0; list-style: none; transform-style: preserve-3d; transform: rotateX(6deg) rotateZ(-5deg); pointer-events: none; }
-.spiral-card { --card-w: clamp(200px, 21vw, 360px); position: absolute; top: 50%; left: 50%; width: var(--card-w); aspect-ratio: 16 / 10; pointer-events: auto; backface-visibility: hidden; -webkit-backface-visibility: hidden; will-change: transform, opacity; }
+.spiral-card { --card-w: max(168px, min(clamp(200px, 21vw, 360px), 38cqw)); position: absolute; top: 50%; left: 50%; width: var(--card-w); aspect-ratio: 16 / 10; pointer-events: auto; backface-visibility: hidden; -webkit-backface-visibility: hidden; will-change: transform, opacity; }
 .spiral-card-link { display: flex; flex-direction: column; justify-content: space-between; width: 100%; height: 100%; padding: 14px 16px; border-radius: 14px; text-decoration: none; box-shadow: 0 18px 40px -24px rgba(0, 0, 0, 0.45); -webkit-user-drag: none; }
 .spiral-card[data-active] .spiral-card-link { box-shadow: 0 0 0 1px var(--ink), 0 24px 50px -24px rgba(0, 0, 0, 0.5); }
 .spiral-card-index, .spiral-card-meta { font: 500 var(--fs-ui) / 1 var(--font-ui); letter-spacing: var(--ls-ui); text-transform: uppercase; }
-.spiral-card-title { font: 400 clamp(18px, 1.6vw, 30px) / 1.1 var(--font-display); letter-spacing: 0.01em; text-transform: uppercase; }
+/* >= 24px counts as large text (3:1) for the halo'd title over the gradient; two lines at most, so a long title cannot spill out of the face. */
+.spiral-card-title { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font: 400 clamp(24px, 1.7vw, 30px) / 1.1 var(--font-display); letter-spacing: 0.01em; text-transform: uppercase; }
 .spiral-controls { display: flex; align-items: center; justify-content: center; gap: 18px; padding-top: 8px; }
 .spiral-step { width: 40px; height: 40px; border: 1px solid var(--line-strong); border-radius: 50%; background: transparent; color: var(--ink); font-size: 16px; }
 .spiral-step:hover:not(:disabled) { border-color: var(--ink); }
@@ -102,11 +108,16 @@
   .filter-search input { width: 100%; }
   .filter-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .view-toggle { align-self: center; }
-  .works-view { position: relative; order: 2; inset: auto; height: 380px; }
+  .works-view { position: relative; order: 2; inset: auto; height: 410px; }
   /* Right gutter keeps text clear of the floating round sound button. */
   .work-info { order: 3; width: auto; height: 250px; padding-right: 60px; }
   .index-numeral { --fs-numeral: 96px; order: 4; }
-  .spiral-card { --card-w: clamp(180px, 46vw, 260px); }
+  .spiral-card { --card-w: clamp(168px, 44vw, 260px); }
+}
+
+/* Tablet portrait: the numeral row would otherwise stretch its three tracks across the whole column. */
+@media (min-width: 600px) and (max-width: 899px) {
+  .index-numeral { justify-content: start; column-gap: 24px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

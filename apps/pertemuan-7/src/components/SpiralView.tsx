@@ -5,7 +5,7 @@ import { CATEGORY_LABELS } from '../data/works';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { useSpiral } from '../hooks/useSpiral';
 import type { Work } from '../types';
-import { cardFace } from '../utils/cardFace';
+import { cardFace, haloFor } from '../utils/cardFace';
 
 interface SpiralViewProps {
   works: Work[];
@@ -103,9 +103,9 @@ export function SpiralView({ works, activeSlug, onActivate, paused }: SpiralView
                   onMouseEnter={() => play('hover')}
                   onClick={(event) => handleCardClick(event, index, isActive)}
                 >
-                  <span className="spiral-card-index">{String(index + 1).padStart(2, '0')}</span>
-                  <span className="spiral-card-title">{work.title}</span>
-                  <span className="spiral-card-meta">{CATEGORY_LABELS[work.category]}</span>
+                  <span className="spiral-card-index" style={{ color: face.inks.top, textShadow: haloFor(face.inks.top) }}>{String(index + 1).padStart(2, '0')}</span>
+                  <span className="spiral-card-title" style={{ textShadow: haloFor(face.inks.middle) }}>{work.title}</span>
+                  <span className="spiral-card-meta" style={{ color: face.inks.bottom, textShadow: haloFor(face.inks.bottom) }}>{CATEGORY_LABELS[work.category]}</span>
                 </Link>
               </li>
             );

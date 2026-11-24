@@ -1,7 +1,10 @@
 /*
  * Self-hosted OFL fonts (see ../assets/fonts/OFL.txt). Latin subset, variable weight.
- * The "Fallback" faces resize Arial to each font's measured metrics (measured in
- * Chromium against Arial/Liberation Sans) so the swap does not shift the layout.
+ * The "Fallback" faces resize Arial to each font's measured advance widths (measured in
+ * Chromium against Liberation Sans, which is metric-compatible with Arial) so the swap
+ * does not shift the layout. Bricolage is almost always set in capitals here, and its
+ * capitals are ~9% narrower relative to Arial than its lowercase, so it gets two fallbacks:
+ * the default is tuned for capitals, the "Mixed" one for the few mixed-case paragraphs.
  */
 @font-face {
   font-family: 'Inter Tight';
@@ -22,7 +25,7 @@
 @font-face {
   font-family: 'Inter Tight Fallback';
   src: local('Arial'), local('Liberation Sans'), local('Helvetica');
-  size-adjust: 96.12%;
+  size-adjust: 94.7%;
   ascent-override: 100.91%;
   descent-override: 24.97%;
   line-gap-override: 0%;
@@ -31,7 +34,16 @@
 @font-face {
   font-family: 'Bricolage Grotesque Fallback';
   src: local('Arial'), local('Liberation Sans'), local('Helvetica');
-  size-adjust: 89.42%;
+  size-adjust: 84.2%;
+  ascent-override: 104%;
+  descent-override: 30.19%;
+  line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: 'Bricolage Grotesque Fallback Mixed';
+  src: local('Arial'), local('Liberation Sans'), local('Helvetica');
+  size-adjust: 92.4%;
   ascent-override: 104%;
   descent-override: 30.19%;
   line-gap-override: 0%;

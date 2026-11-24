@@ -6,7 +6,7 @@ import { CATEGORY_LABELS, works } from '../data/works';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { originRect, playSheetClose, playSheetOpen, type OriginMode } from '../motion/sheetMotion';
 import { useShell } from '../shell/shellContext';
-import { cardFace } from '../utils/cardFace';
+import { INK_DARK, INK_LIGHT, cardFace, haloFor } from '../utils/cardFace';
 import { DisclosurePanel } from './DisclosurePanel';
 import { MetaList } from './MetaList';
 import { SoundToggle } from './SoundToggle';
@@ -16,7 +16,8 @@ import { VideoEmbed } from './VideoEmbed';
 /** The hero media wears the orbit card's face; the inverse ink keeps the hovered play icon visible. */
 const heroStyle = (work: { slug: string; thumbnail: string | null }): CSSProperties => {
   const face = cardFace(work);
-  return { '--hero-bg': face.background, '--hero-ink': face.ink, '--hero-ink-inverse': face.ink === '#141414' ? '#f4f4f2' : '#141414' } as CSSProperties;
+  const ink = face.inks.center;
+  return { '--hero-bg': face.background, '--hero-ink': ink, '--hero-halo': haloFor(ink), '--hero-ink-inverse': ink === INK_DARK ? INK_LIGHT : INK_DARK } as CSSProperties;
 };
 
 const focusTrigger = (slug: string) => {

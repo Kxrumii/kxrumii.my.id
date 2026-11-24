@@ -72,7 +72,8 @@ html[data-gate] .shell * { visibility: hidden !important; }
 .shell-identity .meta-list { display: grid; gap: 2px; margin: 0; }
 .shell-identity .meta-list div { display: flex; gap: 10px; }
 .shell-identity dt { min-width: 3.2em; color: var(--muted); }
-.shell-identity dd { margin: 0; }
+.shell-identity .meta-list div { min-width: 0; }
+.shell-identity dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
 
 .copy-email { display: inline-flex; flex-direction: column; gap: 2px; }
 .shell-inquiries.copy-email { align-items: flex-end; }
@@ -96,6 +97,16 @@ html[data-gate] .shell * { visibility: hidden !important; }
   .wordmark span { vertical-align: baseline; }
 }
 
+/* Narrow desktop (900-1099): the 12-column header is too tight for five two-column cells (the identity ran into the
+   clock and the address wrapped), so the clock tucks under the audio toggle and identity/inquiries get the room. */
+@media (min-width: 900px) and (max-width: 1099px) {
+  /* Every cell is pinned to row 1: an explicit placement for one item would otherwise push the auto-placed ones down. */
+  .shell-nav, .shell-audio, .shell-identity, .local-clock, .shell-inquiries { grid-row: 1; }
+  .local-clock { grid-column: 4 / span 2; margin-top: 2.4em; }
+  .shell-identity { grid-column: 6 / span 3; }
+  .shell-inquiries { grid-column: 9 / span 4; }
+}
+
 /* Mobile: Pacôme pill + sheet, identity stays horizontal and readable. */
 @media (max-width: 899px) {
   .shell-rail { gap: 10px; }
@@ -103,7 +114,8 @@ html[data-gate] .shell * { visibility: hidden !important; }
   .shell-top { display: block; padding: 0; }
   .shell-nav, .shell-audio, .local-clock, .shell-inquiries { display: none; }
   .shell-identity { position: absolute; top: 72px; left: var(--margin); right: var(--margin); font-size: 13px; }
-  .shell-identity .meta-list { grid-auto-flow: column; justify-content: start; gap: 4px 22px; }
+  /* Content-sized columns (not two equal halves), so a long name keeps the room it needs next to the NIM. */
+  .shell-identity .meta-list { grid-auto-flow: column; grid-template-columns: auto auto; justify-content: start; gap: 4px 22px; }
   .menu-pill { position: absolute; top: var(--margin); right: var(--margin); display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 999px; padding: 11px 16px; background: var(--ink); color: var(--canvas); font-size: 15px; letter-spacing: -0.02em; }
   .menu-pill-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
   .stage-host { padding: 140px var(--margin) 110px; }

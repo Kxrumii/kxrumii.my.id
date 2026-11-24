@@ -16,7 +16,15 @@ import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
  * - reduced motion: no requestAnimationFrame loop at all; steps jump instantly
  */
 
-const STEP_DEG = 38;
+/*
+ * Angular step between cards. With radius = RADIUS_PER_WIDTH × card width, neighbours sit RADIUS·sin(step) apart in
+ * x while only (1 + cos(step)) / 2 card widths are needed to clear each other: 0.935 vs 0.85 widths at 46°/1.3 (before perspective, which only shrinks the far cards), so the
+ * front three cards never overlap. Cards two steps away (92°) are fully faded: no hidden slivers behind the others.
+ */
+const STEP_DEG = 46;
+const RADIUS_PER_WIDTH = 1.3;
+const FADE_START_DEG = 62;
+const FADE_SPAN_DEG = 22;
 const FRICTION = 0.92;
 const SNAP_STIFFNESS = 140;
 const SNAP_DAMPING = 18;
@@ -106,7 +114,7 @@ export function useSpiral({ count, initialIndex, resetKey, reducedMotion, paused
       const angle = d * STEP_DEG;
       const y = d * rise;
       // Fade cards turning away from the camera, and at the loop seam so the wrap jump is never visible.
-      const away = 1 - Math.min(Math.max((Math.abs(angle) - 70) / 40, 0), 1);
+      const away = 1 - Math.min(Math.max((Math.abs(angle) - FADE_START_DEG) / FADE_SPAN_DEG, 0), 1);
       const seam = loops() ? Math.min(Math.max((half - Math.abs(d)) / 0.5, 0), 1) : 1;
       const opacity = finite(Math.min(away, seam), 0);
       el.style.transform = `translate3d(-50%, -50%, 0) translate3d(0, ${y.toFixed(2)}px, ${(-radius).toFixed(2)}px) rotateY(${angle.toFixed(3)}deg) translateZ(${radius.toFixed(2)}px)`;
@@ -251,8 +259,9 @@ export function useSpiral({ count, initialIndex, resetKey, reducedMotion, paused
       const card = cards.current.find(Boolean);
       const width = finite(card?.offsetWidth ?? 0, 0) || 280;
       const height = finite(card?.offsetHeight ?? 0, 0) || 180;
-      const radius = Math.min(width * 1.25, Math.max(node.clientWidth * 0.55, width));
-      state.current.geometry = { radius, rise: height * 0.42, pxPerItem: Math.max(width * 0.8, 120) };
+      // The stage width is handled in CSS (card width <= 38cqw), so the radius only follows the card.
+      const radius = width * RADIUS_PER_WIDTH;
+      state.current.geometry = { radius, rise: height * 0.36, pxPerItem: Math.max(width * 0.8, 120) };
       render();
     };
     measure();

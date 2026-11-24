@@ -17,6 +17,8 @@
 
   --font-ui: 'Inter Tight', 'Inter Tight Fallback', 'Helvetica Neue', Arial, sans-serif;
   --font-display: 'Bricolage Grotesque', 'Bricolage Grotesque Fallback', 'Helvetica Neue', Arial, sans-serif;
+  /* Same face with the fallback tuned for mixed case (paragraphs, addresses), see fonts.css. */
+  --font-display-mixed: 'Bricolage Grotesque', 'Bricolage Grotesque Fallback Mixed', 'Helvetica Neue', Arial, sans-serif;
 
   /* Huy: 12px mobile, 10px desktop (raised to 11px for legibility), 12px ≥1800, 14px ≥2200. */
   --fs-ui: 12px;
@@ -49,6 +51,8 @@
   --line-strong: rgba(24, 24, 24, 0.3);
   --surface: rgba(24, 24, 24, 0.04);
   --sheet: #f7f7f5;
+  /* The dark-canvas red is only 2.8:1 on #ececec; this one keeps the focus ring >= 3:1 (4.1:1) on both light surfaces. */
+  --accent: #d92d2d;
   color-scheme: light;
 }
 

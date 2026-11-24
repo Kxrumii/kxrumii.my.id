@@ -18,10 +18,10 @@
  */
 export type OriginMode = 'spiral' | 'list';
 
-const OPEN_MS = 600;
-const CLOSE_MS = 380;
-const FALLBACK_OPEN_MS = 420;
-const FALLBACK_CLOSE_MS = 260;
+const OPEN_MS = 500;
+const CLOSE_MS = 340;
+const FALLBACK_OPEN_MS = 380;
+const FALLBACK_CLOSE_MS = 220;
 const EASE_OUT = 'cubic-bezier(0.16, 1, 0.3, 1)';
 const EASE_IN = 'cubic-bezier(0.45, 0, 0.2, 1)';
 
@@ -131,7 +131,7 @@ export function playSheetOpen(dialog: HTMLElement, slug: string, mode: OriginMod
           { opacity: 0, transform: 'translate3d(0, 14px, 0)' },
           { opacity: 1, transform: 'none' },
         ],
-        { duration: 420, delay: 200 + index * 40, easing: EASE_OUT, fill: 'backwards' },
+        { duration: 320, delay: 110 + index * 25, easing: EASE_OUT, fill: 'backwards' },
       ),
     );
   });
@@ -165,8 +165,8 @@ export async function playSheetClose(dialog: HTMLElement, slug: string, mode: Or
     const cardScale = prepareCard(card, origin);
     reveals.forEach((el) => {
       animations.push(
-        fade(el, 200),
-        el.animate([{ transform: 'none' }, { transform: 'translate3d(0, 8px, 0)' }], { duration: 200, easing: EASE_IN, fill: 'forwards' }),
+        fade(el, 160),
+        el.animate([{ transform: 'none' }, { transform: 'translate3d(0, 8px, 0)' }], { duration: 160, easing: EASE_IN, fill: 'forwards' }),
       );
     });
     animations.push(

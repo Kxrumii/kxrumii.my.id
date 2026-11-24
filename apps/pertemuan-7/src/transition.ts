@@ -68,7 +68,7 @@ function depthAnimations(elements: HTMLElement[], kind: 'exit' | 'enter'): Anima
           { opacity: 1, transform: 'none' },
           { opacity: 0, transform: 'translate3d(0, -2vh, 0) scale(0.96)' },
         ],
-        { duration: 260, delay: index * 30, easing: 'cubic-bezier(0.45, 0, 0.2, 1)', fill: 'forwards' },
+        { duration: 160, delay: index * 15, easing: 'cubic-bezier(0.45, 0, 0.2, 1)', fill: 'forwards' },
       );
     }
     return el.animate(
@@ -76,7 +76,7 @@ function depthAnimations(elements: HTMLElement[], kind: 'exit' | 'enter'): Anima
         { opacity: 0, transform: 'scale(1.03)' },
         { opacity: 1, transform: 'none' },
       ],
-      { duration: 560, delay: 80 + index * 30, easing: easingVar('--ease-spring', 'cubic-bezier(0.16, 1, 0.3, 1)'), fill: 'both' },
+      { duration: 310, delay: 30 + index * 15, easing: easingVar('--ease-spring', 'cubic-bezier(0.16, 1, 0.3, 1)'), fill: 'both' },
     );
   });
 }
