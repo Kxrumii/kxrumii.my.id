@@ -237,3 +237,36 @@ describe('deadlineLabel', () => {
     assert.equal(deadlineLabel('none'), '');
   });
 });
+
+describe('createTask, updateTask, dan cache formatDeadline untuk skema S2', () => {
+  it('menyertakan category dan description non-kosong serta menghapusnya saat dikosongkan pada edit', () => {
+    const created = createTask([], {
+      title: 'Proyek',
+      course: 'PAW',
+      category: '  Praktikum ',
+      description: '  Buat aplikasi ',
+      deadline: null,
+    });
+    assert.deepEqual(created[0], {
+      id: 1,
+      title: 'Proyek',
+      course: 'PAW',
+      category: 'Praktikum',
+      description: 'Buat aplikasi',
+      deadline: null,
+      status: 'belum-selesai',
+    });
+
+    const cleared = updateTask(created, 1, {
+      title: 'Proyek',
+      course: 'PAW',
+      deadline: null,
+    });
+    assert.deepEqual(Object.keys(cleared[0] as Task).sort(), ['course', 'deadline', 'id', 'status', 'title']);
+  });
+
+  it('formatDeadline konsisten pada pemanggilan berulang', () => {
+    assert.equal(formatDeadline('2026-12-12'), formatDeadline('2026-12-12'));
+    assert.equal(formatDeadline('2026-01-05'), formatDeadline('2026-01-05'));
+  });
+});

@@ -1,3 +1,4 @@
+import { animateTaskDialogOpen } from './motion.ts';
 import { requireElement } from './render.ts';
 import type { Task } from './types.ts';
 
@@ -31,8 +32,8 @@ export function initDeleteDialog(root: ParentNode, onConfirm: (id: number) => vo
     pendingId = null;
     deleted = true;
     confirm.disabled = true;
-    onConfirm(id);
     dialog.close();
+    onConfirm(id);
   });
 
   cancel.addEventListener('click', () => dialog.close());
@@ -51,7 +52,11 @@ export function initDeleteDialog(root: ParentNode, onConfirm: (id: number) => vo
       returnFocus = focus;
       taskName.textContent = `“${task.title}”`;
       confirm.disabled = false;
-      dialog.showModal();
+      const wasOpen = dialog.open;
+      if (!wasOpen) {
+        dialog.showModal();
+        animateTaskDialogOpen(dialog);
+      }
       cancel.focus();
     },
   };

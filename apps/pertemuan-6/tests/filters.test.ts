@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { filterCounts, filterTasks, isTaskFilter, TASK_FILTERS } from '../src/filters.ts';
+import {
+  filterCounts,
+  filterTasks,
+  isTaskFilter,
+  matchesSearchQuery,
+  normalizeSearchQuery,
+  queryTasks,
+  TASK_FILTERS,
+} from '../src/filters.ts';
 import { createTask, removeTask, toggleStatus } from '../src/tasks.ts';
 import type { Task } from '../src/types.ts';
 
@@ -69,5 +77,68 @@ describe('isTaskFilter', () => {
   it('menerima tepat tiga nilai', () => {
     for (const value of TASK_FILTERS) assert.equal(isTaskFilter(value), true);
     for (const value of ['', 'ALL', 'done', null, undefined, 1]) assert.equal(isTaskFilter(value), false);
+  });
+});
+
+describe('normalizeSearchQuery, matchesSearchQuery, dan queryTasks', () => {
+  const richTasks = (): readonly Task[] =>
+    Object.freeze([
+      Object.freeze<Task>({
+        id: 1,
+        title: 'Normalisasi Basis Data',
+        course: 'Sistem Basis Data',
+        category: 'Praktikum',
+        description: 'Membuat skema 3NF dan diagram relasi',
+        deadline: null,
+        status: 'belum-selesai',
+      }),
+      Object.freeze<Task>({
+        id: 2,
+        title: 'Esai Etika Profesi',
+        course: 'Etika TI',
+        deadline: '2026-12-01',
+        status: 'selesai',
+      }),
+      Object.freeze<Task>({
+        id: 3,
+        title: 'Implementasi Router',
+        course: 'PAW',
+        category: 'Proyek',
+        description: 'Nested routes dengan fallback Nginx',
+        deadline: null,
+        status: 'belum-selesai',
+      }),
+    ]);
+
+  it('menormalkan query kosong, spasi tepi, spasi ganda, dan huruf besar', () => {
+    assert.equal(normalizeSearchQuery(''), '');
+    assert.equal(normalizeSearchQuery('   \t\n  '), '');
+    assert.equal(normalizeSearchQuery('  Basis   Data  '), 'basis data');
+  });
+
+  it('query kosong atau hanya spasi cocok dengan seluruh tugas', () => {
+    const source = richTasks();
+    assert.equal(matchesSearchQuery(source[1] as Task, ''), true);
+    assert.deepEqual(
+      queryTasks(source, 'all', '   ').map((t) => t.id),
+      [1, 2, 3],
+    );
+  });
+
+  it('mencocokkan judul, mata kuliah, kategori, dan deskripsi secara case-insensitive serta aman tanpa field opsional', () => {
+    const source = richTasks();
+    assert.deepEqual(queryTasks(source, 'all', 'NORMALISASI').map((t) => t.id), [1]);
+    assert.deepEqual(queryTasks(source, 'all', 'etika ti').map((t) => t.id), [2]);
+    assert.deepEqual(queryTasks(source, 'all', 'PRAKTIKUM').map((t) => t.id), [1]);
+    assert.deepEqual(queryTasks(source, 'all', 'nested   routes').map((t) => t.id), [3]);
+    assert.deepEqual(queryTasks(source, 'all', 'tidak-ada'), []);
+  });
+
+  it('menggabungkan filter status dan query pencarian secara konsisten tanpa mengubah array sumber', () => {
+    const source = richTasks();
+    assert.deepEqual(queryTasks(source, 'active', 'proyek').map((t) => t.id), [3]);
+    assert.deepEqual(queryTasks(source, 'completed', 'proyek'), []);
+    assert.deepEqual(queryTasks(source, 'completed', 'etika').map((t) => t.id), [2]);
+    assert.equal(source.length, 3);
   });
 });

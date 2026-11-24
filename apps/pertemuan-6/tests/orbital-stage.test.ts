@@ -22,6 +22,20 @@ describe('resolveEffectiveView', () => {
     assert.equal(resolveEffectiveView(25, 'orbit'), 'orbit');
     assert.equal(resolveEffectiveView(3, 'list'), 'list');
   });
+
+  it('pattern A: pilihan eksplisit orbit dengan > 12 tugas tetap di orbit dan terpaginasi tepat 12 per halaman', () => {
+    const thirty = Array.from({ length: 30 }, (_, i) => i + 1);
+    assert.equal(resolveEffectiveView(thirty.length, 'orbit'), 'orbit');
+    const p1 = paginateOrbit(thirty, 1, ORBIT_LIMIT);
+    const p2 = paginateOrbit(thirty, 2, ORBIT_LIMIT);
+    const p3 = paginateOrbit(thirty, 3, ORBIT_LIMIT);
+    assert.equal(p1.totalPages, 3);
+    assert.equal(p1.items.length, 12);
+    assert.equal(p2.items.length, 12);
+    assert.equal(p3.items.length, 6);
+    assert.equal(p3.startIndex, 25);
+    assert.equal(p3.endIndex, 30);
+  });
 });
 
 describe('paginateOrbit', () => {

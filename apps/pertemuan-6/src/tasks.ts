@@ -14,6 +14,8 @@ export function nextId(tasks: TaskList): number {
 }
 
 export function createTask(tasks: TaskList, draft: TaskDraft): Task[] {
+  const category = (draft.category ?? '').trim();
+  const description = (draft.description ?? '').trim();
   const task: Task = {
     id: nextId(tasks),
     title: draft.title.trim(),
@@ -21,16 +23,26 @@ export function createTask(tasks: TaskList, draft: TaskDraft): Task[] {
     deadline: draft.deadline,
     status: 'belum-selesai',
   };
+  if (category !== '') task.category = category;
+  if (description !== '') task.description = description;
   return [...tasks, task];
 }
 
 export function updateTask(tasks: TaskList, id: number, draft: TaskDraft): Task[] {
-  return updateById(tasks, id, (task) => ({
-    ...task,
-    title: draft.title.trim(),
-    course: draft.course.trim(),
-    deadline: draft.deadline,
-  }));
+  const category = (draft.category ?? '').trim();
+  const description = (draft.description ?? '').trim();
+  return updateById(tasks, id, (task) => {
+    const next: Task = {
+      id: task.id,
+      title: draft.title.trim(),
+      course: draft.course.trim(),
+      deadline: draft.deadline,
+      status: task.status,
+    };
+    if (category !== '') next.category = category;
+    if (description !== '') next.description = description;
+    return next;
+  });
 }
 
 export function toggleStatus(tasks: TaskList, id: number): Task[] {
@@ -66,12 +78,18 @@ export function parseCalendarDate(value: string): Date | null {
   return date;
 }
 
+const DEADLINE_FORMATTER = new Intl.DateTimeFormat('id-ID', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
+
 /** Memformat `YYYY-MM-DD` sebagai tanggal lokal (tanpa pergeseran UTC); `null`/tidak valid menjadi "—". */
 export function formatDeadline(deadline: string | null): string {
   if (deadline === null) return '—';
   const date = parseCalendarDate(deadline);
   if (date === null) return '—';
-  return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }).format(date);
+  return DEADLINE_FORMATTER.format(date);
 }
 
 /** Id tugas yang tersisa dan paling dekat dengan posisi `removedId` (berikutnya, atau sebelumnya bila terakhir); `null` bila tidak ada. */

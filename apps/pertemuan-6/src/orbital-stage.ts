@@ -211,7 +211,7 @@ export function createOrbitalStage(
   let pointer: { id: number; startX: number; startY: number; lastX: number; lastY: number; moved: boolean } | null = null;
 
   let boxEls: HTMLButtonElement[] = [];
-  let captionEls: HTMLElement[] = [];
+  let captionEls: Array<HTMLElement | null> = [];
   let stageWidth = stageEl.clientWidth;
   let stageHeight = stageEl.clientHeight;
   let measures: BoxMeasure[] = [];
@@ -241,8 +241,14 @@ export function createOrbitalStage(
   }
 
   function measure(): void {
-    boxEls = Array.from(stageEl.querySelectorAll<HTMLButtonElement>('.task-box'));
-    captionEls = Array.from(stageEl.querySelectorAll<HTMLElement>('.box-caption'));
+    boxEls = Array.from(stageEl.querySelectorAll<HTMLButtonElement>('.task-box:not([data-exiting="true"])'));
+    captionEls = boxEls.map((box) => {
+      const taskId = box.dataset.taskId;
+      if (!taskId) return null;
+      return stageEl.querySelector<HTMLElement>(
+        `.box-caption[data-caption-for="${taskId}"]:not([data-exiting="true"])`,
+      );
+    });
     stageWidth = stageEl.clientWidth;
     stageHeight = stageEl.clientHeight;
     measures = boxEls.map((box, index) => ({
@@ -370,9 +376,11 @@ export function createOrbitalStage(
     }, 0);
     if (!wasMoved) {
       const hit = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-task-id]');
-      const taskId = Number(hit?.dataset.taskId);
-      if (Number.isSafeInteger(taskId) && taskId > 0) {
-        options.onSelectTask(taskId);
+      if (hit && hit.dataset.exiting !== 'true') {
+        const taskId = Number(hit.dataset.taskId);
+        if (Number.isSafeInteger(taskId) && taskId > 0) {
+          options.onSelectTask(taskId);
+        }
       }
     }
     requestFrame();
@@ -385,7 +393,8 @@ export function createOrbitalStage(
     }
     const target = event.target instanceof Element ? event.target : null;
     const box = target?.closest<HTMLElement>('[data-task-id]');
-    const taskId = Number(box?.dataset.taskId);
+    if (!box || box.dataset.exiting === 'true') return;
+    const taskId = Number(box.dataset.taskId);
     if (Number.isSafeInteger(taskId) && taskId > 0) {
       options.onSelectTask(taskId);
     }
@@ -414,8 +423,8 @@ export function createOrbitalStage(
   }
 
   const ro = new ResizeObserver(() => {
-    fitBoxTitles();
     measure();
+    fitBoxTitles();
     applyPositions();
     requestFrame();
   });
@@ -466,15 +475,15 @@ export function createOrbitalStage(
   document.addEventListener('visibilitychange', onVisibilityChange);
 
   void document.fonts?.ready.then(() => {
-    fitBoxTitles();
     measure();
+    fitBoxTitles();
     applyPositions();
   });
 
   return {
     sync(): void {
-      fitBoxTitles();
       measure();
+      fitBoxTitles();
       applyPositions();
       requestFrame();
     },
@@ -483,8 +492,8 @@ export function createOrbitalStage(
       if (!active) {
         stopLoop();
       } else {
-        fitBoxTitles();
         measure();
+        fitBoxTitles();
         applyPositions();
         requestFrame();
       }

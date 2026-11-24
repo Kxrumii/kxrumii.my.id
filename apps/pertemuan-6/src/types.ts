@@ -4,6 +4,8 @@ export interface Task {
   id: number;
   title: string;
   course: string;
+  category?: string;
+  description?: string;
   /** Tanggal kalender `YYYY-MM-DD`, atau `null` bila tidak ada tenggat. */
   deadline: string | null;
   status: TaskStatus;
@@ -12,6 +14,8 @@ export interface Task {
 export interface TaskDraft {
   title: string;
   course: string;
+  category?: string;
+  description?: string;
   deadline: string | null;
 }
 
