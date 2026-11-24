@@ -1,6 +1,7 @@
 /* Base */
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+/* Reserve the scrollbar gutter so switching between scrolling and non-scrolling stages never reflows the shell. */
+html { -webkit-text-size-adjust: 100%; scrollbar-gutter: stable; }
 body {
   margin: 0;
   min-width: 320px;

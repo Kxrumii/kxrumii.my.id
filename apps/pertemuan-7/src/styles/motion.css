@@ -35,3 +35,14 @@ html[data-route-scope='stage'][data-transition-state='entering'] [data-shell][da
   .menu-sheet[open] { animation: none; }
   .shell-nav-arrow, .sound-dash, .gate-button { transition: none; }
 }
+
+/* Regions holding a CSS 3D scene move with opacity + transform (see transition.ts), never with clip-path. */
+[data-transition-motion='depth'] {
+  --transition-enter-from-transform: scale(1.03);
+  --transition-enter-from-clip: none;
+  --transition-exit-clip: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-transition-state='entering'] [data-transition-motion='depth'] { opacity: 0; }
+}

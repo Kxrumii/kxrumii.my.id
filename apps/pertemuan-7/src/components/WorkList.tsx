@@ -27,14 +27,8 @@ export function WorkList({ works, activeSlug, onActivate }: WorkListProps) {
 
   return (
     <ol className="work-list" aria-label="Daftar karya" onKeyDown={handleKeyDown}>
-      {works.map((work, index) => (
-        <WorkRow
-          key={work.slug}
-          work={work}
-          position={index + 1}
-          active={work.slug === activeSlug}
-          onActivate={onActivate}
-        />
+      {works.map((work) => (
+        <WorkRow key={work.slug} work={work} active={work.slug === activeSlug} onActivate={onActivate} />
       ))}
     </ol>
   );

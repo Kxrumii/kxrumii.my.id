@@ -48,8 +48,56 @@ function participants(elements: HTMLElement[]): HTMLElement[] {
   return elements;
 }
 
-function animateParticipants(ctx: ExitEnterContext, kind: 'exit' | 'enter'): Promise<unknown> {
-  return Promise.allSettled(ctx.animateElements(participants(ctx.elements), kind).map((animation) => animation.finished));
+/*
+ * "Depth" motion: regions holding a CSS 3D scene (the Works spiral) move with
+ * opacity + transform instead of the bridge's clip-path, so no clip ever sits
+ * on top of the 3D chain. Everything else uses the bridge's own keyframes.
+ */
+const DEPTH = '[data-transition-motion="depth"]';
+
+function easingVar(name: string, fallback: string): string {
+  return getComputedStyle(root).getPropertyValue(name).trim() || fallback;
+}
+
+function depthAnimations(elements: HTMLElement[], kind: 'exit' | 'enter'): Animation[] {
+  return elements.map((el) => {
+    const index = Number.parseFloat(getComputedStyle(el).getPropertyValue('--i')) || 0;
+    if (kind === 'exit') {
+      return el.animate(
+        [
+          { opacity: 1, transform: 'none' },
+          { opacity: 0, transform: 'translate3d(0, -2vh, 0) scale(0.96)' },
+        ],
+        { duration: 260, delay: index * 30, easing: 'cubic-bezier(0.45, 0, 0.2, 1)', fill: 'forwards' },
+      );
+    }
+    return el.animate(
+      [
+        { opacity: 0, transform: 'scale(1.03)' },
+        { opacity: 1, transform: 'none' },
+      ],
+      { duration: 560, delay: 80 + index * 30, easing: easingVar('--ease-spring', 'cubic-bezier(0.16, 1, 0.3, 1)'), fill: 'both' },
+    );
+  });
+}
+
+/** Animates page elements, routing 3D regions to the depth motion. */
+export function animatePageElements(
+  elements: HTMLElement[],
+  kind: 'exit' | 'enter',
+  animateDefault: (els: Iterable<HTMLElement>, kind: 'exit' | 'enter') => Animation[] = animateElements,
+): { all: Animation[]; own: Animation[] } {
+  const depth = elements.filter((el) => el.matches(DEPTH));
+  const rest = elements.filter((el) => !el.matches(DEPTH));
+  const own = depthAnimations(depth, kind);
+  return { all: [...animateDefault(rest, kind), ...own], own };
+}
+
+async function animateParticipants(ctx: ExitEnterContext, kind: 'exit' | 'enter'): Promise<void> {
+  const { all, own } = animatePageElements(participants(ctx.elements), kind, ctx.animateElements);
+  await Promise.allSettled(all.map((animation) => animation.finished));
+  // The bridge cancels the animations it tracks; enter animations started here end in the natural state too.
+  if (kind === 'enter') own.forEach((animation) => animation.cancel());
 }
 
 // Guarded so a re-evaluated module (dev HMR) never installs a second bridge.
@@ -130,7 +178,7 @@ export async function playGateHandOff(onRevealed: () => void): Promise<void> {
   if (!reduce) await wait(180);
   const content = Array.from(root.querySelectorAll<HTMLElement>('[data-transition-enter]:not([data-gate-part])'));
   // Start from the pre-state (fill: both) before the gate attribute stops hiding the content.
-  const entering = reduce ? [] : animateElements(content, 'enter');
+  const entering = reduce ? [] : animatePageElements(content, 'enter').all;
   delete root.dataset.gate;
   onRevealed();
   await Promise.allSettled([reveal, ...entering.map((a) => a.finished)]);
