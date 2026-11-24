@@ -124,4 +124,40 @@ describe('validasi + operasi tugas (alur edit)', () => {
     assert.equal(created[1]?.id, 5);
     assert.equal(created[1]?.status, 'belum-selesai');
   });
+
+  it('menormalkan category dan description opsional serta membuang yang kosong/spasi', () => {
+    const withOptional = validateDraft({
+      title: 'Tugas',
+      course: 'PAW',
+      category: '  Praktikum  ',
+      description: '  Catatan tugas  ',
+      deadline: '',
+    });
+    assert.deepEqual(withOptional, {
+      ok: true,
+      value: {
+        title: 'Tugas',
+        course: 'PAW',
+        category: 'Praktikum',
+        description: 'Catatan tugas',
+        deadline: null,
+      },
+    });
+
+    const withoutOptional = validateDraft({
+      title: 'Tugas',
+      course: 'PAW',
+      category: '   ',
+      description: '\t',
+      deadline: '',
+    });
+    assert.deepEqual(withoutOptional, {
+      ok: true,
+      value: { title: 'Tugas', course: 'PAW', deadline: null },
+    });
+    if (withoutOptional.ok) {
+      assert.equal('category' in withoutOptional.value, false);
+      assert.equal('description' in withoutOptional.value, false);
+    }
+  });
 });

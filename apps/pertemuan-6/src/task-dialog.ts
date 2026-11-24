@@ -1,3 +1,4 @@
+import { animateTaskDialogOpen } from './motion.ts';
 import { requireElement } from './render.ts';
 import type { Task, TaskDraft } from './types.ts';
 import { DRAFT_FIELD_ORDER, firstInvalidField, validateDraft, type DraftErrors, type DraftField } from './validation.ts';
@@ -25,6 +26,9 @@ export function initTaskDialog(root: ParentNode, handlers: TaskDialogHandlers): 
   const heading = requireElement(root, '#task-dialog-title', HTMLElement);
   const cancel = requireElement(root, '#task-cancel', HTMLButtonElement);
 
+  const categoryInput = requireElement(root, '#task-category', HTMLInputElement);
+  const descriptionInput = requireElement(root, '#task-description', HTMLTextAreaElement);
+
   const inputs: Record<DraftField, HTMLInputElement> = {
     title: requireElement(root, '#task-title', HTMLInputElement),
     course: requireElement(root, '#task-course', HTMLInputElement),
@@ -38,6 +42,7 @@ export function initTaskDialog(root: ParentNode, handlers: TaskDialogHandlers): 
 
   let editingId: number | null = null;
   let returnFocus: FocusTarget = () => null;
+  let deferCloseFocus = false;
 
   function clearErrors(): void {
     for (const field of DRAFT_FIELD_ORDER) {
@@ -66,9 +71,15 @@ export function initTaskDialog(root: ParentNode, handlers: TaskDialogHandlers): 
     heading.textContent = title;
     inputs.title.value = values.title;
     inputs.course.value = values.course;
+    categoryInput.value = values.category ?? '';
+    descriptionInput.value = values.description ?? '';
     inputs.deadline.value = values.deadline ?? '';
     clearErrors();
-    dialog.showModal();
+    const wasOpen = dialog.open;
+    if (!wasOpen) {
+      dialog.showModal();
+      animateTaskDialogOpen(dialog);
+    }
     inputs.title.focus();
   }
 
@@ -77,18 +88,25 @@ export function initTaskDialog(root: ParentNode, handlers: TaskDialogHandlers): 
     const result = validateDraft({
       title: inputs.title.value,
       course: inputs.course.value,
+      category: categoryInput.value,
+      description: descriptionInput.value,
       deadline: inputs.deadline.value,
     });
     if (!result.ok) {
       showErrors(result.errors);
       return;
     }
-    if (editingId === null) {
-      handlers.onCreate(result.value);
-    } else {
-      handlers.onEdit(editingId, result.value);
-    }
+    const isCreate = editingId === null;
+    const targetId = editingId;
+    const focusAfterSubmit = returnFocus;
+    deferCloseFocus = true;
     dialog.close();
+    if (isCreate) {
+      handlers.onCreate(result.value);
+    } else if (targetId !== null) {
+      handlers.onEdit(targetId, result.value);
+    }
+    focusAfterSubmit()?.focus();
   });
 
   cancel.addEventListener('click', () => dialog.close());
@@ -96,6 +114,10 @@ export function initTaskDialog(root: ParentNode, handlers: TaskDialogHandlers): 
   // Berlaku untuk simpan, batal, dan Escape. Fokus dipulihkan setelah daftar dirender ulang.
   dialog.addEventListener('close', () => {
     editingId = null;
+    if (deferCloseFocus) {
+      deferCloseFocus = false;
+      return;
+    }
     returnFocus()?.focus();
   });
 
@@ -104,7 +126,18 @@ export function initTaskDialog(root: ParentNode, handlers: TaskDialogHandlers): 
       open('Tambah tugas', { title: '', course: '', deadline: null }, focus, null);
     },
     openEdit(task, focus) {
-      open('Edit tugas', { title: task.title, course: task.course, deadline: task.deadline }, focus, task.id);
+      open(
+        'Edit tugas',
+        {
+          title: task.title,
+          course: task.course,
+          category: task.category,
+          description: task.description,
+          deadline: task.deadline,
+        },
+        focus,
+        task.id,
+      );
     },
   };
 }

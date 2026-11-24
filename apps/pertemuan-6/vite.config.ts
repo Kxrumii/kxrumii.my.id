@@ -11,5 +11,11 @@ export default defineConfig({
     ),
     emptyOutDir: true,
     assetsDir: 'assets',
+    rolldownOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        dokumentasi: fileURLToPath(new URL('./dokumentasi/index.html', import.meta.url)),
+      },
+    },
   },
 });

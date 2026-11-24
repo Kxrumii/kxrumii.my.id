@@ -1,8 +1,10 @@
 import { parseCalendarDate } from './tasks.ts';
-import type { Task, TaskStatus } from './types.ts';
+import type { Task, TaskStatus, ViewMode } from './types.ts';
 
 export const STORAGE_KEY = 'kxrumii:pertemuan-6:tasks:v1';
 export const STORAGE_VERSION = 1;
+export const VIEW_MODE_KEY = 'kxrumii-task6-view-mode';
+export const DEFAULT_VIEW_MODE: ViewMode = 'list';
 
 /** Subset `Storage` yang dipakai aplikasi; memudahkan injeksi pada test. */
 export interface StorageLike {
@@ -42,17 +44,45 @@ function isNonEmptyText(value: unknown): value is string {
 /** Validasi runtime satu record tugas dari data yang tidak dipercaya. */
 export function isTask(value: unknown): value is Task {
   if (!isRecord(value)) return false;
-  const { id, title, course, deadline, status } = value;
+  const { id, title, course, category, description, deadline, status } = value;
   return (
     typeof id === 'number' &&
     Number.isSafeInteger(id) &&
     id > 0 &&
     isNonEmptyText(title) &&
     isNonEmptyText(course) &&
+    (category === undefined || typeof category === 'string') &&
+    (description === undefined || typeof description === 'string') &&
     (deadline === null || (typeof deadline === 'string' && parseCalendarDate(deadline) !== null)) &&
     typeof status === 'string' &&
     (STATUSES as readonly string[]).includes(status)
   );
+}
+
+export function isViewMode(value: unknown): value is ViewMode {
+  return value === 'list' || value === 'orbit';
+}
+
+/** Membaca preferensi mode tampilan dari storage; selalu jatuh aman ke `list`. */
+export function loadViewMode(storage: StorageLike | null): ViewMode {
+  if (storage === null) return DEFAULT_VIEW_MODE;
+  try {
+    const raw = storage.getItem(VIEW_MODE_KEY);
+    return isViewMode(raw) ? raw : DEFAULT_VIEW_MODE;
+  } catch {
+    return DEFAULT_VIEW_MODE;
+  }
+}
+
+/** Menyimpan preferensi mode tampilan ke storage. Tidak pernah melempar error. */
+export function saveViewMode(storage: StorageLike | null, mode: ViewMode): SaveResult {
+  if (storage === null) return { ok: false, reason: 'unavailable' };
+  try {
+    storage.setItem(VIEW_MODE_KEY, mode);
+    return { ok: true };
+  } catch {
+    return { ok: false, reason: 'save-failed' };
+  }
 }
 
 /** Mengambil `localStorage` bila dapat diakses; accessor-nya sendiri bisa melempar error. */
@@ -101,13 +131,18 @@ export function loadTasks(storage: StorageLike | null): LoadResult {
     }
     seen.add(record.id);
     // Salin hanya field yang dikenal; properti tambahan tidak ikut dipulihkan.
-    tasks.push({
+    const item: Task = {
       id: record.id,
       title: record.title,
       course: record.course,
       deadline: record.deadline,
       status: record.status,
-    });
+    };
+    const category = (record.category ?? '').trim();
+    const description = (record.description ?? '').trim();
+    if (category !== '') item.category = category;
+    if (description !== '') item.description = description;
+    tasks.push(item);
   }
   return { tasks, skipped, issue: null };
 }

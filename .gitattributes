@@ -1,0 +1,14 @@
+# Normalisasi otomatis seluruh file teks ke LF di kedua OS
+* text=auto eol=lf
+
+# Pastikan file biner tidak pernah disentuh normalisasi teks Git
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+*.zip binary

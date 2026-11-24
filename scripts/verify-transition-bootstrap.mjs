@@ -1,7 +1,7 @@
 /**
  * Verifies the shared transition bootstrap in the built site (run after `npm run build`).
  *
- * - The six application documents contain exactly one bootstrap script.
+ * - The seven application documents contain exactly one bootstrap script.
  * - Its text is identical to packages/transition-bridge/src/bootstrap.inline.js.
  * - It follows <meta charset> and precedes the first stylesheet, <style> and module script.
  * - Static redirect documents are byte-identical to their source and carry no bootstrap.
@@ -24,6 +24,7 @@ const APPLICATION_DOCUMENTS = [
   'tugas/index.html',
   'tugas/pertemuan-1/index.html',
   'tugas/pertemuan-6/index.html',
+  'tugas/pertemuan-6/dokumentasi/index.html',
   'tugas/pertemuan-7/index.html',
   'tugas/pertemuan-8/index.html',
 ];
@@ -138,4 +139,4 @@ if (failures.length) {
 
 for (const document of APPLICATION_DOCUMENTS) console.log(`  ✓ ${document}`);
 for (const { built } of STATIC_REDIRECTS) console.log(`  ✓ ${built} (unchanged redirect)`);
-console.log('Transition bootstrap verified in 6 application documents.');
+console.log(`Transition bootstrap verified in ${APPLICATION_DOCUMENTS.length} application documents.`);
