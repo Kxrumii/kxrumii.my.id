@@ -8,7 +8,7 @@ import { WorksStage } from './pages/WorksStage';
 
 export default function App() {
   return (
-    <BrowserRouter basename="/tugas/pertemuan-7">
+    <BrowserRouter basename="/tugas/pertemuan-9">
       <Routes>
         <Route element={<AppShell />}>
           <Route path="/" element={<WorksStage />}>

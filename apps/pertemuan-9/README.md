@@ -1,14 +1,14 @@
-# PAW Task 7 — Interactive Project Showroom (React + Vite)
+# PAW Task 9 — Interactive Project Showroom (React + Vite)
 
-Catatan teknis pengumpulan Task 7. Dokumen ini sengaja tidak menyebut judul karya: seluruh isi karya dan profil hanya
+Catatan teknis pengumpulan Task 9. Dokumen ini sengaja tidak menyebut judul karya: seluruh isi karya dan profil hanya
 ada di `src/data/` (saat ini masih **data contoh**, ditandai `isSample: true`), sehingga README tetap valid setelah data
 nyata diisi. Judul kerja visual: *Afterimage Archive* (belum final sebagai nama).
 
 ## 1. Gambaran umum
 
 Showroom interaktif untuk karya video/moving image, dibangun dengan **React 19 + Vite 8 + TypeScript (strict) +
-React Router 7**. Aplikasi berjalan di `basename="/tugas/pertemuan-7"` dan menjadi workspace npm `@kxrumii/pertemuan-7`
-di monorepo (hasil build ke `public/tugas/pertemuan-7/`).
+React Router 7**. Aplikasi berjalan di `basename="/tugas/pertemuan-9"` dan menjadi workspace npm `@kxrumii/pertemuan-9`
+di monorepo (hasil build ke `public/tugas/pertemuan-9/`).
 
 Halaman utama punya dua mode atas satu sumber data (`src/data/works.ts`):
 
@@ -99,7 +99,7 @@ WorksStage (query, category, view, activeSlug)
 | `playing` | `VideoEmbed` | Video diputar (di-`key` per karya) |
 | `open` | `DisclosurePanel`, `MenuSheet` | Panel / menu terbuka |
 | `gate` | `AppShell` (+ `sessionStorage`) | Gerbang suara terbuka / keluar / selesai |
-| audio `musicEnabled`, `sfxEnabled`, `musicStatus` | `audio/soundEngine` via `useSyncExternalStore` | Dua switch independen (`localStorage` `t7:music`, `t7:sfx`) dan status lagu |
+| audio `musicEnabled`, `sfxEnabled`, `musicStatus` | `audio/soundEngine` via `useSyncExternalStore` | Dua switch independen (`localStorage` `t9:music`, `t9:sfx`) dan status lagu |
 
 Event: klik (toggle, tombol galeri, panel, gerbang), `change` (pencarian), keyboard (`←` `→`, `Spasi`, `↑` `↓` pada
 List, `Esc` pada dialog), pointer (hover/fokus karya, drag), `wheel`, `visibilitychange`.
@@ -154,18 +154,18 @@ hanya dirujuk di mode pengembangan (`tracks.ts`). Build produksi tidak memuat at
 memakai suasana latar prosedural sampai hak penggunaan lagu jelas. Titik loop saat ini masih **provisional** (hasil
 analisis offline) dan menunggu uji dengar.
 
-**Transition Bridge**: `src/transition.ts` mendaftarkan `pageId: 'task-7'`; transisi antar-stage memakai mode "depth"
+**Transition Bridge**: `src/transition.ts` mendaftarkan `pageId: 'task-9'`; transisi antar-stage memakai mode "depth"
 untuk wilayah Gallery. Canvas: dari warna pendaratan Portal (`#10110f`) ke Cinema Black (`#0c0c0d`); aplikasi hanya
 dark.
 
 **Responsif**: profil `portrait` (aspek < 0,8 atau lebar < 600 px, dengan histeresis) dan `landscape` memakai koordinat
 dan framing yang ditulis terpisah; layout shell berpindah di 900 px.
 
-**Deploy (Nginx)**: ini SPA dengan `basename`; permintaan langsung ke `/tugas/pertemuan-7/about` atau `/work/<slug>`
-butuh fallback ke `/tugas/pertemuan-7/index.html`:
+**Deploy (Nginx)**: ini SPA dengan `basename`; permintaan langsung ke `/tugas/pertemuan-9/about` atau `/work/<slug>`
+butuh fallback ke `/tugas/pertemuan-9/index.html`:
 ```nginx
-location = /tugas/pertemuan-7 { return 301 /tugas/pertemuan-7/; }
-location /tugas/pertemuan-7/ { try_files $uri $uri/ /tugas/pertemuan-7/index.html; }
+location = /tugas/pertemuan-9 { return 301 /tugas/pertemuan-9/; }
+location /tugas/pertemuan-9/ { try_files $uri $uri/ /tugas/pertemuan-9/index.html; }
 ```
 
 ## 7. Menjalankan dan memverifikasi
@@ -173,15 +173,15 @@ location /tugas/pertemuan-7/ { try_files $uri $uri/ /tugas/pertemuan-7/index.htm
 Prasyarat: Node `v26.13.1`, npm `12.2.3` (workspace; jalankan perintah root dari akar repo).
 
 ```bash
-npm run check --workspace=@kxrumii/pertemuan-7   # tsc --noEmit
-npm test --workspace=@kxrumii/pertemuan-7        # node --test (logika murni: kamera, timeline, transport, controller, morph, audio)
+npm run check --workspace=@kxrumii/pertemuan-9   # tsc --noEmit
+npm test --workspace=@kxrumii/pertemuan-9        # node --test (logika murni: kamera, timeline, transport, controller, morph, audio)
 npm run check                                    # semua workspace
 npm run build                                    # build semua aplikasi + Astro (menulis public/tugas/, dist/)
 npm run verify:transition                        # bootstrap transisi tunggal di setiap dokumen aplikasi
-npm run dev --workspace=@kxrumii/pertemuan-7 -- --port 5177 --strictPort
+npm run dev --workspace=@kxrumii/pertemuan-9 -- --port 5177 --strictPort
 ```
 
-Dev server tersedia di `http://127.0.0.1:5177/tugas/pertemuan-7/`. Di preview mandiri, prefetch ke portal `/tugas/`
+Dev server tersedia di `http://127.0.0.1:5177/tugas/pertemuan-9/`. Di preview mandiri, prefetch ke portal `/tugas/`
 akan 404 karena portal Astro tidak ikut dilayani; itu tidak terjadi di produksi.
 
 **Yang sudah diuji di browser**: skenario kontrol Gallery, detail, About, List, dan reduced motion di Chromium (Brave

@@ -9,7 +9,7 @@
  * beats, so the transport runs on their least common multiple. The camera wraps on its own cycle, the music on its
  * loop, and both stay on the same beat grid with clean seams.
  *
- * Development only: `?tune` / localStorage `t7:tune` can override beats, curve and distance for live tuning.
+ * Development only: `?tune` / localStorage `t9:tune` can override beats, curve and distance for live tuning.
  */
 
 export const LOOP_PERIOD_S = 27.513;
@@ -30,7 +30,7 @@ export interface Tune {
 /** Smooth start and end, quick middle, but not so steep that the move reads as a cut ("blink"). */
 export const DEFAULT_TUNE: Tune = { transitBeats: 2, holdBeats: 6, bezier: [0.7, 0, 0.3, 1], distanceScale: 1 };
 
-export const TUNE_STORAGE_KEY = 't7:tune';
+export const TUNE_STORAGE_KEY = 't9:tune';
 
 function sanitize(raw: Partial<Tune> | null): Tune {
   const t = { ...DEFAULT_TUNE, ...(raw ?? {}) };

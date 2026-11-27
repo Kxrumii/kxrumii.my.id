@@ -185,7 +185,7 @@ export async function ensureMusicClock(masterCycleS: number): Promise<MusicClock
   } catch (error) {
     cache.delete(track.id);
     setMusicStatus('error');
-    if (import.meta.env.DEV) console.warn('[t7 music]', error);
+    if (import.meta.env.DEV) console.warn('[t9 music]', error);
     return null;
   }
 }

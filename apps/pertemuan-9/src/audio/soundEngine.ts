@@ -29,9 +29,9 @@ export interface SoundSnapshot {
   ducked: boolean;
 }
 
-const KEY_MUSIC = 't7:music';
-const KEY_SFX = 't7:sfx';
-const KEY_LEGACY = 't7:sound';
+const KEY_MUSIC = 't9:music';
+const KEY_SFX = 't9:sfx';
+const KEY_LEGACY = 't9:sound';
 const MASTER_LEVEL = 0.9;
 const AMBIENT_LEVEL = 0.3;
 const SCRUB_DUCK_LEVEL = 0.15;
@@ -101,7 +101,7 @@ export function getSnapshot(): SoundSnapshot {
 
 /**
  * Last choice on this device, used to pre-select the gate button: 'on' if either switch was on.
- * Falls back to the single switch of earlier versions (t7:sound).
+ * Falls back to the single switch of earlier versions (t9:sound).
  */
 export function getStoredPreference(): 'on' | 'off' | null {
   const music = readStored(KEY_MUSIC);
@@ -444,7 +444,7 @@ if (typeof document !== 'undefined') {
 declare global {
   interface Window {
     /** Development-only handle for inspecting the sound layer from tests and devtools. */
-    __t7Audio?: {
+    __t9Audio?: {
       getSnapshot: typeof getSnapshot;
       contextState: () => string | null;
       counters: () => { contexts: number; sfxVoices: number };
@@ -456,7 +456,7 @@ declare global {
 }
 
 if (import.meta.env.DEV) {
-  window.__t7Audio = {
+  window.__t9Audio = {
     getSnapshot,
     contextState: () => ctx?.state ?? null,
     counters: () => ({ ...counters }),

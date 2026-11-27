@@ -1,11 +1,11 @@
 /*
- * Shared Transition Bridge installation for Task 7.
+ * Shared Transition Bridge installation for Task 9.
  * Installation happens once at module initialisation (before React renders);
  * page readiness is signalled by usePageReady() after the shell commits.
  *
  * Canvas: every document lands on LANDING_CANVAS (what the Portal predicts),
  * then revealCanvas() hands the page off to STAGE_CANVAS (Cinema Black; the app
- * is dark-only). The published colour for `task-7` is always kept at LANDING_CANVAS.
+ * is dark-only). The published colour for `task-9` is always kept at LANDING_CANVAS.
  *
  * Scopes: same-document route changes run with `data-route-scope="stage"`, so
  * only the stage moves while the shell (`[data-shell]`) stays put. Document
@@ -26,8 +26,8 @@ import { prefersReducedMotion } from './hooks/useReducedMotion';
 import { cancelMorph, playMorph } from './motion/morphRunner';
 import { MORPH_PRESETS } from './motion/morphShapes';
 
-export const PAGE_ID = 'task-7';
-/** Landing colour; must stay equal to the Portal's `canvasFallback` for task-7. */
+export const PAGE_ID = 'task-9';
+/** Landing colour; must stay equal to the Portal's `canvasFallback` for task-9. */
 export const LANDING_CANVAS = '#10110f';
 /** Cinema Black: the canvas of the showroom after the gate. */
 export const STAGE_CANVAS = '#0c0c0d';

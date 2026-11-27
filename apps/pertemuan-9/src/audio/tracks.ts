@@ -1,7 +1,7 @@
 /*
  * Music track registry. Pure data + validation (no DOM), so it runs under node --test.
  *
- * Rights: the candidate tracks are owner-provided files kept LOCAL-ONLY in apps/pertemuan-7/local-media/ (excluded
+ * Rights: the candidate tracks are owner-provided files kept LOCAL-ONLY in apps/pertemuan-9/local-media/ (excluded
  * from Git). Their URL is only set in development (`import.meta.env.DEV`), so a production build never references,
  * bundles or ships them. Production therefore has no track: Music ON falls back to the procedural ambient pad.
  *
@@ -69,12 +69,12 @@ export const TRACKS: Readonly<Record<TrackId, MusicTrackConfig>> = {
 
 /**
  * Track used for testing; there is deliberately no track selector in the UI. In development only, QA can pick the
- * other candidate with localStorage `t7:dev-track` (read once at load).
+ * other candidate with localStorage `t9:dev-track` (read once at load).
  */
 function devTrackOverride(): TrackId | null {
   if (!DEV) return null;
   try {
-    const value = globalThis.localStorage?.getItem('t7:dev-track');
+    const value = globalThis.localStorage?.getItem('t9:dev-track');
     return value === 'on-sight' || value === 'shelter-piano' ? value : null;
   } catch {
     return null;

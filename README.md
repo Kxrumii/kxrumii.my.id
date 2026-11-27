@@ -69,6 +69,7 @@ npm run dev:t1
 npm run dev:t6
 npm run dev:t7
 npm run dev:t8
+npm run dev:t9
 ```
 
 Setiap aplikasi memiliki development server sendiri dan dapat dijalankan tanpa harus menjalankan aplikasi lainnya.
@@ -96,7 +97,8 @@ kxrumii.my.id/
 │   ├── pertemuan-1/
 │   ├── pertemuan-6/
 │   ├── pertemuan-7/
-│   └── pertemuan-8/
+│   ├── pertemuan-8/
+│   └── pertemuan-9/
 ├── docs/
 │   └── deployment/
 ├── public/
@@ -122,8 +124,9 @@ Berikut beberapa halaman yang tersedia:
 | `/tugas/` | Arsip tugas PAW |
 | `/tugas/pertemuan-1/` | Tugas HTML5 |
 | `/tugas/pertemuan-6/` | Aplikasi TypeScript |
-| `/tugas/pertemuan-7/` | Aplikasi React |
+| `/tugas/pertemuan-7/` | Portofolio React (galeri spiral) |
 | `/tugas/pertemuan-8/` | Aplikasi React Router |
+| `/tugas/pertemuan-9/` | Project Showroom 2.5D (React) |
 
 ## Deployment
 

@@ -47,12 +47,12 @@ export const portalProjects: PortalProject[] = [
     number: '07',
     href: '/tugas/pertemuan-7/',
     transitionPage: 'task-7',
-    canvasFallback: '#10110f',
+    canvasFallback: '#0a0a0a',
     title: { id: 'Portofolio', en: 'Portfolio' },
     category: { id: '[Karya Kreatif · React]', en: '[Creative Work · React]' },
     previews: [
-      { key: 'portfolio-work', altId: 'Halaman karya terpilih', altEn: 'Selected works page preview' },
-      { key: 'portfolio-playground', altId: 'Halaman playground', altEn: 'Playground page preview' },
+      { key: 'portfolio-spiral', altId: 'Galeri spiral karya', altEn: 'Spiral works gallery preview' },
+      { key: 'portfolio-list', altId: 'Daftar karya', altEn: 'Works list preview' },
     ],
   },
   {
@@ -65,6 +65,18 @@ export const portalProjects: PortalProject[] = [
     previews: [
       { key: 'music-archive', altId: 'Halaman arsip musik', altEn: 'Music archive page preview' },
       { key: 'music-release', altId: 'Detail album dan vinyl', altEn: 'Album and vinyl detail preview' },
+    ],
+  },
+  {
+    number: '09',
+    href: '/tugas/pertemuan-9/',
+    transitionPage: 'task-9',
+    canvasFallback: '#10110f',
+    title: { id: 'Project Showroom', en: 'Project Showroom' },
+    category: { id: '[Ruang 2.5D · React]', en: '[2.5D Space · React]' },
+    previews: [
+      { key: 'showroom-gallery', altId: 'Galeri showroom 2.5D', altEn: '2.5D showroom gallery preview' },
+      { key: 'showroom-list', altId: 'Indeks proyek showroom', altEn: 'Showroom project index preview' },
     ],
   },
 ];

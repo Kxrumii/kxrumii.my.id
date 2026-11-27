@@ -3,7 +3,7 @@
  * `data-gate` attribute is set on <html> before React renders so the shell and
  * stage are hidden from the very first paint while the gate is open.
  */
-const SESSION_KEY = 't7:gate';
+const SESSION_KEY = 't9:gate';
 
 export function gatePassed(): boolean {
   try {

@@ -606,7 +606,7 @@ export function useShowroom({ works, initialSlug, suspendedDetail, onFocusChange
   useEffect(() => {
     if (!import.meta.env.DEV) return;
     const { timeline } = liveRef.current;
-    window.__t7Showroom = {
+    window.__t9Showroom = {
       dispatch: runtime.dispatch,
       state: runtime.state,
       nav: runtime.nav,
@@ -627,7 +627,7 @@ export function useShowroom({ works, initialSlug, suspendedDetail, onFocusChange
       },
     };
     return () => {
-      delete window.__t7Showroom;
+      delete window.__t9Showroom;
     };
   }, [runtime, built.timeline]);
 
@@ -673,7 +673,7 @@ export function useShowroom({ works, initialSlug, suspendedDetail, onFocusChange
 declare global {
   interface Window {
     /** Development-only handle for scripted QA of the showroom runtime. */
-    __t7Showroom?: {
+    __t9Showroom?: {
       dispatch: (event: ControllerEvent) => void;
       state: () => ControllerState;
       nav: () => NavPlan | null;
