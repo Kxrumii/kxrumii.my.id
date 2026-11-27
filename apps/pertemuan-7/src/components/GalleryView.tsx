@@ -1,6 +1,7 @@
 import { useShowroom } from '../showroom/useShowroom';
 import type { Work } from '../types';
 import { AtmosphereLayer } from './AtmosphereLayer';
+import { AudioToggles } from './AudioToggles';
 import { FilmFragments } from './FilmFragments';
 import { FocusCaption } from './FocusCaption';
 import { GalleryControls } from './GalleryControls';
@@ -85,6 +86,7 @@ export function GalleryView({ works, initialSlug, suspended, onFocusChange }: Ga
         </div>
       )}
       <FocusCaption work={focusWork} phase={ui.phase} />
+      <AudioToggles />
       <GalleryControls
         paused={ui.userPaused}
         reducedMotion={ui.reducedMotion}

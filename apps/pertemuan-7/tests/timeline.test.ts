@@ -8,7 +8,7 @@ import {
   buildTimeline,
   holdStartOf,
   navPlan,
-  placeholderSchedule,
+  fixedSchedule,
   sceneAt,
   validateProfile,
   validateTimeline,
@@ -16,12 +16,12 @@ import {
 } from '../src/showroom/timeline.ts';
 
 const profiles: ProfileId[] = ['landscape', 'portrait'];
-const timelineFor = (id: ProfileId) => buildTimeline(PROFILES[id], placeholderSchedule(PROFILES[id]));
+const timelineFor = (id: ProfileId) => buildTimeline(PROFILES[id], fixedSchedule(PROFILES[id]));
 
 test('authored profiles validate against the sample works, with a valid placeholder schedule', () => {
   for (const id of profiles) {
     const profile = PROFILES[id];
-    assert.deepEqual(validateTimeline(profile, placeholderSchedule(profile), PLACEHOLDER_SLUGS), [], id);
+    assert.deepEqual(validateTimeline(profile, fixedSchedule(profile), PLACEHOLDER_SLUGS), [], id);
   }
 });
 
@@ -204,7 +204,7 @@ test('profile selection uses aspect ratio / width with hysteresis', () => {
 
 test('validation rejects broken choreography and schedules', () => {
   const base = LANDSCAPE_PROFILE;
-  const schedule = placeholderSchedule(base);
+  const schedule = fixedSchedule(base);
   assert.ok(validateTimeline(base, schedule, ['a', 'b']).length > 0, 'slug mismatch');
 
   const dupSlug: ChoreographyProfile = { ...base, cues: base.cues.map((c, i) => (i === 1 ? { ...c, projectSlug: base.cues[0].projectSlug } : c)) };

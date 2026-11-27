@@ -59,7 +59,7 @@ export function SoundGate({ onChoose, leaving }: SoundGateProps) {
           </button>
         </div>
         <p className="gate-hint ui-label" data-gate-part="" data-transition-exit="" data-transition-enter="" style={transitionIndex(3)}>
-          Suara dapat diubah kapan saja lewat tombol Audio.
+          Musik dan efek suara dapat diubah kapan saja.
         </p>
       </div>
     </section>

@@ -41,7 +41,8 @@ lokal, identitas (Nama + NIM), `SoundToggle`.
 | Hover atau fokus keyboard pada karya aktif saat HOLD | Menjeda kamera; keluar melanjutkan dari posisi tersimpan setelah jeda singkat |
 | Tombol Jeda / `Spasi` | Jeda manual; tidak dibatalkan oleh hover |
 | Detail terbuka, mode List, tab tersembunyi, transisi rute | Kamera berhenti dan dilanjutkan dari posisi yang sama |
-| `prefers-reduced-motion` | Kamera statis; Sebelumnya/Berikutnya berpindah langsung tanpa animasi |
+| `prefers-reduced-motion` | Kamera statis; Sebelumnya/Berikutnya berpindah langsung tanpa animasi; musik boleh tetap berjalan |
+| Tombol Musik / Efek suara (HUD) | Dua switch independen; Musik OFF tidak menghentikan kamera, Efek suara OFF membungkam semua SFX |
 
 Roda gulir tidak menginterupsi gerakan Sebelumnya/Berikutnya yang sedang berjalan: satu niat scroll disimpan (dibatasi)
 dan diterapkan setelah gerakan selesai.
@@ -57,7 +58,8 @@ Semua di `src/components/` kecuali disebut lain.
 | `ShellRail`, `ShellNav`, `LocalClock` | Rail kiri, nav desktop, jam | `AppShell` |
 | `MenuSheet` | Menu `<dialog>` untuk layar < 900 px | `AppShell` |
 | `TransitionLink` ★ | Link router yang memicu transisi halaman | `ShellNav`, `MenuSheet`, `NotFoundPage` |
-| `SoundToggle` ★ | Tombol suara on/off | `AppShell`, `MenuSheet`, `WorkSheet` |
+| `SoundToggle` ★ | Switch efek suara global (state sama dengan SFX di HUD) | `AppShell`, `MenuSheet`, `WorkSheet` |
+| `AudioToggles` | Dua switch HUD: Musik dan Efek suara, dengan status untuk pembaca layar | `GalleryView` |
 | `StatusBadge` ★ | Lencana "Sample" / "Featured" / "Sample data" | `WorkRow`, `WorkSheet`, `AboutPage`, `PlaygroundPage` |
 | `MetaList` ★ | Daftar `dt/dd` (peran, tahun, dst.) | `WorkSheet`, `AboutPage`, `AppShell` (identitas) |
 | `DisclosurePanel` ★ | Panel tampil/sembunyi (`aria-expanded`) | `WorkSheet`, `PlaygroundPage` |
@@ -97,7 +99,7 @@ WorksStage (query, category, view, activeSlug)
 | `playing` | `VideoEmbed` | Video diputar (di-`key` per karya) |
 | `open` | `DisclosurePanel`, `MenuSheet` | Panel / menu terbuka |
 | `gate` | `AppShell` (+ `sessionStorage`) | Gerbang suara terbuka / keluar / selesai |
-| audio `enabled/ducked` | `audio/soundEngine` via `useSyncExternalStore` | Preferensi suara (`localStorage` kunci `t7:sound`) |
+| audio `musicEnabled`, `sfxEnabled`, `musicStatus` | `audio/soundEngine` via `useSyncExternalStore` | Dua switch independen (`localStorage` `t7:music`, `t7:sfx`) dan status lagu |
 
 Event: klik (toggle, tombol galeri, panel, gerbang), `change` (pencarian), keyboard (`←` `→`, `Spasi`, `↑` `↓` pada
 List, `Esc` pada dialog), pointer (hover/fokus karya, drag), `wheel`, `visibilitychange`.
@@ -124,8 +126,9 @@ List, `Esc` pada dialog), pointer (hover/fokus karya, drag), `wheel`, `visibilit
 **Camera Choreography** (`src/showroom/`) — perpindahan antar-karya. Data deklaratif dan deterministik, terpisah dari
 urutan data karya: `camera.ts` (pose, segmen, easing), `choreography.ts` (profil landscape dan portrait; urutan cue,
 ID segmen, dan durasi sama di keduanya), `timeline.ts` (`sceneAt(t)` murni: pose kamera, fokus, fase HOLD/TRANSIT),
-`cameraTransform.ts`. Karya yang tampak kecil lalu membesar adalah efek perspektif/kedalaman kamera. Semua angka
-koreografi masih **placeholder** yang perlu disetel secara visual.
+`cameraTransform.ts`. Karya yang tampak kecil lalu membesar adalah efek perspektif/kedalaman kamera. Jadwal kamera
+tetap dan otoritatif: setiap HOLD 2,5 s dan setiap TRANSIT 3,0 s (siklus 27,5 s). Pose dan arah gerak masih nilai
+prototipe yang disetel secara visual.
 
 **Shape Morph** (`src/motion/morphShapes.ts` murni, `morphRunner.ts` WAAPI) — sistem terpisah untuk hover/fokus, buka dan
 tutup Detail, dan transisi About. Hanya menulis `clip-path` pada elemen mask daun; media tidak pernah di-stretch. Tidak
@@ -136,9 +139,20 @@ pernah berjalan hanya karena kamera berpindah antar-karya.
 transform di dalam dialog; Transition Bridge memiliki siklus hidup rute dan kunci interaksi.
 
 **Controller dan transport**: `controller.ts` adalah reducer murni (kepemilikan masukan, prioritas, antrean intent);
-`transport.ts` adalah satu-satunya master timeline (detik). Saat ini sumber waktunya jam senyap (`performance.now()`).
-**Musik sebagai master timeline belum diimplementasikan**: `musicCueMap.ts` baru berisi model dan validasi; aset musik
-yang legal dan cue manualnya belum tersedia. Suara yang ada hanya SFX prosedural (Web Audio, tanpa berkas).
+`transport.ts` adalah satu-satunya master timeline (detik). Saat Musik ON dan lagu siap, sumber waktunya adalah jam
+AudioContext lewat `audio/musicSource.ts`; selain itu jam senyap. Pergantian sumber tidak menggeser posisi, jadi kamera
+tidak pernah melompat dan musik selalu mulai di posisi kamera.
+
+**Audio** (`src/audio/`): satu AudioContext dengan bus musik, SFX, dan ambient. Lagu di-decode sekali
+(`decodeAudioData`), dipotong ke segmen loop, lalu diputar dengan loop sepanjang tepat satu siklus kamera (crossfade
+equal-power terjadwal pada jam AudioContext). Musik tidak pernah di-time-stretch dan tidak mengubah jadwal kamera;
+`showroom/musicAccents.ts` hanya mendokumentasikan aksen terpilih dan melaporkan selisihnya terhadap transisi.
+SFX prosedural: radio-off/on (hover), seek (Sebelumnya/Berikutnya), arrival, dan suara pita saat scrub.
+
+**Aset musik**: dua kandidat lagu milik pemilik hanya ada secara lokal (`local-media/`, di-exclude dari Git) dan
+hanya dirujuk di mode pengembangan (`tracks.ts`). Build produksi tidak memuat atau mengunduh lagu; Musik ON di produksi
+memakai suasana latar prosedural sampai hak penggunaan lagu jelas. Titik loop saat ini masih **provisional** (hasil
+analisis offline) dan menunggu uji dengar.
 
 **Transition Bridge**: `src/transition.ts` mendaftarkan `pageId: 'task-7'`; transisi antar-stage memakai mode "depth"
 untuk wilayah Gallery. Canvas: dari warna pendaratan Portal (`#10110f`) ke Cinema Black (`#0c0c0d`); aplikasi hanya
@@ -160,7 +174,7 @@ Prasyarat: Node `v26.13.1`, npm `12.2.3` (workspace; jalankan perintah root dari
 
 ```bash
 npm run check --workspace=@kxrumii/pertemuan-7   # tsc --noEmit
-npm test --workspace=@kxrumii/pertemuan-7        # node --test (logika murni: kamera, timeline, transport, controller, morph)
+npm test --workspace=@kxrumii/pertemuan-7        # node --test (logika murni: kamera, timeline, transport, controller, morph, audio)
 npm run check                                    # semua workspace
 npm run build                                    # build semua aplikasi + Astro (menulis public/tugas/, dist/)
 npm run verify:transition                        # bootstrap transisi tunggal di setiap dokumen aplikasi
@@ -171,8 +185,11 @@ Dev server tersedia di `http://127.0.0.1:5177/tugas/pertemuan-7/`. Di preview ma
 akan 404 karena portal Astro tidak ikut dilayani; itu tidak terjadi di produksi.
 
 **Yang sudah diuji di browser**: skenario kontrol Gallery, detail, About, List, dan reduced motion di Chromium (Brave
-headless, lewat skrip), termasuk framing pada lebar 1440, 1100, 768, dan 390 px. **Belum diuji**: Firefox, perangkat
-mobile nyata (gesture touch, Safari iOS), tab tersembunyi sungguhan, dan pengukuran performa di perangkat nyata.
+headless, lewat skrip), termasuk framing pada lebar 1440, 1100, 768, dan 390 px; audio dengan kedua kandidat lagu (sinkron
+timeline dengan jam AudioContext melewati batas loop, empat kombinasi Musik/SFX, hover, scrub, tab tersembunyi yang
+disimulasikan, satu AudioContext) dan build produksi tanpa lagu. **Belum diuji**: kualitas sambungan loop secara
+didengar, Firefox, Safari, perangkat mobile nyata (gesture touch), tab tersembunyi sungguhan, dan performa di perangkat
+nyata.
 
 ## 8. Mengganti data contoh
 

@@ -14,15 +14,16 @@ import { wrapTime } from './time.ts';
 /*
  * Timeline = choreography profile + schedule. All times are seconds on the loop timeline [0, cycleS).
  *
- * The schedule only decides WHEN each transition starts (from the music cue map, or a placeholder). The duration and
+ * The schedule decides WHEN each transition starts. It is fixed (owner decision): equal holds (HOLD_S) and the
+ * segments' own durations (TRANSIT_S each). Music follows this schedule and never changes it. The duration and
  * easing of a transition always come from its CameraSegment and are never stretched to fit.
  * sceneAt() returns camera state only; it has no notion of Shape Morph.
  */
 
 /** [REKOMENDASI R-TIME] minimum hold between arrival and the next transition start (prototype value). */
 export const MIN_HOLD_S = 1.5;
-/** Hold used by the placeholder schedule (no music asset yet). */
-export const PLACEHOLDER_HOLD_S = 2.5;
+/** Owner decision: every hold lasts the same time. */
+export const HOLD_S = 2.5;
 /** Focus (caption/active work) switches to the target at this fraction of a transition. */
 export const FOCUS_SWITCH_AT = 0.5;
 
@@ -187,8 +188,8 @@ export function validateTimeline(
   return validateSchedule(durations, schedule, minHoldS);
 }
 
-/** Schedule used until an owner-approved music cue map exists: equal holds, cue 0 starts moving at t = 0. */
-export function placeholderSchedule(profile: ChoreographyProfile, holdS: number = PLACEHOLDER_HOLD_S): Schedule {
+/** The fixed camera schedule: equal holds, cue 0 starts moving at t = 0. */
+export function fixedSchedule(profile: ChoreographyProfile, holdS: number = HOLD_S): Schedule {
   const segById = new Map(profile.segments.map((s) => [s.id, s]));
   const starts: number[] = [];
   let t = 0;
@@ -320,4 +321,27 @@ export function navPlan(timeline: Timeline, currentIndex: number, dir: 1 | -1): 
     targetIndex,
     durationS: window.durationS,
   };
+}
+
+export interface CameraScheduleEntry {
+  cueId: string;
+  fromSlug: string;
+  toSlug: string;
+  holdS: number;
+  transitionS: number;
+  /** Relative transition start on the loop timeline. */
+  transitionStartS: number;
+}
+
+/** Read-only view of the authoritative camera schedule (derived from the timeline, never stored separately). */
+export function cameraSchedule(timeline: Timeline): CameraScheduleEntry[] {
+  const n = timeline.cues.length;
+  return timeline.cues.map((c) => ({
+    cueId: c.cue.id,
+    fromSlug: c.cue.projectSlug,
+    toSlug: timeline.cues[(c.index + 1) % n].cue.projectSlug,
+    holdS: c.holdS,
+    transitionS: c.durationS,
+    transitionStartS: c.transitionStartS,
+  }));
 }

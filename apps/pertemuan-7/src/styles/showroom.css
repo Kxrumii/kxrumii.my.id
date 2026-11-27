@@ -118,12 +118,22 @@
 .gallery-button:hover:not(:disabled) { border-color: var(--ink); }
 .gallery-button:disabled { opacity: 0.35; }
 .gallery-button[aria-pressed='true'] { border-color: var(--accent); color: var(--accent); }
+.audio-toggles { position: absolute; right: var(--margin); bottom: calc(var(--margin) + 44px); display: flex; gap: 8px; }
+.audio-toggle { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--line-strong); border-radius: 50%; padding: 0; background: rgba(12, 12, 13, 0.55); color: var(--muted); }
+.audio-toggle svg { width: 20px; height: 20px; }
+.audio-toggle:hover:not(:disabled) { border-color: var(--ink); color: var(--ink); }
+.audio-toggle[aria-pressed='true'] { border-color: var(--accent); color: var(--accent); }
+.audio-toggle[data-status='loading'] { opacity: 0.6; }
+.audio-toggle:disabled { opacity: 0.35; }
 .showroom-error { position: absolute; inset: 0; display: grid; place-content: center; margin: 0; padding: var(--margin); color: var(--muted); text-align: center; }
 
 @media (max-width: 899px) {
   .showroom-caption { left: var(--margin); right: var(--margin); bottom: 120px; }
   .gallery-controls { bottom: 24px; }
+  .audio-toggles { right: var(--margin); bottom: 26px; }
 }
+/* In the gallery the HUD already carries the SFX switch: hide the floating duplicate (mobile). */
+body:has(.showroom) .shell-corner { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .fragment[data-drift], .atmosphere-leak-a, .atmosphere-leak-b { animation: none; }

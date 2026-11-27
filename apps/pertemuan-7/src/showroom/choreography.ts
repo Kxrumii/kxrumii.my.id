@@ -16,20 +16,27 @@ import {
 /*
  * Authored choreography for the sample works.
  *
- * PLACEHOLDER_TIMING: every number here (poses, deltas, durations) is a prototype value to be tuned visually in the
- * browser. None of it is derived from a beat map: music cues only decide when a transition STARTS.
+ * Timing is fixed by the owner: TRANSIT_S for every transition and HOLD_S (timeline.ts) for every hold. The camera
+ * schedule is authoritative; music never changes it (accents are only documented against it, see musicAccents.ts).
+ * Poses and via-deltas are still prototype values to be tuned visually in the browser.
  *
  * The cue slugs below are the five sample works in src/data/works.ts. When real works replace the samples this
  * choreography must be re-authored (validateTimeline(profile, schedule, slugs) fails loudly on a mismatch).
  *
  * Both profiles are built from the same SEGMENT_PLANS, so landscape and portrait share cue order, segment ids,
- * kinds, easings and DURATIONS (one music cue map serves both). Only coordinates, depth, framing and fragment
+ * kinds, easings and DURATIONS (one music loop serves both). Only coordinates, depth, framing and fragment
  * budgets differ.
  */
 
 export const PLACEHOLDER_SLUGS = ['sample-work-01', 'sample-work-02', 'sample-work-03', 'sample-work-04', 'sample-work-05'] as const;
 
 const STOP_IDS = ['stop-entry', 'stop-drift', 'stop-orbit', 'stop-rise', 'stop-return'] as const;
+
+/**
+ * Owner decision (2026-11-27): every transition between works lasts the same time. 3.0 s is the mean of the earlier
+ * per-segment durations, so the camera cycle (5 x (3.0 + 2.5) = 27.5 s) is unchanged.
+ */
+export const TRANSIT_S = 3.0;
 
 interface Via {
   at: number;
@@ -49,7 +56,7 @@ const SEGMENT_PLANS: readonly SegmentPlan[] = [
   {
     id: 'seg-dolly-drift',
     kind: 'mixed',
-    durationS: 2.4,
+    durationS: TRANSIT_S,
     easing: 'ease-in-out-cubic',
     viaLandscape: [{ at: 0.5, delta: { yaw: 8, y: 40 } }],
     viaPortrait: [{ at: 0.5, delta: { yaw: 6, y: -160 } }],
@@ -57,7 +64,7 @@ const SEGMENT_PLANS: readonly SegmentPlan[] = [
   {
     id: 'seg-orbit-rise',
     kind: 'orbit',
-    durationS: 3.0,
+    durationS: TRANSIT_S,
     easing: 'ease-in-out',
     viaLandscape: [{ at: 0.5, delta: { roll: 12, y: -120, yaw: -14 } }],
     viaPortrait: [{ at: 0.5, delta: { roll: 10, y: 260, yaw: -10 } }],
@@ -65,7 +72,7 @@ const SEGMENT_PLANS: readonly SegmentPlan[] = [
   {
     id: 'seg-pullback-sweep',
     kind: 'pull-back',
-    durationS: 3.2,
+    durationS: TRANSIT_S,
     easing: 'ease-in-out-cubic',
     viaLandscape: [{ at: 0.4, delta: { z: 900, x: 260 } }],
     viaPortrait: [{ at: 0.4, delta: { z: 1500, y: -240 } }],
@@ -73,7 +80,7 @@ const SEGMENT_PLANS: readonly SegmentPlan[] = [
   {
     id: 'seg-flip-reveal',
     kind: 'roll',
-    durationS: 2.8,
+    durationS: TRANSIT_S,
     easing: 'ease-in-out',
     // Inverted intermediate composition; every HOLD pose is upright (validated).
     viaLandscape: [{ at: 0.5, delta: { roll: 180 } }],
@@ -82,7 +89,7 @@ const SEGMENT_PLANS: readonly SegmentPlan[] = [
   {
     id: 'seg-return',
     kind: 'pull-back',
-    durationS: 3.6,
+    durationS: TRANSIT_S,
     easing: 'ease-in-out-cubic',
     // Loop-closing segment: last work back to the first, so the cycle has no camera jump.
     viaLandscape: [{ at: 0.5, delta: { y: -200, yaw: 10 } }],

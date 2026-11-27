@@ -1,6 +1,14 @@
 import { transitionEvents } from '@kxrumii/transition-bridge';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { play as playSound, type SoundName } from '../audio/soundEngine';
+import { ensureMusicClock } from '../audio/musicSource';
+import {
+  getSnapshot as getSoundSnapshot,
+  play as playSound,
+  scrubVoice,
+  setMusicMuted,
+  setMusicScrubDucked,
+  subscribe as subscribeSound,
+} from '../audio/soundEngine';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { useShell } from '../shell/shellContext';
 import type { Work } from '../types';
@@ -18,12 +26,12 @@ import {
   type Phase,
 } from './controller.ts';
 import { generateFragments, type FilmFragmentSpec } from './fragments.ts';
-import { sharedTransport, takeFirstSeat } from './runtime.ts';
+import { activeClock, setMusicClock, sharedTransport, takeFirstSeat } from './runtime.ts';
 import {
   buildTimeline,
   holdStartOf,
   navPlan,
-  placeholderSchedule,
+  fixedSchedule,
   sceneAt,
   validateTimeline,
   type NavPlan,
@@ -42,14 +50,6 @@ import { normalizeWheelDelta, wheelToTimelineSeconds } from './wheel.ts';
  *  - This module writes `transform` on the camera element and `opacity`/`visibility` on anchors and fragments; the
  *    Shape Morph runner owns clip-path and the sheet FLIP owns the sheet's transforms.
  */
-
-/** TEMPORARY until M3 adds dedicated sounds: the dedicated radio/tape SFX replace this mapping. */
-const SFX_MAP: Readonly<Record<'radio-off' | 'radio-on' | 'seek' | 'arrival', SoundName>> = {
-  'radio-off': 'close',
-  'radio-on': 'open',
-  seek: 'switch',
-  arrival: 'tick',
-};
 
 const EDGE_PX = 24;
 const DRAG_THRESHOLD_PX = 6;
@@ -201,12 +201,17 @@ function createRuntime(host: Host) {
         }
         return;
       case 'sfx':
-        playSound(SFX_MAP[effect.name]);
+        playSound(effect.name); // silent while SFX is off
         return;
       case 'music':
+        if (effect.action === 'duck' || effect.action === 'unduck') setMusicScrubDucked(effect.action === 'duck');
+        else setMusicMuted(effect.action === 'mute');
+        return;
       case 'scrub':
+        scrubVoice(effect.action, effect.dir ?? 1);
+        return;
       case 'teardown':
-        return; // music duck/mute and the tape voice arrive with M3
+        return;
       case 'scrubBy':
         if (!tr) return;
         tr.seek(tr.position() + effect.deltaS);
@@ -347,7 +352,7 @@ export function useShowroom({ works, initialSlug, suspendedDetail, onFocusChange
   const slugKey = works.map((w) => w.slug).join('|');
   const built = useMemo(() => {
     const slugs = slugKey ? slugKey.split('|') : [];
-    const schedule = placeholderSchedule(profile);
+    const schedule = fixedSchedule(profile);
     const errors = validateTimeline(profile, schedule, slugs);
     if (errors.length > 0) return { timeline: null as Timeline | null, error: errors.join('; ') };
     return { timeline: buildTimeline(profile, schedule) as Timeline | null, error: null as string | null };
@@ -437,6 +442,31 @@ export function useShowroom({ works, initialSlug, suspendedDetail, onFocusChange
   useEffect(() => {
     runtime.setReduced(reducedMotion);
   }, [reducedMotion, runtime]);
+
+  // Music link: with Music ON and a ready track the transport runs on the music clock; otherwise on the silent clock.
+  // Either way the camera keeps its position (setSource re-anchors), so toggling Music never resets the timeline.
+  useEffect(() => {
+    const timeline = built.timeline;
+    if (!timeline) return;
+    let cancelled = false;
+    const sync = () => {
+      if (!getSoundSnapshot().musicEnabled) {
+        setMusicClock(null);
+        return;
+      }
+      void ensureMusicClock(timeline.cycleS).then((clock) => {
+        if (cancelled || !getSoundSnapshot().musicEnabled) return;
+        setMusicClock(clock, clock?.visualLeadMs ?? 0);
+        runtime.render();
+      });
+    };
+    sync();
+    const unsubscribe = subscribeSound(sync);
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, [built.timeline, runtime]);
 
   // Input and environment listeners.
   useEffect(() => {
@@ -577,6 +607,8 @@ export function useShowroom({ works, initialSlug, suspendedDetail, onFocusChange
         return tl ? sceneAt(tl, sharedTransport(tl.cycleS).visualPosition(), runtime.nav()?.variant ?? 'forward') : null;
       },
       cycleS: () => liveRef.current.timeline?.cycleS ?? 0,
+      clock: activeClock,
+      visualPosition: () => (timeline ? sharedTransport(timeline.cycleS).visualPosition() : null),
       seek: (t: number) => {
         const tl = liveRef.current.timeline;
         if (tl) sharedTransport(tl.cycleS).seek(t);
@@ -638,6 +670,8 @@ declare global {
       playing: () => boolean;
       scene: () => ReturnType<typeof sceneAt> | null;
       cycleS: () => number;
+      clock: () => 'music' | 'silent';
+      visualPosition: () => number | null;
       seek: (t: number) => void;
     };
   }

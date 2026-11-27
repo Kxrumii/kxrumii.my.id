@@ -27,7 +27,7 @@ export function AppShell() {
   const mainRef = useRef<HTMLElement>(null);
   const previousPath = useRef<string | null>(null);
   const [gate, setGate] = useState<GateState>(() => (document.documentElement.dataset.gate ? 'open' : 'done'));
-  const { enable, disable, play } = useSound();
+  const { enableAll, disableAll, play } = useSound();
 
   // page-ready is sent as soon as the shell (or the gate) is on screen; it never waits for the gate choice.
   usePageReady(key);
@@ -57,10 +57,11 @@ export function AppShell() {
     (withSound: boolean) => {
       if (gate !== 'open') return;
       // Still inside the click: the AudioContext may start here, never earlier.
+      // "With sound" switches Music and SFX on (the context is created inside this click); "without" leaves both off.
       if (withSound) {
-        if (enable()) play('click');
+        if (enableAll()) play('click');
       } else {
-        disable();
+        disableAll();
       }
       markGatePassed();
       setGate('leaving');
@@ -72,7 +73,7 @@ export function AppShell() {
         });
       });
     },
-    [gate, enable, disable, play],
+    [gate, enableAll, disableAll, play],
   );
 
   const locked = gate !== 'done';
