@@ -195,24 +195,24 @@
   transform: translateY(12px);
 }
 
-/* The calligraphic F is written stroke by stroke when the count reaches 100. */
+/* The signature F is written stroke by stroke when the count reaches 100: top bar, looping stem, crossbar. */
 .loader-logo .ink path {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
 }
 
 .loader:not([data-phase='loading']) .loader-logo .ink path {
-  animation: ink-write 0.5s cubic-bezier(0.65, 0, 0.35, 1) both;
+  animation: ink-write 0.4s cubic-bezier(0.65, 0, 0.35, 1) both;
 }
 
 .loader:not([data-phase='loading']) .loader-logo .ink-stroke-1 path {
-  animation-duration: 0.55s;
-  animation-delay: 0.42s;
+  animation-duration: 0.62s;
+  animation-delay: 0.36s;
 }
 
 .loader:not([data-phase='loading']) .loader-logo .ink-stroke-2 path {
-  animation-duration: 0.3s;
-  animation-delay: 0.9s;
+  animation-duration: 0.2s;
+  animation-delay: 0.96s;
 }
 
 @keyframes ink-write {
