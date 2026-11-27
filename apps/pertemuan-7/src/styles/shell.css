@@ -22,7 +22,11 @@ button:disabled { cursor: default; }
 /* Gate (Pacôme entry) */
 .gate { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: var(--margin); text-align: center; }
 .gate-inner { display: grid; justify-items: center; gap: 22px; }
-.gate-mark { width: 56px; height: 56px; color: var(--ink); }
+.gate-mark { width: 96px; height: 64px; color: var(--ink); }
+.gate-timecode { margin-top: -10px; font-variant-numeric: tabular-nums; letter-spacing: 0.12em; }
+/* A restrained light leak behind the gate (one flat gradient; the room has its own atmosphere layer). */
+.gate::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(55% 45% at 92% 100%, rgba(231, 139, 66, 0.2), rgba(169, 54, 120, 0.08) 50%, transparent 75%), radial-gradient(45% 40% at 6% 0%, rgba(107, 57, 187, 0.22), transparent 70%); }
+.gate-inner { position: relative; }
 .gate-title { margin: 8px 0 6px; font: 400 clamp(44px, 6vw, 104px) / 1 var(--font-display); letter-spacing: 0.01em; text-transform: uppercase; }
 .gate-tagline { margin: 0; color: var(--muted); font-size: 14px; }
 .gate-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
@@ -62,7 +66,6 @@ html[data-gate] .shell * { visibility: hidden !important; }
 .shell-audio { grid-column: 4 / span 2; }
 .shell-identity { grid-column: 6 / span 2; }
 .local-clock { grid-column: 8 / span 2; margin: 0; display: flex; flex-direction: column; }
-.shell-inquiries { grid-column: 10 / span 3; justify-self: end; text-align: right; }
 
 .sound-text { display: inline-flex; align-items: center; gap: 0.5em; border: 0; padding: 0; background: none; }
 .sound-text:disabled { opacity: 0.6; }
@@ -74,12 +77,6 @@ html[data-gate] .shell * { visibility: hidden !important; }
 .shell-identity dt { min-width: 3.2em; color: var(--muted); }
 .shell-identity .meta-list div { min-width: 0; }
 .shell-identity dd { min-width: 0; margin: 0; overflow-wrap: anywhere; }
-
-.copy-email { display: inline-flex; flex-direction: column; gap: 2px; }
-.shell-inquiries.copy-email { align-items: flex-end; }
-.copy-email-button { border: 0; padding: 0; background: none; text-decoration: underline; text-underline-offset: 3px; text-align: inherit; }
-.copy-email[data-copy-state='copied'] .copy-email-button { color: var(--muted); }
-.copy-email-status { min-height: 1.3em; color: var(--muted); }
 
 .menu-pill { display: none; }
 
@@ -98,13 +95,12 @@ html[data-gate] .shell * { visibility: hidden !important; }
 }
 
 /* Narrow desktop (900-1099): the 12-column header is too tight for five two-column cells (the identity ran into the
-   clock and the address wrapped), so the clock tucks under the audio toggle and identity/inquiries get the room. */
+   clock wrapped), so the clock tucks under the audio toggle and the identity gets the room. */
 @media (min-width: 900px) and (max-width: 1099px) {
   /* Every cell is pinned to row 1: an explicit placement for one item would otherwise push the auto-placed ones down. */
-  .shell-nav, .shell-audio, .shell-identity, .local-clock, .shell-inquiries { grid-row: 1; }
+  .shell-nav, .shell-audio, .shell-identity, .local-clock { grid-row: 1; }
   .local-clock { grid-column: 4 / span 2; margin-top: 2.4em; }
   .shell-identity { grid-column: 6 / span 3; }
-  .shell-inquiries { grid-column: 9 / span 4; }
 }
 
 /* Mobile: Pacôme pill + sheet, identity stays horizontal and readable. */
@@ -112,7 +108,7 @@ html[data-gate] .shell * { visibility: hidden !important; }
   .shell-rail { gap: 10px; }
   .wordmark { font-size: 24px; }
   .shell-top { display: block; padding: 0; }
-  .shell-nav, .shell-audio, .local-clock, .shell-inquiries { display: none; }
+  .shell-nav, .shell-audio, .local-clock { display: none; }
   .shell-identity { position: absolute; top: 72px; left: var(--margin); right: var(--margin); font-size: 13px; }
   /* Content-sized columns (not two equal halves), so a long name keeps the room it needs next to the NIM. */
   .shell-identity .meta-list { grid-auto-flow: column; grid-template-columns: auto auto; justify-content: start; gap: 4px 22px; }

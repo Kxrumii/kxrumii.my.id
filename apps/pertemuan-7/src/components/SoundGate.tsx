@@ -29,12 +29,16 @@ export function SoundGate({ onChoose, leaving }: SoundGateProps) {
           data-transition-exit=""
           data-transition-enter=""
           style={transitionIndex(0)}
-          viewBox="0 0 64 64"
+          viewBox="0 0 96 64"
           aria-hidden="true"
         >
-          <circle cx="32" cy="32" r="30" fill="none" stroke="currentColor" strokeWidth="2" />
-          <path d="M26 21 L45 32 L26 43 Z" fill="currentColor" />
+          {/* A film frame reduced to its corner marks and two sprocket ticks: the "first frame" before the room opens. */}
+          <path d="M2 18V2h16M78 2h16v16M94 46v16H78M18 62H2V46" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" />
+          <path d="M44 8h8M44 56h8" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="square" />
         </svg>
+        <p className="ui-label gate-timecode" data-gate-part="" data-transition-exit="" data-transition-enter="" style={transitionIndex(0)} aria-hidden="true">
+          TC 00:00:00:00
+        </p>
         <div data-gate-part="" data-transition-exit="" data-transition-enter="" style={transitionIndex(1)}>
           <p className="ui-label">PAW / Pertemuan 07</p>
           <h1 id="gate-title" className="gate-title">Kxrumii</h1>

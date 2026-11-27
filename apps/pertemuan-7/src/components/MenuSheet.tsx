@@ -3,7 +3,6 @@ import { useLocation } from 'react-router';
 import { useSound } from '../audio/useSound';
 import { profile } from '../data/profile';
 import { navItems, trimTrailingSlash } from '../shell/navItems';
-import { CopyEmailButton } from './CopyEmailButton';
 import { SoundToggle } from './SoundToggle';
 import { TransitionLink } from './TransitionLink';
 
@@ -70,7 +69,6 @@ export function MenuSheet() {
           </ul>
         </nav>
         <div className="menu-sheet-bottom">
-          <CopyEmailButton email={profile.email} label="Email" />
           <ul className="menu-sheet-socials">
             {profile.socials.map((social) => (
               <li key={social.url}>

@@ -6,7 +6,6 @@ import { markGatePassed } from '../shell/gate';
 import { stagePath } from '../shell/navItems';
 import { ShellContext } from '../shell/shellContext';
 import { notifyRouteCommit, playGateHandOff, revealCanvas, transitionIndex, usePageReady } from '../transition';
-import { CopyEmailButton } from './CopyEmailButton';
 import { LocalClock } from './LocalClock';
 import { MenuSheet } from './MenuSheet';
 import { MetaList } from './MetaList';
@@ -96,7 +95,6 @@ export function AppShell() {
             />
           </div>
           <LocalClock />
-          <CopyEmailButton className="shell-inquiries" email={profile.email} label="Untuk kerja sama" />
           <MenuSheet />
         </header>
         <main id="main" className="stage-host" ref={mainRef} tabIndex={-1}>
