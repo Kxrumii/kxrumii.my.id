@@ -7,7 +7,7 @@ import { LogoMark } from './LogoMark';
 import { PillButton } from './PillButton';
 
 const MIN_LOAD_MS = 1100;
-const MARK_MS = 520;
+const MARK_MS = 900;
 const FLIGHT_MS = 950;
 
 export interface GateLeave {

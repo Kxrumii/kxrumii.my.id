@@ -194,3 +194,29 @@
 .loader[data-phase='leaving'] .loader-text {
   transform: translateY(12px);
 }
+
+/* The calligraphic F is written stroke by stroke when the count reaches 100. */
+.loader-logo .ink path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.loader:not([data-phase='loading']) .loader-logo .ink path {
+  animation: ink-write 0.5s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+.loader:not([data-phase='loading']) .loader-logo .ink-stroke-1 path {
+  animation-duration: 0.55s;
+  animation-delay: 0.42s;
+}
+
+.loader:not([data-phase='loading']) .loader-logo .ink-stroke-2 path {
+  animation-duration: 0.3s;
+  animation-delay: 0.9s;
+}
+
+@keyframes ink-write {
+  to {
+    stroke-dashoffset: 0;
+  }
+}

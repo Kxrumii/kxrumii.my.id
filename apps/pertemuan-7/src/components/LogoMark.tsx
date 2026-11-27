@@ -1,5 +1,4 @@
-import { useId, type Ref } from 'react';
-import { useReducedMotion } from '../hooks/useReducedMotion';
+import type { Ref } from 'react';
 
 interface LogoMarkProps {
   className?: string;
@@ -7,42 +6,37 @@ interface LogoMarkProps {
 }
 
 /*
- * The owner's mark: an off-white disc with a liquid "F". The letter is drawn from soft strokes and drops (a head,
- * a top arm that drips, a rounded middle arm, a heavy foot), then run through a "gooey" filter: blur + an alpha
- * threshold melts the joins together like a fluid, and a slowly drifting turbulence displaces it so the F never
- * sits perfectly still. Reduced motion keeps the shape and drops the drift.
+ * The owner's mark: an off-white disc with a calligraphic "F", written as with a broad-nib pen. Each stroke's
+ * centre line is drawn several times, shifted along the nib (40°, 5.2 units wide), so the letter gets real
+ * thick/thin contrast: wide on the downstroke, hairline on the cross-strokes. Strokes, in writing order: the top
+ * swash with its entry curl, the stem ending in a tail, the crossbar. Each path has pathLength 1, so the gate can
+ * "write" the letter with stroke-dashoffset (loader.css).
  */
-export function LogoMark({ className, ref }: LogoMarkProps) {
-  const reducedMotion = useReducedMotion();
-  const filterId = `goo-${useId().replace(/[^a-zA-Z0-9-]/g, '')}`;
+const STROKES = [
+  'M18 20.5C17 16.2 22.4 14 27 15.8C31.6 17.6 37 17 42.6 13.8C44.6 12.7 46.8 13 47.2 14.8',
+  'M30.6 16.6C32.2 24 31 33.6 28.4 41C26.6 46.4 22.4 50.2 18 48.6C15.8 47.8 16 45 18.4 45.2',
+  'M22.8 32.6C25.4 30.8 29 30.6 32.4 31.4C34.6 31.9 36.6 31.2 38 29.8',
+];
+const NIB_ANGLE = (40 * Math.PI) / 180;
+const NIB_WIDTH = 5.2;
+const NIB_STEPS = 13;
+const NIB = Array.from({ length: NIB_STEPS }, (_, i) => {
+  const t = -NIB_WIDTH / 2 + (NIB_WIDTH * i) / (NIB_STEPS - 1);
+  return `translate(${(Math.cos(NIB_ANGLE) * t).toFixed(3)} ${(-Math.sin(NIB_ANGLE) * t).toFixed(3)})`;
+});
 
+export function LogoMark({ className, ref }: LogoMarkProps) {
   return (
     <svg ref={ref} className={className} viewBox="0 0 64 64" aria-hidden="true">
-      <defs>
-        <filter id={filterId} x="-25%" y="-25%" width="150%" height="150%" colorInterpolationFilters="sRGB">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="2.1" result="blur" />
-          <feColorMatrix in="blur" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -10" result="goo" />
-          <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="7" result="noise">
-            {reducedMotion ? null : <animate attributeName="baseFrequency" dur="8s" values="0.03;0.05;0.03" repeatCount="indefinite" />}
-          </feTurbulence>
-          <feDisplacementMap in="goo" in2="noise" scale="2" xChannelSelector="R" yChannelSelector="G" />
-        </filter>
-      </defs>
       <circle cx="32" cy="32" r="31" fill="currentColor" />
-      <g filter={`url(#${filterId})`} fill="var(--color-bg-dark)" stroke="var(--color-bg-dark)" strokeLinecap="round" strokeLinejoin="round">
-        {/* stem, slightly swaying, with a heavy foot that drips */}
-        <path d="M23.5 48C22.6 39 24.6 28 23.2 16.8" fill="none" strokeWidth="7" />
-        <circle cx="24" cy="48.4" r="4.4" stroke="none" />
-        <path d="M24 50C24.4 52 23.8 53.4 24.6 55" fill="none" strokeWidth="2.2" />
-        <circle cx="24.8" cy="55.8" r="1.6" stroke="none" />
-        {/* head and top arm flowing right, then dripping */}
-        <circle cx="23.4" cy="17" r="4.2" stroke="none" />
-        <path d="M23 16.6C29.5 13.8 37 13.6 44 15.8" fill="none" strokeWidth="6.4" />
-        <path d="M44 16C45.6 18.4 45 20.8 45.6 23" fill="none" strokeWidth="3.4" />
-        <circle cx="45.7" cy="25.2" r="2.6" stroke="none" />
-        {/* middle arm ending in a drop */}
-        <path d="M23.6 31.8C27.6 30.2 31.8 30.4 35.2 31.6" fill="none" strokeWidth="5.6" />
-        <circle cx="36.4" cy="32" r="3.7" stroke="none" />
+      <g className="ink" fill="none" stroke="var(--color-bg-dark)" strokeWidth="1" strokeLinecap="round" transform="translate(32 32) scale(1.06) translate(-32 -32)">
+        {STROKES.map((d, stroke) => (
+          <g key={stroke} className={`ink-stroke ink-stroke-${stroke}`}>
+            {NIB.map((offset, i) => (
+              <path key={i} d={d} transform={offset} pathLength={1} />
+            ))}
+          </g>
+        ))}
       </g>
     </svg>
   );
