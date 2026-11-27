@@ -13,7 +13,7 @@ import { startMusic, type MusicStatus } from './music';
  *   so the music schedule simply pauses and resumes in place.
  * - A playing video ducks the music.
  */
-export type SoundName = 'hover' | 'click' | 'open' | 'close' | 'enter' | 'switch' | 'next' | 'stars' | 'trail' | 'ripple' | 'shoot';
+export type SoundName = 'hover' | 'click' | 'open' | 'close' | 'enter' | 'switch' | 'spiral' | 'list' | 'next' | 'stars' | 'trail' | 'ripple' | 'shoot';
 
 export interface SoundSnapshot {
   supported: boolean;
@@ -23,7 +23,8 @@ export interface SoundSnapshot {
 
 const MASTER_LEVEL = 0.85;
 const MUSIC_LEVEL = 0.55;
-const MUSIC_DUCK_LEVEL = 0.12;
+/** A playing video takes over completely. */
+const MUSIC_DUCK_LEVEL = 0;
 const HOVER_THROTTLE_MS = 70;
 const TRAIL_THROTTLE_MS = 95;
 
@@ -83,7 +84,9 @@ function applyLevels(): void {
   const now = ctx.currentTime;
   const audible = snapshot.enabled && document.visibilityState === 'visible';
   master.gain.cancelScheduledValues(now);
-  master.gain.setTargetAtTime(audible ? MASTER_LEVEL : 0, now, audible ? 0.12 : 0.05);
+  // On: full level at once, so the very first click (the gate choice) is heard. Off: a short fade.
+  if (audible) master.gain.setValueAtTime(MASTER_LEVEL, now);
+  else master.gain.setTargetAtTime(0, now, 0.05);
   musicBus.gain.cancelScheduledValues(now);
   // Music swells in slowly (about 1.5 s) and ducks under a playing video.
   musicBus.gain.setTargetAtTime(audible ? (ducked ? MUSIC_DUCK_LEVEL : MUSIC_LEVEL) : 0, now, audible ? 0.5 : 0.05);
@@ -162,8 +165,14 @@ const SPARKLE = [880, 987.77, 1174.66, 1318.51, 1567.98, 1760, 1975.53, 2349.32]
  * Plays an interface sound when sound is on (no-op otherwise). `amount` (0–1) shapes the continuous ones:
  * the cursor speed for `trail`.
  */
-export function playSound(name: SoundName, amount = 0.5): void {
-  if (!snapshot.enabled || !ctx || ctx.state !== 'running' || document.visibilityState !== 'visible') return;
+export function playSound(name: SoundName, amount = 0.5, afterResume = false): void {
+  if (!snapshot.enabled || !ctx || document.visibilityState !== 'visible') return;
+  // A context created by this very gesture can still be starting: play as soon as it runs.
+  if (ctx.state === 'suspended' && !afterResume) {
+    void ctx.resume().then(() => playSound(name, amount, true));
+    return;
+  }
+  if (ctx.state !== 'running') return;
   const at = ctx.currentTime + 0.005;
   const nowMs = performance.now();
   switch (name) {
@@ -173,8 +182,10 @@ export function playSound(name: SoundName, amount = 0.5): void {
       tone(2100, at, 0.05, 0.04);
       break;
     case 'click':
-      tone(880, at, 0.12, 0.08, 'triangle');
-      tone(1320, at + 0.03, 0.06, 0.08);
+      // Short and crisp: a high-passed noise tick on top of a quick sine pop.
+      filteredNoise(at, 4200, 2600, 0.03, 0.32, 'highpass');
+      tone(1480, at, 0.16, 0.035, 'sine', 0.001);
+      tone(740, at + 0.004, 0.08, 0.05, 'triangle', 0.001);
       break;
     case 'open':
       filteredNoise(at, 300, 2400, 0.42, 0.22);
@@ -186,6 +197,16 @@ export function playSound(name: SoundName, amount = 0.5): void {
       tone(523.25, at, 0.12, 0.6);
       tone(783.99, at + 0.09, 0.1, 0.7);
       tone(1046.5, at + 0.18, 0.07, 0.9);
+      break;
+    case 'spiral':
+      // A rising swirl into the coil.
+      filteredNoise(at, 320, 2600, 0.34, 0.14);
+      tone(523.25, at + 0.04, 0.05, 0.22, 'sine', 0.01);
+      tone(783.99, at + 0.12, 0.045, 0.3, 'sine', 0.01);
+      break;
+    case 'list':
+      // Three quick descending ticks, like rows falling into place.
+      [1760, 1318.51, 987.77].forEach((freq, i) => tone(freq, at + i * 0.055, 0.06, 0.05, 'triangle', 0.001));
       break;
     case 'switch':
       filteredNoise(at, 900, 3200, 0.22, 0.12);

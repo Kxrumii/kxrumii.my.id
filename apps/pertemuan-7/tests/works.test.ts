@@ -1,34 +1,64 @@
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
 import { test } from 'node:test';
-import { works } from '../src/data/works.ts';
+import { fileURLToPath } from 'node:url';
+import { categoryLabel, works } from '../src/data/works.ts';
 import type { Work } from '../src/types.ts';
 import { interleave } from '../src/utils/interleave.ts';
-import { coverImage, coverPalette, findWork, nextWork, workNumber } from '../src/utils/works.ts';
+import { coverImage, coverPalette, findWork, nextWork, prevWork, workNumber } from '../src/utils/works.ts';
+
+const publicDir = fileURLToPath(new URL('../public/', import.meta.url));
 
 const make = (slug: string, extra: Partial<Work> = {}): Work => ({
   slug,
   title: slug,
   year: null,
-  category: 'film',
+  category: null,
   role: null,
-  summary: '',
+  summary: null,
   notes: null,
-  thumbnail: null,
+  cover: null,
+  styleframes: [],
+  aspect: 16 / 9,
+  preview: false,
   youtubeVideoId: null,
   externalUrl: null,
-  isSample: true,
+  isSample: false,
   ...extra,
 });
 
-test('work data: unique, URL-safe slugs and no invented details', () => {
+test('the eight works: unique URL-safe slugs, five on YouTube, three still waiting for a link', () => {
+  assert.equal(works.length, 8);
   const slugs = works.map((work) => work.slug);
   assert.equal(new Set(slugs).size, slugs.length);
+  for (const work of works) assert.match(work.slug, /^[a-z0-9-]+$/);
+  const onYouTube = works.filter((work) => work.youtubeVideoId !== null);
+  assert.equal(onYouTube.length, 5);
+  for (const work of onYouTube) assert.match(work.youtubeVideoId!, /^[\w-]{11}$/);
+  assert.deepEqual(
+    works.filter((work) => work.youtubeVideoId === null).map((work) => work.title),
+    ['ILUSI GARIS KEMISKINAN', 'Rahmatan Lil Alamin', 'Sundays'],
+  );
+});
+
+test('no invented details: year, role and description stay empty until the owner fills them', () => {
   for (const work of works) {
-    assert.match(work.slug, /^[a-z0-9-]+$/);
-    if (work.isSample) {
-      assert.equal(work.year, null, `${work.slug}: sample entries must not carry a year`);
-      assert.equal(work.role, null, `${work.slug}: sample entries must not carry a role`);
+    assert.equal(work.year, null, work.slug);
+    assert.equal(work.role, null, work.slug);
+    assert.equal(work.summary, null, work.slug);
+    assert.equal(work.isSample, false, work.slug);
+  }
+  assert.equal(categoryLabel(make('x')), '—');
+  assert.equal(categoryLabel(make('x', { category: 'mograph' })), 'mograph');
+});
+
+test('every cover and styleframe file exists in public/', () => {
+  for (const work of works) {
+    for (const path of [work.cover, ...work.styleframes]) {
+      assert.ok(path, work.slug);
+      assert.ok(existsSync(publicDir + path), `${work.slug}: missing public/${path}`);
     }
+    assert.equal(work.styleframes.length, 3, work.slug);
   }
 });
 
@@ -37,19 +67,20 @@ test('work numbers are two digits from 01', () => {
   assert.equal(workNumber(11), '12');
 });
 
-test('findWork and nextWork resolve slugs and wrap around', () => {
+test('findWork, nextWork and prevWork resolve slugs and wrap around', () => {
   const list = [make('a'), make('b'), make('c')];
   assert.equal(findWork(list, 'b')?.slug, 'b');
   assert.equal(findWork(list, 'zzz'), null);
   assert.equal(findWork(list, undefined), null);
-  assert.equal(nextWork(list, 'a')?.slug, 'b');
   assert.equal(nextWork(list, 'c')?.slug, 'a');
+  assert.equal(prevWork(list, 'a')?.slug, 'c');
+  assert.equal(prevWork(list, 'b')?.slug, 'a');
   assert.equal(nextWork(list, 'zzz'), null);
-  assert.equal(nextWork([make('only')], 'only'), null);
+  assert.equal(prevWork([make('only')], 'only'), null);
 });
 
-test('covers: own thumbnail first, then the YouTube still, else generative', () => {
-  assert.equal(coverImage(make('x', { thumbnail: '/a.jpg', youtubeVideoId: 'abc' })), '/a.jpg');
+test('covers: own still first, then the YouTube still, else generative', () => {
+  assert.equal(coverImage(make('x', { cover: 'works/x/cover.webp', youtubeVideoId: 'abc' })), '/works/x/cover.webp');
   assert.equal(coverImage(make('x', { youtubeVideoId: 'abc' })), 'https://i.ytimg.com/vi/abc/hqdefault.jpg');
   assert.equal(coverImage(make('x')), null);
 });
@@ -66,11 +97,9 @@ test('interleave keeps every word in order and spreads images between them', () 
   const pieces = interleave(text, 3);
   const words = pieces.filter((p) => p.kind === 'word').map((p) => (p.kind === 'word' ? p.text : ''));
   assert.deepEqual(words, text.split(' '));
-  const images = pieces.filter((p) => p.kind === 'image');
-  assert.equal(images.length, 3);
+  assert.equal(pieces.filter((p) => p.kind === 'image').length, 3);
   assert.equal(pieces[0].kind, 'word');
   assert.equal(pieces[pieces.length - 1].kind, 'word');
-  // Never two images side by side.
   for (let i = 1; i < pieces.length; i += 1) assert.ok(!(pieces[i].kind === 'image' && pieces[i - 1].kind === 'image'));
 });
 

@@ -9,10 +9,10 @@ import { workNumber } from '../utils/works';
 
 const INLINE_IMAGES = 4;
 
-/** Large statement with work covers set inline between the words, then links and credits. */
+/** The owner's statement with work covers set inline between the words, a small quote, links and credits. */
 export function AboutPage() {
   usePageTitle('about');
-  const statement = `hi, i'm ${profile.handle} — ${profile.tagline}. ${profile.intro}`;
+  const statement = profile.intro;
   const covers = works.slice(0, INLINE_IMAGES);
   const pieces = interleave(statement, covers.length);
 
@@ -34,13 +34,17 @@ export function AboutPage() {
           ),
         )}
       </p>
-      {profile.isSample ? <p className="about-sample">sample text — replace in src/data/profile.ts before publishing</p> : null}
-      <footer className="about-footer" data-transition-enter data-transition-exit style={transitionIndex(1)}>
+      {profile.quote ? (
+        <blockquote className="about-quote" data-transition-enter data-transition-exit style={transitionIndex(1)}>
+          “{profile.quote}”
+        </blockquote>
+      ) : null}
+      <footer className="about-footer" data-transition-enter data-transition-exit style={transitionIndex(2)}>
         <div>
           <p className="about-label">elsewhere</p>
           <SocialLinks links={profile.socials} variant="labelled" />
         </div>
-        {!profile.isSample ? (
+        {profile.email ? (
           <div>
             <p className="about-label">contact</p>
             <a className="about-mail" href={`mailto:${profile.email}`}>
@@ -50,7 +54,7 @@ export function AboutPage() {
         ) : null}
         <div className="about-credits">
           <p className="about-label">credits</p>
-          <p>design &amp; development {profile.handle}</p>
+          <p>design, development, video &amp; edit {profile.handle}</p>
           <p>layout and interaction modelled on the portfolio of Pacôme Pertant</p>
           <p>pixel stars adapted from @uicapsule, ASCII wake after @nikolas-sapa (21st.dev)</p>
           <p>music: Shelter (Official Piano Version), Porter Robinson &amp; Madeon</p>

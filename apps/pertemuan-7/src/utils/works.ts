@@ -17,6 +17,26 @@ export function nextWork(list: readonly Work[], slug: string): Work | null {
   return list[(index + 1) % list.length];
 }
 
+/** The work before `slug`, wrapping to the last one; null for an unknown slug or a list of one. */
+export function prevWork(list: readonly Work[], slug: string): Work | null {
+  const index = list.findIndex((work) => work.slug === slug);
+  if (index < 0 || list.length < 2) return null;
+  return list[(index - 1 + list.length) % list.length];
+}
+
+/** URL of a file in the app's public folder (respects the Vite base, e.g. /tugas/pertemuan-7/). */
+export function assetUrl(path: string): string {
+  const base = (import.meta as ImportMeta & { env?: { BASE_URL?: string } }).env?.BASE_URL ?? '/';
+  return `${base}${path.replace(/^\/+/, '')}`;
+}
+
+/** Muted preview loop: local-media in development, media/previews on the server (uploaded by hand). */
+export function previewUrl(work: Work): string | null {
+  if (!work.preview) return null;
+  const env = (import.meta as ImportMeta & { env?: { DEV?: boolean } }).env;
+  return assetUrl(env?.DEV ? `local-media/previews/${work.slug}.mp4` : `media/previews/${work.slug}.mp4`);
+}
+
 /** Stable 32-bit FNV-1a hash, used to derive deterministic covers from a slug. */
 export function hashString(value: string): number {
   let hash = 0x811c9dc5;
@@ -53,9 +73,9 @@ export function coverPalette(slug: string): CoverPalette {
   return { ...palette, angle: 100 + ((hash >>> 8) % 140) };
 }
 
-/** Image URL for a work's cover: its own thumbnail, else the YouTube still, else null (generative cover). */
+/** Image URL for a work's cover: its own still, else the YouTube still, else null (generative cover). */
 export function coverImage(work: Work): string | null {
-  if (work.thumbnail) return work.thumbnail;
+  if (work.cover) return assetUrl(work.cover);
   if (work.youtubeVideoId) return `https://i.ytimg.com/vi/${encodeURIComponent(work.youtubeVideoId)}/hqdefault.jpg`;
   return null;
 }

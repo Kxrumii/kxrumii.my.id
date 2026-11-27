@@ -67,3 +67,13 @@
     transform: scale(0.9);
   }
 }
+
+/* ---- Route transitions: the incoming page is invisible until its own enter animation runs (no blink) ---- */
+:root {
+  --transition-enter-from-clip: inset(0 0 0 0);
+  --transition-enter-from-transform: translate3d(0, 80px, 0) scale(0.96);
+}
+
+html[data-transition-state='entering'] [data-transition-enter] {
+  opacity: 0;
+}

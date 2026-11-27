@@ -56,12 +56,33 @@
   background: var(--color-bg-grey);
 }
 
+.project-preview.playable {
+  cursor: pointer;
+}
+
 .project-preview-cover,
-.project-video {
+.project-preview-video {
   display: block;
   width: 100%;
   height: 100%;
   border: 0;
+  object-fit: cover;
+}
+
+/* "video segera hadir": a dark, inert pill (the work is not on YouTube yet). */
+.project-play.project-play-soon {
+  background: var(--color-bg-dark);
+  color: var(--color-white);
+  white-space: nowrap;
+  cursor: default;
+}
+
+.project-play.project-play-soon::before {
+  display: none;
+}
+
+.project-play.project-play-soon:hover {
+  transform: translate(-50%, -50%);
 }
 
 .project-play {
@@ -399,6 +420,16 @@
   }
 }
 
+.about-quote {
+  max-width: 34ch;
+  margin: calc(var(--gap-xl) * -0.5) 0 0;
+  font-size: 18px;
+  font-style: italic;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  opacity: 0.55;
+}
+
 .about-sample {
   margin-top: calc(var(--gap-xl) * -0.6);
   font-size: 14px;
@@ -459,4 +490,284 @@
   font-size: clamp(48px, 8vw, 120px);
   font-weight: 500;
   letter-spacing: -0.06em;
+}
+
+/* ---- Previous project hint (scrolling up past the top) ---- */
+.prev-hint {
+  position: fixed;
+  top: var(--grid-margin);
+  left: 0;
+  right: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  margin-inline: auto;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-12px);
+  transition:
+    opacity 0.25s ease,
+    transform 0.4s var(--ease-spring);
+}
+
+.prev-hint[data-active='true'] {
+  opacity: 1;
+  transform: none;
+}
+
+.prev-pill {
+  padding: 8px 16px;
+  border-radius: 50px;
+  background: var(--color-pop);
+  color: var(--color-bg-dark);
+  font-size: 16px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.prev-bar {
+  position: relative;
+  width: 120px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 100px;
+  background: var(--color-white-20);
+}
+
+.prev-fill {
+  --progress: 0;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--color-white);
+  transform: scaleX(var(--progress));
+  transform-origin: left center;
+}
+
+/* ---- Video player (after the reference): blurred poster, contained video, white control pill ---- */
+.player {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow: hidden;
+  background-color: var(--color-bg-dark);
+  background-image: var(--poster, none);
+  background-position: center;
+  background-size: cover;
+  animation: player-in 0.4s ease-in-out 0.1s both;
+  transform-origin: bottom center;
+}
+
+.player::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgb(10 10 10 / 0.35);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  pointer-events: none;
+}
+
+.player[data-state='closing'] {
+  animation: player-out 0.4s ease-in-out both;
+}
+
+@keyframes player-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+    border-radius: 16px 16px 0 0;
+  }
+}
+
+@keyframes player-out {
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+    border-radius: 16px 16px 0 0;
+  }
+}
+
+.player-video {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  /* Room for the control pill below the frame. */
+  padding: var(--grid-margin) var(--grid-margin) 110px;
+}
+
+/* Sized to the video's own ratio, as large as fits: the blurred poster shows around it. */
+.player-frame {
+  position: relative;
+  width: min(100%, calc((100vh - 110px - var(--grid-margin)) * var(--aspect, 1.7778)));
+  aspect-ratio: var(--aspect, 1.7778);
+  overflow: hidden;
+  border-radius: var(--radius-m);
+  background: #000;
+  box-shadow: 0 30px 80px rgb(0 0 0 / 0.45);
+}
+
+/*
+ * The embed is taller than the frame and cropped: YouTube fits the video to the iframe width, so the picture
+ * fills the frame exactly, while the strips above and below (where YouTube puts its title, "More videos" and
+ * logo) fall outside the visible area.
+ */
+.player-frame iframe {
+  position: absolute;
+  left: 0;
+  top: -90px;
+  display: block;
+  width: 100%;
+  height: calc(100% + 180px);
+  border: 0;
+}
+
+.player-shield {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  cursor: pointer;
+}
+
+.player[data-idle='true'] .player-shield {
+  cursor: none;
+}
+
+.player-controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 30px;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s var(--ease-expo-out);
+}
+
+.player[data-idle='true'] .player-controls {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.player[data-idle='true'] {
+  cursor: none;
+}
+
+.player-inner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 20px;
+  padding: var(--gap-xs);
+  border-radius: var(--radius-xl);
+  background: var(--color-white);
+  pointer-events: auto;
+}
+
+.player-button,
+.player-close {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--control);
+  height: var(--control);
+  border-radius: 50%;
+  color: var(--color-white);
+}
+
+.player-button svg,
+.player-close svg {
+  position: relative;
+  width: 22px;
+  height: 22px;
+}
+
+.player-button-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--color-bg-dark);
+  transition: transform 0.15s ease-out;
+}
+
+.player-button:hover .player-button-bg {
+  transform: scale(0.9);
+}
+
+.player-close {
+  margin-left: var(--gap-s);
+  background: var(--color-pop);
+  color: var(--color-bg-dark);
+  transition: transform 0.15s ease-out;
+}
+
+.player-close:hover {
+  transform: scale(0.9);
+}
+
+.player-thumbs {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin-left: var(--gap-s);
+  overflow: hidden;
+  border-radius: 10px;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.player-thumbs:focus-visible {
+  outline-color: var(--color-bg-dark);
+}
+
+.player-thumb {
+  display: block;
+  overflow: hidden;
+}
+
+.player-thumb img {
+  display: block;
+  width: auto;
+  height: 48px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+/* The unplayed part is dimmed; its left edge (a white line) is the playhead. */
+.player-progress {
+  --remaining: 1;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  border-left: 3px solid var(--color-white);
+  background: rgb(10 10 10 / 0.6);
+  transform: scaleX(var(--remaining));
+  transform-origin: center right;
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .player-thumb img {
+    height: 36px;
+  }
+  .player-thumb:nth-child(n + 3) {
+    display: none;
+  }
+  .player-thumbs {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }

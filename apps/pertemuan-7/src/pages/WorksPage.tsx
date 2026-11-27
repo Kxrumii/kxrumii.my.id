@@ -80,7 +80,7 @@ export function WorksPage() {
 
   const setView = (next: WorksView) => {
     if (next === view) return;
-    playSound('switch');
+    playSound(next === 'list' ? 'list' : 'spiral');
     setParams(next === 'list' ? { view: 'list' } : {}, { replace: true, preventScrollReset: true });
   };
 

@@ -37,3 +37,30 @@ export function isAtBottom(scrollY: number, viewportHeight: number, scrollHeight
 export function isComplete(progress: number): boolean {
   return progress >= 1;
 }
+
+export type Edge = 'top' | 'bottom' | 'both' | null;
+
+/** Which end of the page the viewport is at ('both' when the page fits in the viewport). */
+export function edgeOf(scrollY: number, viewportHeight: number, scrollHeight: number, tolerance = 2): Edge {
+  const top = scrollY <= tolerance;
+  const bottom = isAtBottom(scrollY, viewportHeight, scrollHeight, tolerance);
+  return top && bottom ? 'both' : top ? 'top' : bottom ? 'bottom' : null;
+}
+
+/** Time after arriving on a page during which edge input is ignored (trackpad momentum must not chain pages). */
+export const ARRIVAL_COOLDOWN_MS = 700;
+/** The viewport must have rested at the edge this long before input there counts. */
+export const EDGE_SETTLE_MS = 150;
+
+/** Whether input at an edge may fill a bar now. */
+export function edgeReady(nowMs: number, arrivedAtMs: number, edgeSinceMs: number | null): boolean {
+  if (edgeSinceMs === null) return false;
+  return nowMs - arrivedAtMs >= ARRIVAL_COOLDOWN_MS && nowMs - edgeSinceMs >= EDGE_SETTLE_MS;
+}
+
+/** Direction a scroll intent points to at a given edge: down at the bottom → next, up at the top → prev. */
+export function edgeIntent(edge: Edge, deltaPx: number): 'next' | 'prev' | null {
+  if (deltaPx > 0 && (edge === 'bottom' || edge === 'both')) return 'next';
+  if (deltaPx < 0 && (edge === 'top' || edge === 'both')) return 'prev';
+  return null;
+}

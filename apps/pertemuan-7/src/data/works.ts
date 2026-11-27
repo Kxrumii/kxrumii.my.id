@@ -1,50 +1,48 @@
 /*
- * SAMPLE DATA — semua entri di bawah adalah contoh untuk membangun antarmuka.
- * Ganti dengan karya nyata (judul, tahun, peran, YouTube ID, sampul) sebelum publikasi,
- * lalu ubah `isSample` menjadi false. Jangan menebak judul, peran, atau tahun.
+ * Karya Fahrii. Judul diambil dari judul YouTube / nama file owner (dengan koreksi owner); jenisnya hanya dari
+ * istilah di judul itu sendiri ("[Mograph]", "Edit/AMV"). Tahun, peran, dan deskripsi BELUM diisi: jangan menebak.
+ * Urutan array = urutan di spiral dan list.
  *
- * Urutan array = urutan di spiral dan list (tidak pernah diacak).
- *  - 01: punya `youtubeVideoId` (video demo publik, hanya untuk menguji pemutar)
- *  - 02: hanya `externalUrl` (tautan contoh `example.com`)
- *  - 03–06: tanpa video dan tanpa tautan (sampul generatif)
+ * Gambar (`public/works/<slug>/`) dibuat oleh `tools/media.mjs` dari file di local-media. Video penuh diputar dari
+ * YouTube; karya tanpa `youtubeVideoId` menunggu link unlisted dari owner.
  */
 import type { Work, WorkCategory } from '../types';
 
 export const CATEGORY_LABELS: Record<WorkCategory, string> = {
-  film: 'film',
-  'music-video': 'music video',
-  commercial: 'commercial',
-  social: 'social',
-  experiment: 'experiment',
+  edit: 'edit',
+  mograph: 'mograph',
 };
 
-const sample = (n: number, category: WorkCategory, extra: Partial<Work> = {}): Work => ({
-  slug: `sample-work-${String(n).padStart(2, '0')}`,
-  title: `Sample Work ${String(n).padStart(2, '0')}`,
+/** Label kategori, atau "—" bila belum disebut. */
+export function categoryLabel(work: Work): string {
+  return work.category ? CATEGORY_LABELS[work.category] : '—';
+}
+
+const work = (slug: string, title: string, youtubeVideoId: string | null, category: WorkCategory | null, aspect = 16 / 9): Work => ({
+  slug,
+  title,
   year: null,
   category,
   role: null,
-  summary: 'Entri contoh. Ganti dengan ringkasan karya nyata sebelum publikasi.',
+  summary: null,
   notes: null,
-  thumbnail: null,
-  youtubeVideoId: null,
-  externalUrl: null,
-  isSample: true,
-  ...extra,
+  cover: `works/${slug}/cover.webp`,
+  styleframes: [1, 2, 3].map((n) => `works/${slug}/f${n}.webp`),
+  aspect,
+  preview: true,
+  youtubeVideoId,
+  externalUrl: youtubeVideoId ? `https://www.youtube.com/watch?v=${youtubeVideoId}` : null,
+  isSample: false,
 });
 
 export const works: Work[] = [
-  sample(1, 'film', {
-    summary: 'Entri contoh dengan video demo publik (bukan karya sendiri) untuk menguji pemutar. Ganti dengan karya nyata.',
-    notes: 'Catatan produksi contoh. Ganti dengan konteks, alat, atau proses karya yang sebenarnya.',
-    youtubeVideoId: 'jNQXAC9IVRw', // SAMPLE: video publik demo, bukan karya pengguna
-  }),
-  sample(2, 'music-video', {
-    summary: 'Entri contoh yang hanya memiliki tautan eksternal, tanpa video yang dapat disematkan.',
-    externalUrl: 'https://example.com/', // SAMPLE: domain reserved untuk contoh
-  }),
-  sample(3, 'commercial'),
-  sample(4, 'social'),
-  sample(5, 'experiment'),
-  sample(6, 'film'),
+  // Aspect ratios measured with ffprobe on the owner's files (2480×2160, 1440×1080); the rest are 16:9.
+  work('last-friday-night', 'Last Friday Night', 'X7lZLkjGXXk', 'mograph', 2480 / 2160),
+  work('a-signal-from-outer-space', 'A Signal From Outer Space', 'talzLiLx1fc', 'mograph'),
+  work('love-letter-from-violet-evergarden', 'Love Letter From Violet Evergarden', 'SVuNZH-vqMg', null),
+  work('oregairu-cinta-terbaik', 'Oregairu — Cinta Terbaik', 'qYnPTRtK7Xk', 'edit'),
+  work('sousou-no-frieren-new-tank', 'Sousou no Frieren — New Tank', '6ZdKTaC54z8', 'edit', 4 / 3),
+  work('ilusi-garis-kemiskinan', 'ILUSI GARIS KEMISKINAN', null, null),
+  work('rahmatan-lil-alamin', 'Rahmatan Lil Alamin', null, null),
+  work('sundays', 'Sundays', null, null),
 ];

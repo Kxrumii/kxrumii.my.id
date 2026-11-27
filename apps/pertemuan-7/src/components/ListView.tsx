@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { playSound } from '../audio/sound';
-import { CATEGORY_LABELS } from '../data/works';
+import { categoryLabel } from '../data/works';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import type { Work } from '../types';
 import { workNumber } from '../utils/works';
@@ -80,7 +80,7 @@ export function ListView({ works }: ListViewProps) {
               onClick={() => playSound('click')}
             >
               <span className="list-meta">
-                {workNumber(index)} · {CATEGORY_LABELS[work.category]}
+                {workNumber(index)} · {categoryLabel(work)}
               </span>
               <span className="list-mask">
                 <span className="list-title">{work.title}</span>

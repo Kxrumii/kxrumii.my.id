@@ -38,10 +38,12 @@ export function Layout() {
   }, [location.pathname]);
   usePageReady(location.pathname);
 
-  // A route change closes the menu and starts the new page at the top (also on browser back/forward).
+  // A route change closes the menu and starts the new page at the top (also on browser back/forward). Arriving
+  // at the previous work by scrolling up lands at its bottom, so scrolling backwards stays continuous.
   useLayoutEffect(() => {
     setMenuOpen(false);
-    window.scrollTo(0, 0);
+    const backwards = document.documentElement.dataset.routeDir === 'prev';
+    window.scrollTo(0, backwards ? document.documentElement.scrollHeight : 0);
   }, [location.pathname]);
 
   const entered = phase !== 'gate';

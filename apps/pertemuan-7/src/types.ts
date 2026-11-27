@@ -1,20 +1,28 @@
-export type WorkCategory = 'film' | 'music-video' | 'commercial' | 'social' | 'experiment';
+/** The owner's own terms, taken from the work titles ("[Mograph]", "Edit/AMV"). */
+export type WorkCategory = 'edit' | 'mograph';
 
 export interface Work {
   slug: string;
   title: string;
   /** null = belum diisi; jangan menebak tahun karya. */
   year: number | null;
-  category: WorkCategory;
+  /** null = jenis karya belum disebut owner. */
+  category: WorkCategory | null;
   /** null = peran belum dikonfirmasi; hanya isi sesuai kontribusi nyata. */
   role: string | null;
-  summary: string;
+  /** Deskripsi singkat; null = belum ditulis (tampil "deskripsi menyusul"). */
+  summary: string | null;
   /** Catatan produksi di halaman proyek; null = belum ditulis. */
   notes: string | null;
-  /** URL gambar sampul milik sendiri; null = pakai thumbnail YouTube atau sampul generatif. */
-  thumbnail: string | null;
-  /** Gambar tambahan (styleframes) di halaman proyek; kosong = tidak ditampilkan (entri sampel memakai sampul generatif). */
-  styleframes?: string[];
+  /** Sampul di folder public app, mis. `works/<slug>/cover.webp`; null = sampul generatif. */
+  cover: string | null;
+  /** Styleframes di folder public app; juga dipakai sebagai thumbnail scrubber player. */
+  styleframes: string[];
+  /** Rasio tampilan video (lebar / tinggi), hasil ffprobe file asli. */
+  aspect: number;
+  /** Ada loop preview bisu (`<slug>.mp4`): dev dari local-media/previews, prod dari media/previews. */
+  preview: boolean;
+  /** null = video belum ada di YouTube (tampil "video segera hadir"). */
   youtubeVideoId: string | null;
   externalUrl: string | null;
   /** true selama entri masih data contoh dan belum diganti karya nyata. */
@@ -36,11 +44,14 @@ export interface Profile {
   /** Nama tampilan / handle publik. */
   handle: string;
   name: string;
-  email: string;
+  /** null = kontak tidak ditampilkan. */
+  email: string | null;
   /** Satu baris di loader dan footer, mis. "video & motion maker". */
   tagline: string;
   /** Paragraf besar di halaman About. */
   intro: string;
+  /** Kutipan kecil di bawah pernyataan About; null = tidak ada. */
+  quote: string | null;
   socials: SocialLink[];
   /** true selama nama, email, atau bio masih placeholder. */
   isSample: boolean;

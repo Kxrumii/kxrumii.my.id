@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { playSound } from '../../audio/sound';
-import { CATEGORY_LABELS } from '../../data/works';
+import { categoryLabel } from '../../data/works';
 import type { Work } from '../../types';
 import { Letters, pillClass } from '../PillButton';
 
@@ -11,7 +11,7 @@ interface ProjectInfosProps {
 
 /**
  * Title on the left (5 columns), description on the right (3 columns). Each block rises out of its own mask
- * the first time it scrolls into view.
+ * the first time it scrolls into view. Missing details read as "—" / "deskripsi menyusul", never invented.
  */
 export function ProjectInfos({ work, number }: ProjectInfosProps) {
   const ref = useRef<HTMLElement>(null);
@@ -38,7 +38,7 @@ export function ProjectInfos({ work, number }: ProjectInfosProps) {
     return () => observer.disconnect();
   }, [work.slug]);
 
-  const meta = [number, CATEGORY_LABELS[work.category], work.year === null ? null : String(work.year), work.role].filter(Boolean);
+  const meta = [number, categoryLabel(work), work.year === null ? '—' : String(work.year), work.role ?? '—'];
 
   return (
     <section ref={ref} className="project-infos" aria-labelledby="project-title">
@@ -50,17 +50,16 @@ export function ProjectInfos({ work, number }: ProjectInfosProps) {
           <span>{meta.join(' · ')}</span>
         </p>
         <p className="project-text reveal" style={{ transitionDelay: '80ms' }}>
-          <span>{work.summary}</span>
+          <span>{work.summary ?? 'deskripsi menyusul.'}</span>
         </p>
         {work.notes ? (
           <p className="project-text reveal" style={{ transitionDelay: '160ms' }}>
             <span>{work.notes}</span>
           </p>
         ) : null}
-        {work.isSample ? <p className="project-sample">sample entry — replace with a real work before publishing</p> : null}
         {work.externalUrl ? (
           <a className={pillClass('dark')} href={work.externalUrl} target="_blank" rel="noreferrer noopener" onPointerEnter={() => playSound('hover')}>
-            <Letters text="see the case" />
+            <Letters text="watch on youtube" />
           </a>
         ) : null}
       </div>

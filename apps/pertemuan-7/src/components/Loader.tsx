@@ -84,7 +84,11 @@ export function Loader({ onLeave, onEntered }: LoaderProps) {
   const choose = (withSound: boolean) => {
     if (phase !== 'ready') return;
     setSoundEnabled(withSound);
-    if (withSound) playSound('enter');
+    if (withSound) {
+      // The click answers the press at once; the chime follows as the gate opens.
+      playSound('click');
+      window.setTimeout(() => playSound('enter'), 80);
+    }
     setPhase('leaving');
 
     const mark = markRef.current;

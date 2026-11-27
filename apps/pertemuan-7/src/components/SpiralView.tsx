@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState, type KeyboardEvent } from 'react';
 import { playSound } from '../audio/sound';
-import { CATEGORY_LABELS } from '../data/works';
+import { categoryLabel } from '../data/works';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 import { useTransitionNavigate } from '../transition';
 import type { Work } from '../types';
@@ -97,7 +97,7 @@ export function SpiralView({ works, paused }: SpiralViewProps) {
       <div className="spiral-caption" aria-live="polite">
         <p className="spiral-caption-meta">
           <span>{currentNumber}</span>
-          <span>{CATEGORY_LABELS[current.category]}</span>
+          <span>{categoryLabel(current)}</span>
         </p>
         <p className="spiral-caption-title" key={current.slug}>
           {current.title}

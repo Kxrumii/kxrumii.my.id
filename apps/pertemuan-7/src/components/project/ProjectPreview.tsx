@@ -1,52 +1,73 @@
-import { useEffect, useState } from 'react';
-import { playSound, setMusicDucked } from '../../audio/sound';
+import { useState } from 'react';
+import { playSound } from '../../audio/sound';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import type { Work } from '../../types';
+import { assetUrl, coverImage, previewUrl } from '../../utils/works';
 import { Letters } from '../PillButton';
 import { WorkCover } from '../WorkCover';
+import { VideoPlayer } from './VideoPlayer';
 
 interface ProjectPreviewProps {
   work: Work;
   number: string;
 }
 
-/** Full-height preview at the top of the white card: the cover, and the video only after "play". */
+/**
+ * Full-height preview at the top of the white card: a muted loop of the work (the cover while it loads, or for
+ * good when the loop file is not on the server). Clicking it, or "play", opens the full-screen player. Works not
+ * on YouTube yet say so instead.
+ */
 export function ProjectPreview({ work, number }: ProjectPreviewProps) {
-  const [playing, setPlaying] = useState(false);
+  const reducedMotion = useReducedMotion();
+  const [open, setOpen] = useState(false);
+  const [loopFailed, setLoopFailed] = useState(false);
+  const poster = coverImage(work);
+  const loop = reducedMotion || loopFailed ? null : previewUrl(work);
+  const playable = work.youtubeVideoId !== null;
+  const thumbs = [work.cover, ...work.styleframes].filter((path): path is string => Boolean(path)).slice(0, 4).map(assetUrl);
 
-  // A playing video ducks the background music; leaving the page restores it.
-  useEffect(() => {
-    setMusicDucked(playing);
-    return () => setMusicDucked(false);
-  }, [playing]);
+  const openPlayer = () => {
+    if (!playable) return;
+    playSound('open');
+    setOpen(true);
+  };
 
   return (
-    <div className="project-preview">
-      {playing && work.youtubeVideoId ? (
-        <iframe
-          className="project-video"
-          src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(work.youtubeVideoId)}?autoplay=1&rel=0`}
-          title={`${work.title} — video`}
-          allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
-          allowFullScreen
+    <div className={`project-preview${playable ? ' playable' : ''}`} onClick={openPlayer}>
+      {loop ? (
+        <video
+          className="project-preview-video"
+          src={loop}
+          poster={poster ?? undefined}
+          muted
+          loop
+          autoPlay
+          playsInline
+          preload="metadata"
+          aria-hidden="true"
+          onError={() => setLoopFailed(true)}
         />
       ) : (
-        <>
-          <WorkCover work={work} number={number} eager className="project-preview-cover" />
-          {work.youtubeVideoId ? (
-            <button
-              type="button"
-              className="project-play"
-              onPointerEnter={() => playSound('hover')}
-              onClick={() => {
-                playSound('click');
-                setPlaying(true);
-              }}
-            >
-              <Letters text="play video" />
-            </button>
-          ) : null}
-        </>
+        <WorkCover work={work} number={number} eager className="project-preview-cover" />
       )}
+      {playable ? (
+        <button
+          type="button"
+          className="project-play"
+          onPointerEnter={() => playSound('hover')}
+          onClick={(event) => {
+            event.stopPropagation();
+            openPlayer();
+          }}
+        >
+          <Letters text="play video" />
+        </button>
+      ) : (
+        <span className="project-play project-play-soon">video segera hadir</span>
+      )}
+      {open && work.youtubeVideoId ? (
+        <VideoPlayer videoId={work.youtubeVideoId} title={work.title} poster={poster} aspect={work.aspect} thumbs={thumbs} onClose={() => setOpen(false)} />
+      ) : null}
     </div>
   );
 }

@@ -102,7 +102,7 @@ export function Menu({ open, onOpenChange }: MenuProps) {
                 </li>
               );
             })}
-            {!profile.isSample ? (
+            {profile.email ? (
               <li>
                 <a className="menu-link" href={`mailto:${profile.email}`} onPointerEnter={() => playSound('hover')}>
                   contact

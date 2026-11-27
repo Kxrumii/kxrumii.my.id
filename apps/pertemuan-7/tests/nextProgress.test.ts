@@ -31,11 +31,12 @@ test('bottom detection tolerates sub-pixel scroll positions', () => {
   assert.equal(isAtBottom(1100, 800, 2000), false);
 });
 
-test('menu socials are the four Pertemuan 1 footer links', () => {
+test('socials: the Pertemuan 1 links, with YouTube moved to @p_ftttt (owner, round 3)', () => {
   assert.deepEqual(
     profile.socials.map((s) => s.url),
-    ['https://github.com/kxrumii', 'https://instagram.com/p_ftttt', 'https://tiktok.com/@p_ftttt', 'https://youtube.com/@Kxrumi1'],
+    ['https://github.com/kxrumii', 'https://instagram.com/p_ftttt', 'https://tiktok.com/@p_ftttt', 'https://www.youtube.com/@p_ftttt'],
   );
+  assert.equal(profile.email, null, 'no e-mail is published');
   assert.equal(profile.handle, 'Fahrii');
   assert.equal(profile.tagline, 'developer & editor');
 });

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import type { Work } from '../../types';
+import { assetUrl } from '../../utils/works';
 import { WorkCover } from '../WorkCover';
 
 interface ProjectStyleframesProps {
@@ -18,7 +19,7 @@ const SAMPLE_FRAMES = 3;
 export function ProjectStyleframes({ work, number }: ProjectStyleframesProps) {
   const reducedMotion = useReducedMotion();
   const ref = useRef<HTMLElement>(null);
-  const frames: Array<string | null> = work.styleframes?.length ? work.styleframes : work.isSample ? Array(SAMPLE_FRAMES).fill(null) : [];
+  const frames: Array<string | null> = work.styleframes.length ? work.styleframes : work.isSample ? Array(SAMPLE_FRAMES).fill(null) : [];
 
   useEffect(() => {
     const root = ref.current;
@@ -54,7 +55,7 @@ export function ProjectStyleframes({ work, number }: ProjectStyleframesProps) {
     <section ref={ref} className="styleframes" aria-label="Styleframes">
       {frames.map((src, i) => (
         <figure key={i} className="styleframe">
-          <WorkCover work={work} number={number} image={src} seed={`${work.slug}-frame-${i}`} className="styleframe-image" />
+          <WorkCover work={work} number={number} image={src ? assetUrl(src) : null} seed={`${work.slug}-frame-${i}`} className="styleframe-image" />
         </figure>
       ))}
     </section>
