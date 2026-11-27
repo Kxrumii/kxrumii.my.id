@@ -1,53 +1,52 @@
 # kxrumii.my.id
 
-Website pribadi yang menjadi tempat untuk menampilkan profil, menyimpan berbagai eksperimen, dan mengembangkan tugas-tugas perkuliahan. Project ini dibuat menggunakan Astro dan terus dikembangkan seiring dengan hal-hal baru yang sedang dipelajari.
+Ini website pribadiku. Isinya profil, eksperimen-eksperimen kecil, dan tugas kuliah yang aku kerjain sambil belajar. Dibikin pakai Astro dan terus kutambah-tambah seiring aku nemu hal baru.
 
-Selain website utama, repository ini juga berisi beberapa aplikasi untuk mata kuliah **Pengembangan Aplikasi Web (PAW)**. Setiap tugas dikembangkan secara terpisah agar bisa menggunakan teknologi dan konfigurasi yang sesuai dengan kebutuhan masing-masing.
+Di repo yang sama ada juga aplikasi untuk mata kuliah **Pengembangan Aplikasi Web (PAW)**. Tiap tugas kupisah supaya bisa pakai teknologi dan konfigurasi yang cocok buat masing-masing.
 
 **Website:** [kxrumii.my.id](https://kxrumii.my.id/)
 
-## Isi Repository
+## Isi repository
 
-### Website Utama
+### Website utama
 
-Website personal yang dibangun menggunakan Astro, Tailwind CSS, dan GSAP. Bagian ini mencakup halaman utama, profil, serta halaman yang menghubungkan berbagai tugas dan eksperimen.
+Website personal yang dibangun dengan Astro, Tailwind CSS, dan GSAP. Di sini ada halaman utama, profil, dan halaman yang menghubungkan semua tugas serta eksperimen.
 
-### Tugas Pengembangan Aplikasi Web
+### Tugas PAW
 
-| Pertemuan | Teknologi | Deskripsi |
+| Pertemuan | Teknologi | Isi |
 |---|---|---|
-| 01 | HTML5, Tailwind CSS | Halaman profil diri menggunakan HTML5 semantik |
-| 06 | TypeScript, Vite | Aplikasi pengelolaan daftar tugas kuliah |
-| 07 | React, TypeScript, Vite | Eksperimen UI berbasis komponen React |
-| 08 | React Router, TypeScript, Vite | Aplikasi multi-halaman dengan sistem routing |
+| 01 | HTML5, Tailwind CSS | Halaman profil diri dengan HTML5 semantik |
+| 06 | TypeScript, Vite | Aplikasi pengelola daftar tugas kuliah |
+| 07 | React, TypeScript, Vite | Portofolio galeri spiral |
+| 08 | React Router, TypeScript, Vite | Aplikasi multi-halaman dengan routing |
+| 09 | React, TypeScript, Vite | Project showroom 2.5D |
 
-Source code setiap tugas berada di dalam direktori `apps/` masing-masing.
+Source code tiap tugas ada di folder `apps/` masing-masing.
 
 ## Teknologi
 
-Beberapa teknologi yang digunakan dalam project ini:
+- **Astro** untuk website utama.
+- **Tailwind CSS** buat styling.
+- **GSAP** buat animasi dan interaksi visual.
+- **React** buat antarmuka berbasis komponen.
+- **TypeScript** buat semua aplikasi berbasis JavaScript.
+- **Vite** sebagai dev server dan build tool aplikasi tugas.
+- **React Router** buat navigasi antarhalaman.
+- **npm Workspaces** supaya banyak aplikasi bisa hidup dalam satu repo.
 
-- **Astro** — framework untuk membangun website utama.
-- **Tailwind CSS** — styling dan pengaturan tampilan.
-- **GSAP** — animasi dan interaksi visual.
-- **React** — pengembangan antarmuka berbasis komponen.
-- **TypeScript** — bahasa pemrograman untuk aplikasi berbasis JavaScript.
-- **Vite** — development server dan build tool untuk aplikasi tugas.
-- **React Router** — pengaturan navigasi antarhalaman.
-- **npm Workspaces** — pengelolaan beberapa aplikasi dalam satu repository.
+## Menjalankan project
 
-## Menjalankan Project
+Pastikan Node.js dan npm sudah terpasang. Project ini pakai Node.js `26.13.1` dan npm `12.2.3`.
 
-Pastikan Node.js dan npm sudah terpasang. Project ini menggunakan Node.js `26.13.1` dan npm `12.2.3`.
-
-Clone repository dan masuk ke direktori project:
+Clone repo lalu masuk ke foldernya:
 
 ```bash
 git clone https://github.com/Kxrumii/kxrumii.my.id.git
 cd kxrumii.my.id
 ```
 
-Aktifkan versi Node.js yang digunakan project dan install dependency:
+Aktifkan versi Node.js yang dipakai project, lalu install dependency:
 
 ```bash
 nvm use
@@ -56,13 +55,13 @@ npm ci
 
 ### Development
 
-Untuk menjalankan website utama:
+Website utama:
 
 ```bash
 npm run dev
 ```
 
-Untuk menjalankan aplikasi tugas secara individual:
+Aplikasi tugas dijalankan satu-satu:
 
 ```bash
 npm run dev:t1
@@ -72,24 +71,34 @@ npm run dev:t8
 npm run dev:t9
 ```
 
-Setiap aplikasi memiliki development server sendiri dan dapat dijalankan tanpa harus menjalankan aplikasi lainnya.
+Tiap aplikasi punya dev server sendiri, jadi nggak perlu menyalakan yang lain.
 
 ### Build
 
-Untuk memeriksa TypeScript dan membangun seluruh aplikasi:
+Cek TypeScript dulu, baru build semuanya:
 
 ```bash
 npm run check
 npm run build
 ```
 
-Hasil build tersedia di direktori `dist/`. Untuk melihat hasilnya secara lokal:
+Hasil build ada di folder `dist/`. Mau lihat hasilnya di lokal:
 
 ```bash
 npm run preview
 ```
 
-## Struktur Repository
+### Favicon
+
+Favicon situs dibuat dari satu skrip, jadi bentuknya selalu sama di semua tempat:
+
+```bash
+npm run favicons
+```
+
+Skrip ini (`scripts/build-favicons.mjs`, butuh ImageMagick `magick` di PATH untuk file `.ico`) menghasilkan `public/favicon.svg`, `public/favicon.ico`, dan ikon data-URI untuk Task 6 (aplikasi dan halaman dokumentasi) serta Task 7, semuanya dari path logo "F" tanda tangan yang sama. Halaman daftar tugas (`/tugas/`) juga pakai favicon ini. Halaman utama tetap punya F monospace hijaunya sendiri.
+
+## Struktur repository
 
 ```text
 kxrumii.my.id/
@@ -111,11 +120,9 @@ kxrumii.my.id/
 └── package-lock.json
 ```
 
-Website utama berada di `src/`, sedangkan source code aplikasi tugas disimpan di `apps/`. Direktori `public/tugas/` dihasilkan secara otomatis ketika proses build berlangsung.
+Website utama ada di `src/`, sedangkan source code aplikasi tugas ada di `apps/`. Folder `public/tugas/` dibuat otomatis waktu build, jadi nggak perlu diisi manual.
 
-## Halaman Website
-
-Berikut beberapa halaman yang tersedia:
+## Halaman website
 
 | URL | Halaman |
 |---|---|
@@ -130,14 +137,14 @@ Berikut beberapa halaman yang tersedia:
 
 ## Deployment
 
-Website ini menggunakan home server pribadi sebagai production host. Hasil build statis disajikan menggunakan Nginx, sedangkan Cloudflare Tunnel digunakan untuk menghubungkan server dengan domain publik.
+Production-nya jalan di home server pribadi. Hasil build statis disajikan Nginx, dan Cloudflare Tunnel yang menyambungkan server ke domain publik.
 
-Proses build tidak dijalankan langsung di server karena keterbatasan hardware dan kompatibilitas toolchain. Server ini menggunakan Intel Core i3-3210 (Ivy Bridge) dengan RAM 8 GB dan tidak mendukung AVX2. Dalam pengujian, salah satu komponen native compiler Astro (`@astrojs/compiler-rs`) mengalami `Illegal instruction` ketika dijalankan di server, sementara proses build yang sama berhasil dilakukan di laptop. Penyebab pasti crash tersebut belum dapat dipastikan, tetapi kondisi ini menunjukkan bahwa lingkungan server belum cocok untuk menjalankan toolchain build yang digunakan saat ini.
+Build nggak kujalankan di server karena hardware dan toolchain-nya kurang cocok. Servernya Intel Core i3-3210 (Ivy Bridge) dengan RAM 8 GB dan nggak mendukung AVX2. Waktu dicoba, salah satu komponen native compiler Astro (`@astrojs/compiler-rs`) kena `Illegal instruction` di server, padahal build yang sama jalan lancar di laptop. Penyebab pastinya belum ketemu, tapi cukup jelas bahwa server ini belum cocok buat toolchain build yang kupakai sekarang.
 
-Karena itu, proses build dilakukan di laptop atau GitHub Actions runner yang memiliki lingkungan lebih sesuai. Hasilnya berupa file statis yang kemudian dikirim ke server untuk disajikan oleh Nginx. Dengan pemisahan ini, server tidak perlu menjalankan proses kompilasi dan dapat berfokus pada penyajian website.
+Jadi build kulakukan di laptop atau GitHub Actions runner. Hasilnya berupa file statis yang dikirim ke server dan disajikan Nginx. Dengan begitu server nggak perlu kompilasi apa-apa dan fokus melayani website.
 
-GitHub digunakan untuk menyimpan source code dan mengelola perubahan. GitHub Actions juga menjalankan pemeriksaan otomatis setiap kali ada perubahan yang diajukan melalui pull request.
+Source code dan perubahan disimpan di GitHub. GitHub Actions juga menjalankan pengecekan otomatis tiap ada pull request.
 
 ## Catatan
 
-Project ini masih terus berkembang. Beberapa aplikasi tugas juga masih dalam tahap pengembangan, sehingga isi dan fiturnya dapat berubah seiring berjalannya perkuliahan dan eksperimen teknologi web.
+Project ini masih berkembang, dan sebagian tugas juga belum final. Isi dan fiturnya bisa berubah seiring aku belajar hal baru di kuliah dan di web.
