@@ -27,7 +27,6 @@ const APPLICATION_DOCUMENTS = [
   'tugas/pertemuan-6/dokumentasi/index.html',
   'tugas/pertemuan-7/index.html',
   'tugas/pertemuan-8/index.html',
-  'tugas/pertemuan-9/index.html',
 ];
 
 const STATIC_REDIRECTS = [{ built: 'profil/index.html', source: 'public/profil/index.html' }];

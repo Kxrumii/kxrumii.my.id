@@ -12,8 +12,7 @@
     "apps/pertemuan-1",
     "apps/pertemuan-6",
     "apps/pertemuan-7",
-    "apps/pertemuan-8",
-    "apps/pertemuan-9"
+    "apps/pertemuan-8"
   ],
   "scripts": {
     "dev": "astro dev",
@@ -21,7 +20,6 @@
     "dev:t6": "npm run dev --workspace=@kxrumii/pertemuan-6",
     "dev:t7": "npm run dev --workspace=@kxrumii/pertemuan-7",
     "dev:t8": "npm run dev --workspace=@kxrumii/pertemuan-8",
-    "dev:t9": "npm run dev --workspace=@kxrumii/pertemuan-9",
     "clean:generated": "node scripts/clean-generated.mjs",
     "check": "npm run check --workspaces --if-present",
     "build:apps": "npm run build --workspaces --if-present",

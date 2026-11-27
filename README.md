@@ -20,7 +20,6 @@ Website personal yang dibangun dengan Astro, Tailwind CSS, dan GSAP. Di sini ada
 | 06 | TypeScript, Vite | Aplikasi pengelola daftar tugas kuliah |
 | 07 | React, TypeScript, Vite | Portofolio galeri spiral |
 | 08 | React Router, TypeScript, Vite | Aplikasi multi-halaman dengan routing |
-| 09 | React, TypeScript, Vite | Project showroom 2.5D |
 
 Source code tiap tugas ada di folder `apps/` masing-masing.
 
@@ -68,7 +67,6 @@ npm run dev:t1
 npm run dev:t6
 npm run dev:t7
 npm run dev:t8
-npm run dev:t9
 ```
 
 Tiap aplikasi punya dev server sendiri, jadi nggak perlu menyalakan yang lain.
@@ -106,8 +104,7 @@ kxrumii.my.id/
 │   ├── pertemuan-1/
 │   ├── pertemuan-6/
 │   ├── pertemuan-7/
-│   ├── pertemuan-8/
-│   └── pertemuan-9/
+│   └── pertemuan-8/
 ├── docs/
 │   └── deployment/
 ├── public/
@@ -133,7 +130,6 @@ Website utama ada di `src/`, sedangkan source code aplikasi tugas ada di `apps/`
 | `/tugas/pertemuan-6/` | Aplikasi TypeScript |
 | `/tugas/pertemuan-7/` | Portofolio React (galeri spiral) |
 | `/tugas/pertemuan-8/` | Aplikasi React Router |
-| `/tugas/pertemuan-9/` | Project Showroom 2.5D (React) |
 
 ## Deployment
 

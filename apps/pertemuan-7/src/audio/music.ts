@@ -8,7 +8,7 @@ import { equalPowerCurve, planSongSegments, type SongLoopInput } from './loopPla
  * server by hand. A missing file (404, or the SPA's index.html served instead) means "unavailable": the app stays
  * silent apart from the interface sounds.
  *
- * Fetch/decode and the node-per-segment crossfade are adapted from apps/pertemuan-9/src/audio/musicSource.ts.
+ * Fetch/decode and the node-per-segment crossfade are adapted from the earlier Task 7 showroom (branch archive/pertemuan-9-showroom).
  * All times come from the AudioContext clock; the interval only decides how far ahead nodes are created. Pausing
  * is free: when sound is off the context is suspended, which freezes its clock and with it the whole schedule.
  */

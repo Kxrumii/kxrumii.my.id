@@ -4,7 +4,7 @@
  * Segment 0 starts at context time `whenS` from song offset `offsetS` and runs to the end of the file. Every next
  * segment starts from the beginning of the file `crossfadeS` before the previous one ends: the outgoing tail fades
  * out over its last `crossfadeS` while the incoming head fades in. No loop points are guessed: the seam is simply
- * end → start. (Adapted from the crossfade scheduler in apps/pertemuan-9/src/audio/loopSchedule.ts.)
+ * end → start. (Adapted from the crossfade scheduler of the earlier Task 7 showroom, kept on branch archive/pertemuan-9-showroom.)
  */
 
 export interface SongSegment {

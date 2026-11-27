@@ -67,16 +67,4 @@ export const portalProjects: PortalProject[] = [
       { key: 'music-release', altId: 'Detail album dan vinyl', altEn: 'Album and vinyl detail preview' },
     ],
   },
-  {
-    number: '09',
-    href: '/tugas/pertemuan-9/',
-    transitionPage: 'task-9',
-    canvasFallback: '#10110f',
-    title: { id: 'Project Showroom', en: 'Project Showroom' },
-    category: { id: '[Ruang 2.5D · React]', en: '[2.5D Space · React]' },
-    previews: [
-      { key: 'showroom-gallery', altId: 'Galeri showroom 2.5D', altEn: '2.5D showroom gallery preview' },
-      { key: 'showroom-list', altId: 'Indeks proyek showroom', altEn: 'Showroom project index preview' },
-    ],
-  },
 ];

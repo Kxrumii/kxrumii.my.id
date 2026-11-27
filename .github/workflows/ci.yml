@@ -51,7 +51,6 @@ jobs:
           test -f dist/tugas/pertemuan-6/index.html
           test -f dist/tugas/pertemuan-7/index.html
           test -f dist/tugas/pertemuan-8/index.html
-          test -f dist/tugas/pertemuan-9/index.html
 
       - name: Verify shared transition bootstrap
         run: node scripts/verify-transition-bootstrap.mjs
