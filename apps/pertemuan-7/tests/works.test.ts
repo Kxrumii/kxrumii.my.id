@@ -41,15 +41,17 @@ test('the eight works: unique URL-safe slugs, five on YouTube, three still waiti
   );
 });
 
-test('no invented details: year, role and description stay empty until the owner fills them', () => {
+test('every work has a category and a description; unknown years and roles stay null instead of guessed', () => {
   for (const work of works) {
-    assert.equal(work.year, null, work.slug);
-    assert.equal(work.role, null, work.slug);
-    assert.equal(work.summary, null, work.slug);
+    assert.ok(work.category, work.slug);
+    assert.ok(work.summary && work.summary.length > 40, work.slug);
+    assert.ok(work.year === null || (Number.isInteger(work.year) && work.year >= 2015 && work.year <= new Date().getFullYear()), work.slug);
+    assert.ok(work.role === null || work.role.trim().length > 0, work.slug);
     assert.equal(work.isSample, false, work.slug);
   }
   assert.equal(categoryLabel(make('x')), '—');
   assert.equal(categoryLabel(make('x', { category: 'mograph' })), 'mograph');
+  assert.equal(categoryLabel(make('x', { category: 'film' })), 'film');
 });
 
 test('every cover and styleframe file exists in public/', () => {

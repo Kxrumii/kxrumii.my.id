@@ -1,5 +1,5 @@
-/** The owner's own terms, taken from the work titles ("[Mograph]", "Edit/AMV"). */
-export type WorkCategory = 'edit' | 'mograph';
+/** The owner's own terms from the work titles ("[Mograph]", "Edit/AMV"), plus "film" for live-action pieces. */
+export type WorkCategory = 'edit' | 'mograph' | 'film';
 
 export interface Work {
   slug: string;
