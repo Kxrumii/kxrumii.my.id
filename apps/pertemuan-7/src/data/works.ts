@@ -3,8 +3,10 @@
  * istilah di judul itu sendiri ("[Mograph]", "Edit/AMV"). Tahun, peran, dan deskripsi BELUM diisi: jangan menebak.
  * Urutan array = urutan di spiral dan list.
  *
- * Gambar (`public/works/<slug>/`) dibuat oleh `tools/media.mjs` dari file di local-media. Video penuh diputar dari
- * YouTube; karya tanpa `youtubeVideoId` menunggu link unlisted dari owner.
+ * Gambar (`public/works/<slug>/`) dibuat oleh `tools/media.mjs`: sampul karya YouTube = thumbnail YouTube-nya,
+ * styleframes = gambar sendiri / timestamp pilihan / frame otomatis (lihat komentar di skrip itu). Kalau jumlah
+ * styleframe bukan 3, isi `frames` di sini dengan jumlah yang sama. Video penuh diputar dari YouTube; karya tanpa
+ * `youtubeVideoId` menunggu link unlisted dari owner.
  */
 import type { Work, WorkCategory } from '../types';
 
@@ -18,7 +20,7 @@ export function categoryLabel(work: Work): string {
   return work.category ? CATEGORY_LABELS[work.category] : '—';
 }
 
-const work = (slug: string, title: string, youtubeVideoId: string | null, category: WorkCategory | null, aspect = 16 / 9): Work => ({
+const work = (slug: string, title: string, youtubeVideoId: string | null, category: WorkCategory | null, aspect = 16 / 9, frames = 3): Work => ({
   slug,
   title,
   year: null,
@@ -27,7 +29,7 @@ const work = (slug: string, title: string, youtubeVideoId: string | null, catego
   summary: null,
   notes: null,
   cover: `works/${slug}/cover.webp`,
-  styleframes: [1, 2, 3].map((n) => `works/${slug}/f${n}.webp`),
+  styleframes: Array.from({ length: frames }, (_, i) => `works/${slug}/f${i + 1}.webp`),
   aspect,
   preview: true,
   youtubeVideoId,

@@ -58,7 +58,7 @@ test('every cover and styleframe file exists in public/', () => {
       assert.ok(path, work.slug);
       assert.ok(existsSync(publicDir + path), `${work.slug}: missing public/${path}`);
     }
-    assert.equal(work.styleframes.length, 3, work.slug);
+    assert.ok(work.styleframes.length > 0, work.slug);
   }
 });
 
