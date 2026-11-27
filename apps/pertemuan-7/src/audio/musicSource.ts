@@ -1,7 +1,7 @@
 import type { ClockSource } from '../showroom/transport';
 import { equalPowerCurve, planLoopSegments } from './loopSchedule';
 import { getAudioGraph, getSnapshot, setMusicStatus, subscribe } from './soundEngine';
-import { ACTIVE_TRACK_ID, TRACKS, validateTrack, type MusicTrackConfig } from './tracks';
+import { ACTIVE_TRACK_ID, TRACKS, loopLengthS, validateTrack, type MusicTrackConfig } from './tracks';
 
 /*
  * Music source: an adapter that lets the showroom transport (the ONE master timeline) run on the soundtrack's
@@ -62,8 +62,10 @@ function audibleTime(ctx: AudioContext): number {
   return ctx.currentTime - (ctx.outputLatency || ctx.baseLatency || 0);
 }
 
-function createMusicClock(loaded: LoadedTrack, ctx: AudioContext, bus: GainNode, cycleS: number): MusicClock {
+function createMusicClock(loaded: LoadedTrack, ctx: AudioContext, bus: GainNode): MusicClock {
   const { track, buffer, sliceStartS } = loaded;
+  /** The music loops on its own period; the master transport position wraps into it. */
+  const cycleS = loopLengthS(track);
   const xf = track.crossfadeMs / 1000;
   /** Buffer offset of loop-in. */
   const loopStart = (track.loopInS ?? 0) - sliceStartS;
@@ -125,8 +127,9 @@ function createMusicClock(loaded: LoadedTrack, ctx: AudioContext, bus: GainNode,
     now: () => ctx.currentTime,
     audibleNow: () => audibleTime(ctx),
     stop: stopSession,
-    start(timelineOffsetS) {
+    start(masterOffsetS) {
       stopSession();
+      const timelineOffsetS = ((masterOffsetS % cycleS) + cycleS) % cycleS;
       const when = ctx.currentTime + LEAD_S;
       const gain = ctx.createGain();
       gain.gain.setValueAtTime(0, when);
@@ -153,15 +156,15 @@ function createMusicClock(loaded: LoadedTrack, ctx: AudioContext, bus: GainNode,
  * Music clock for the active track at this camera cycle, or null when the build has no playable track (production),
  * the loop does not fit the cycle, or decoding failed. Reports the outcome through setMusicStatus.
  */
-export async function ensureMusicClock(cycleS: number): Promise<MusicClock | null> {
+export async function ensureMusicClock(masterCycleS: number): Promise<MusicClock | null> {
   const track = TRACKS[ACTIVE_TRACK_ID];
   const graph = getAudioGraph();
-  if (!track.src || validateTrack(track, cycleS).length > 0) {
+  if (!track.src || validateTrack(track, masterCycleS).length > 0) {
     setMusicStatus('unavailable');
     return null;
   }
   if (!graph) return null;
-  const key = `${track.id}@${cycleS}`;
+  const key = track.id;
   const existing = clocks.get(key);
   if (existing) {
     setMusicStatus('ready');
@@ -175,7 +178,7 @@ export async function ensureMusicClock(cycleS: number): Promise<MusicClock | nul
   setMusicStatus('loading');
   try {
     const loaded = await loading;
-    const clock = clocks.get(key) ?? createMusicClock(loaded, graph.ctx, graph.musicBus, cycleS);
+    const clock = clocks.get(key) ?? createMusicClock(loaded, graph.ctx, graph.musicBus);
     clocks.set(key, clock);
     setMusicStatus('ready');
     return clock;

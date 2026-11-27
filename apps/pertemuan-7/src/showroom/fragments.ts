@@ -1,4 +1,4 @@
-import type { FragmentBounds } from './camera.ts';
+import type { FragmentBounds, Vec3 } from './camera.ts';
 
 /*
  * Film-fragment particles: small cut pieces of film stock, generated ONCE from a constant seed so ids, positions,
@@ -44,15 +44,38 @@ const between = (rnd: () => number, [min, max]: readonly [number, number]): numb
 const VARIANTS: readonly FragmentVariant[] = ['chip', 'pair', 'strip3'];
 const FRAMES: Readonly<Record<FragmentVariant, number>> = { chip: 1, pair: 2, strip3: 3 };
 
-export function generateFragments(count: number, bounds: FragmentBounds, seed: number = FRAGMENT_SEED): FilmFragmentSpec[] {
+export interface FragmentClearance {
+  /** Points to keep away from (the camera corridor and the works). */
+  avoid: readonly Vec3[];
+  /** Minimum distance to every avoid point. */
+  radius: number;
+}
+
+const MAX_TRIES = 40;
+
+export function generateFragments(
+  count: number,
+  bounds: FragmentBounds,
+  seed: number = FRAGMENT_SEED,
+  clearance?: FragmentClearance,
+): FilmFragmentSpec[] {
   const rnd = mulberry32(seed);
   const [zMin, zMax] = bounds.z;
+  const r2min = clearance ? clearance.radius ** 2 : 0;
+  const clear = (x: number, y: number, z: number) =>
+    !clearance || clearance.avoid.every((p) => (p.x - x) ** 2 + (p.y - y) ** 2 + (p.z - z) ** 2 >= r2min);
   const out: FilmFragmentSpec[] = [];
   for (let i = 1; i <= count; i += 1) {
-    // Draw order is fixed: changing it changes every fragment.
-    const x = between(rnd, bounds.x);
-    const y = between(rnd, bounds.y);
-    const z = between(rnd, bounds.z);
+    // Draw order is fixed: changing it changes every fragment. Positions inside the camera's corridor (or on a
+    // work) are redrawn from the same sequence, so the result stays deterministic.
+    let x = between(rnd, bounds.x);
+    let y = between(rnd, bounds.y);
+    let z = between(rnd, bounds.z);
+    for (let tries = 0; tries < MAX_TRIES && !clear(x, y, z); tries += 1) {
+      x = between(rnd, bounds.x);
+      y = between(rnd, bounds.y);
+      z = between(rnd, bounds.z);
+    }
     const rotX = between(rnd, [-35, 35]);
     const rotY = between(rnd, [-60, 60]);
     const rotZ = between(rnd, [-90, 90]);

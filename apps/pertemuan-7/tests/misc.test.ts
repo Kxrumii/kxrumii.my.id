@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { LANDSCAPE_PROFILE, PORTRAIT_PROFILE } from '../src/showroom/choreography.ts';
+import { cameraCorridor, fragmentClearance } from '../src/showroom/clearance.ts';
 import { FRAGMENT_SEED, MAX_DRIFT_FRAGMENTS, generateFragments, mulberry32 } from '../src/showroom/fragments.ts';
 import {
   DOM_DELTA_LINE,
@@ -49,9 +50,22 @@ test('fragments are deterministic with stable ids, bounds and depth layers', () 
 });
 
 test('fragment output matches the golden checksum (ids, positions, rotations and depth must not drift)', () => {
-  const landscape = fnv1a(JSON.stringify(generateFragments(LANDSCAPE_PROFILE.fragmentCount, LANDSCAPE_PROFILE.fragmentBounds)));
-  const portrait = fnv1a(JSON.stringify(generateFragments(PORTRAIT_PROFILE.fragmentCount, PORTRAIT_PROFILE.fragmentBounds)));
+  const make = (p: typeof LANDSCAPE_PROFILE) => generateFragments(p.fragmentCount, p.fragmentBounds, FRAGMENT_SEED, fragmentClearance(p));
+  const landscape = fnv1a(JSON.stringify(make(LANDSCAPE_PROFILE)));
+  const portrait = fnv1a(JSON.stringify(make(PORTRAIT_PROFILE)));
   assert.deepEqual([landscape, portrait], [GOLDEN.landscape, GOLDEN.portrait]);
+});
+
+test('fragments stay out of the camera corridor and off the works', () => {
+  for (const profile of [LANDSCAPE_PROFILE, PORTRAIT_PROFILE]) {
+    const clearance = fragmentClearance(profile);
+    const fragments = generateFragments(profile.fragmentCount, profile.fragmentBounds, FRAGMENT_SEED, clearance);
+    const corridor = cameraCorridor(profile);
+    for (const f of fragments) {
+      const closest = Math.min(...[...corridor, ...profile.anchors].map((p) => Math.hypot(p.x - f.x, p.y - f.y, p.z - f.z)));
+      assert.ok(closest >= clearance.radius - 1, `${profile.id} ${f.id}: ${closest.toFixed(0)} < ${clearance.radius}`);
+    }
+  }
 });
 
 test('mulberry32 is reproducible', () => {
@@ -62,7 +76,7 @@ test('mulberry32 is reproducible', () => {
 
 // Regression anchor recorded from the generator's first run (not an independent oracle): any change to the generator,
 // seed, draw order or profile bounds must update this deliberately.
-const GOLDEN = { landscape: 2541160098, portrait: 3858317286 };
+const GOLDEN = { landscape: 4017896162, portrait: 2688600792 };
 
 /* ---------- wheel ---------- */
 

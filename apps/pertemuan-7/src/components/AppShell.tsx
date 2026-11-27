@@ -13,6 +13,7 @@ import { ShellNav } from './ShellNav';
 import { ShellRail } from './ShellRail';
 import { SoundGate } from './SoundGate';
 import { SoundToggle } from './SoundToggle';
+import { TunePanel } from './TunePanel';
 
 type GateState = 'open' | 'leaving' | 'done';
 
@@ -81,6 +82,7 @@ export function AppShell() {
 
   return (
     <ShellContext.Provider value={shellState}>
+      {import.meta.env.DEV && new URLSearchParams(window.location.search).has('tune') ? <TunePanel /> : null}
       {gate !== 'done' ? <SoundGate onChoose={handleChoose} leaving={gate === 'leaving'} /> : null}
       <div className="shell" inert={locked}>
         <ShellRail />

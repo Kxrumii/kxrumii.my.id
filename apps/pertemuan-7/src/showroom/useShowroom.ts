@@ -25,8 +25,10 @@ import {
   type Owner,
   type Phase,
 } from './controller.ts';
-import { generateFragments, type FilmFragmentSpec } from './fragments.ts';
+import { fragmentClearance } from './clearance.ts';
+import { FRAGMENT_SEED, generateFragments, type FilmFragmentSpec } from './fragments.ts';
 import { activeClock, setMusicClock, sharedTransport, takeFirstSeat } from './runtime.ts';
+import { alignToPeriod, masterCycleS } from './tempo.ts';
 import {
   buildTimeline,
   holdStartOf,
@@ -90,6 +92,13 @@ function writeOpacity(el: HTMLElement, cache: Map<HTMLElement, number>, opacity:
   el.style.visibility = rounded < 0.02 ? 'hidden' : 'visible';
 }
 
+/** The master transport for a camera timeline: its cycle is the LCM of the camera cycle and the music loop. */
+const transportFor = (timeline: Timeline) => sharedTransport(masterCycleS(timeline.cycleS));
+
+/** Seek target for camera-cycle time `targetS`, in the camera period closest to the current master position. */
+const alignedSeek = (timeline: Timeline, position: number, targetS: number) =>
+  alignToPeriod(position, targetS, timeline.cycleS, masterCycleS(timeline.cycleS));
+
 function createRuntime(host: Host) {
   let state: ControllerState = initialControllerState(false);
   let nav: NavPlan | null = null;
@@ -104,7 +113,7 @@ function createRuntime(host: Host) {
 
   const transport = () => {
     const { timeline } = host.live();
-    return timeline ? sharedTransport(timeline.cycleS) : null;
+    return timeline ? transportFor(timeline) : null;
   };
 
   function focusIndexNow(): number {
@@ -222,7 +231,8 @@ function createRuntime(host: Host) {
         return;
       case 'navigate': {
         if (!tr || !timeline) return;
-        nav = navPlan(timeline, focusIndexNow(), effect.dir);
+        const plan = navPlan(timeline, focusIndexNow(), effect.dir);
+        nav = { ...plan, seekToS: alignedSeek(timeline, tr.position(), plan.seekToS) };
         tr.seek(nav.seekToS);
         render();
         return;
@@ -231,13 +241,13 @@ function createRuntime(host: Host) {
         if (!tr || !timeline) return;
         const n = timeline.cues.length;
         staticFocus = (staticFocus + effect.dir + n) % n;
-        tr.seek(holdStartOf(timeline, staticFocus));
+        tr.seek(alignedSeek(timeline, tr.position(), holdStartOf(timeline, staticFocus)));
         render();
         return;
       }
       case 'seekToHold':
         if (!tr || !timeline) return;
-        tr.seek(holdStartOf(timeline, staticFocus));
+        tr.seek(alignedSeek(timeline, tr.position(), holdStartOf(timeline, staticFocus)));
         render();
         return;
       case 'jumpToArrival':
@@ -294,7 +304,7 @@ function createRuntime(host: Host) {
         const target = wanted >= 0 ? wanted : here.focusIndex;
         // The very first mount starts on a hold (position 0 is the start of a transition); later mounts (back from
         // List or a sheet) keep the shared position unless a different work was asked for.
-        if (takeFirstSeat() || here.focusIndex !== target) tr.seek(holdStartOf(timeline, target));
+        if (takeFirstSeat() || here.focusIndex !== target) tr.seek(alignedSeek(timeline, tr.position(), holdStartOf(timeline, target)));
         staticFocus = sceneAt(timeline, tr.position()).focusIndex;
       }
       render();
@@ -357,7 +367,7 @@ export function useShowroom({ works, initialSlug, suspendedDetail, onFocusChange
     if (errors.length > 0) return { timeline: null as Timeline | null, error: errors.join('; ') };
     return { timeline: buildTimeline(profile, schedule) as Timeline | null, error: null as string | null };
   }, [profile, slugKey]);
-  const fragments = useMemo(() => generateFragments(profile.fragmentCount, profile.fragmentBounds), [profile]);
+  const fragments = useMemo(() => generateFragments(profile.fragmentCount, profile.fragmentBounds, FRAGMENT_SEED, fragmentClearance(profile)), [profile]);
 
   const [ui, setUi] = useState<ShowroomUi>({
     focusSlug: initialSlug,
@@ -454,7 +464,7 @@ export function useShowroom({ works, initialSlug, suspendedDetail, onFocusChange
         setMusicClock(null);
         return;
       }
-      void ensureMusicClock(timeline.cycleS).then((clock) => {
+      void ensureMusicClock(masterCycleS(timeline.cycleS)).then((clock) => {
         if (cancelled || !getSoundSnapshot().musicEnabled) return;
         setMusicClock(clock, clock?.visualLeadMs ?? 0);
         runtime.render();
@@ -600,18 +610,19 @@ export function useShowroom({ works, initialSlug, suspendedDetail, onFocusChange
       dispatch: runtime.dispatch,
       state: runtime.state,
       nav: runtime.nav,
-      position: () => (timeline ? sharedTransport(timeline.cycleS).position() : null),
-      playing: () => (timeline ? sharedTransport(timeline.cycleS).isPlaying() : false),
+      position: () => (timeline ? transportFor(timeline).position() : null),
+      playing: () => (timeline ? transportFor(timeline).isPlaying() : false),
       scene: () => {
         const tl = liveRef.current.timeline;
-        return tl ? sceneAt(tl, sharedTransport(tl.cycleS).visualPosition(), runtime.nav()?.variant ?? 'forward') : null;
+        return tl ? sceneAt(tl, transportFor(tl).visualPosition(), runtime.nav()?.variant ?? 'forward') : null;
       },
       cycleS: () => liveRef.current.timeline?.cycleS ?? 0,
+      masterCycleS: () => (liveRef.current.timeline ? masterCycleS(liveRef.current.timeline.cycleS) : 0),
       clock: activeClock,
-      visualPosition: () => (timeline ? sharedTransport(timeline.cycleS).visualPosition() : null),
+      visualPosition: () => (timeline ? transportFor(timeline).visualPosition() : null),
       seek: (t: number) => {
         const tl = liveRef.current.timeline;
-        if (tl) sharedTransport(tl.cycleS).seek(t);
+        if (tl) transportFor(tl).seek(t);
         runtime.render();
       },
     };
@@ -670,6 +681,7 @@ declare global {
       playing: () => boolean;
       scene: () => ReturnType<typeof sceneAt> | null;
       cycleS: () => number;
+      masterCycleS: () => number;
       clock: () => 'music' | 'silent';
       visualPosition: () => number | null;
       seek: (t: number) => void;

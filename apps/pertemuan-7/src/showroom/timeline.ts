@@ -1,14 +1,17 @@
 import {
-  EASINGS,
   POSE_KEYS,
   ease,
+  isValidEasing,
+  sameAngle,
   samplePath,
+  unwrappedTarget,
   type CameraPose,
   type CameraSegment,
   type CameraStop,
   type ChoreographyProfile,
   type ShowroomCue,
 } from './camera.ts';
+import { HOLD_S } from './tempo.ts';
 import { wrapTime } from './time.ts';
 
 /*
@@ -22,8 +25,8 @@ import { wrapTime } from './time.ts';
 
 /** [REKOMENDASI R-TIME] minimum hold between arrival and the next transition start (prototype value). */
 export const MIN_HOLD_S = 1.5;
-/** Owner decision: every hold lasts the same time. */
-export const HOLD_S = 2.5;
+/** Owner decision: every hold lasts the same time (6 beats, see tempo.ts). */
+export { HOLD_S } from './tempo.ts';
 /** Focus (caption/active work) switches to the target at this fraction of a transition. */
 export const FOCUS_SWITCH_AT = 0.5;
 
@@ -131,25 +134,33 @@ export function validateProfile(profile: ChoreographyProfile, slugs?: readonly s
 
   for (const stop of profile.stops) {
     if (!poseFinite(stop.pose)) errors.push(`stop ${stop.id}: pose must be finite`);
-    if (Math.abs(stop.pose.roll) > EPS) errors.push(`stop ${stop.id}: hold pose must be upright (roll = 0)`);
   }
   for (const seg of profile.segments) {
     if (!(seg.durationS > 0) || !finite(seg.durationS)) errors.push(`segment ${seg.id}: durationS must be positive`);
-    if (!(seg.easing in EASINGS)) errors.push(`segment ${seg.id}: unknown easing ${seg.easing}`);
+    if (!isValidEasing(seg.easing)) errors.push(`segment ${seg.id}: invalid easing`);
+    if (!finite(seg.rollTurn)) errors.push(`segment ${seg.id}: rollTurn must be finite`);
     if (!stopById.has(seg.fromStop) || !stopById.has(seg.toStop)) errors.push(`segment ${seg.id}: unknown stop`);
+    else if (!sameAngle(stopById.get(seg.fromStop)!.pose.roll + seg.rollTurn, stopById.get(seg.toStop)!.pose.roll)) {
+      errors.push(`segment ${seg.id}: start roll + rollTurn must land on the arrival roll`);
+    }
     let previous = 0;
     for (const kf of seg.keyframes ?? []) {
       if (!(kf.at > previous) || !(kf.at < 1)) errors.push(`segment ${seg.id}: keyframe 'at' must be strictly increasing inside (0, 1)`);
-      if (!poseFinite(kf.pose)) errors.push(`segment ${seg.id}: keyframe pose must be finite`);
+      if (![kf.position.x, kf.position.y, kf.position.z].every(finite)) errors.push(`segment ${seg.id}: keyframe position must be finite`);
       previous = kf.at;
     }
   }
-  const anchorSlugs = new Set(profile.anchors.map((a) => a.slug));
+  const anchorBySlug = new Map(profile.anchors.map((a) => [a.slug, a]));
+  const anchorSlugs = new Set(anchorBySlug.keys());
   for (const cue of profile.cues) {
     if (!stopById.has(cue.stopId)) errors.push(`cue ${cue.id}: unknown stop ${cue.stopId}`);
     if (!segById.has(cue.outSegmentId)) errors.push(`cue ${cue.id}: unknown out segment ${cue.outSegmentId}`);
     if (!segById.has(cue.backSegmentId)) errors.push(`cue ${cue.id}: unknown back segment ${cue.backSegmentId}`);
     if (!anchorSlugs.has(cue.projectSlug)) errors.push(`cue ${cue.id}: no world anchor for ${cue.projectSlug}`);
+    // The work must look upright while held: the camera's roll at its stop matches the anchor's roll.
+    const stop = stopById.get(cue.stopId);
+    const anchor = anchorBySlug.get(cue.projectSlug);
+    if (stop && anchor && !sameAngle(stop.pose.roll, anchor.roll)) errors.push(`cue ${cue.id}: hold roll must match the work's roll (upright on screen)`);
   }
   if (slugs) {
     const expected = new Set(slugs);
@@ -171,7 +182,10 @@ export function validateProfile(profile: ChoreographyProfile, slugs?: readonly s
     if (Math.abs(back.durationS - arrivingForward.durationS) > EPS) {
       errors.push(`cue ${cue.id}: back segment duration must equal the forward segment arriving at it`);
     }
+    if (Math.abs(back.rollTurn + out.rollTurn) > EPS) errors.push(`cue ${cue.id}: back segment must turn back the same roll`);
   });
+  const totalTurn = profile.cues.reduce((sum, cue) => sum + segById.get(cue.outSegmentId)!.rollTurn, 0);
+  if (!sameAngle(totalTurn, 0)) errors.push(`the loop's roll turns must add up to a whole number of turns (got ${totalTurn})`);
   return errors;
 }
 
@@ -257,7 +271,12 @@ export function sceneAt(timeline: Timeline, t: number, variant: Variant = 'forwa
     const segment = back ? target.backSegment : c.outSegment;
     const fromIndex = back ? (targetIndex + 1) % n : c.index;
     const fromStop = cues[fromIndex].stop;
-    const camera = samplePath(fromStop.pose, segment.keyframes, target.stop.pose, ease(segment.easing, progress));
+    const camera = samplePath(
+      fromStop.pose,
+      segment.keyframes,
+      unwrappedTarget(fromStop.pose, target.stop.pose, segment.rollTurn),
+      ease(segment.easing, progress),
+    );
     const focusIndex = progress >= FOCUS_SWITCH_AT ? targetIndex : fromIndex;
     return {
       camera,

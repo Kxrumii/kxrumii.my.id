@@ -139,3 +139,12 @@ body:has(.showroom) .shell-corner { display: none; }
   .fragment[data-drift], .atmosphere-leak-a, .atmosphere-leak-b { animation: none; }
   .showroom-caption { transition: none; }
 }
+
+/* Development-only tuning panel (?tune). */
+.tune-panel { position: fixed; top: 12px; left: 50%; translate: -50% 0; z-index: 50; display: grid; gap: 6px; width: min(420px, calc(100vw - 24px)); border-radius: 12px; padding: 12px 14px; background: rgba(25, 24, 23, 0.94); color: var(--ink); font-size: 12px; }
+.tune-title { margin: 0; color: var(--accent); text-transform: uppercase; letter-spacing: 0.08em; }
+.tune-row { display: grid; grid-template-columns: 64px 1fr 130px; align-items: center; gap: 8px; }
+.tune-row output { color: var(--muted); font-variant-numeric: tabular-nums; }
+.tune-code { margin: 0; color: var(--muted); font-family: ui-monospace, monospace; }
+.tune-actions { display: flex; gap: 8px; }
+.tune-actions button { border: 1px solid var(--line-strong); border-radius: 999px; padding: 6px 12px; background: transparent; }

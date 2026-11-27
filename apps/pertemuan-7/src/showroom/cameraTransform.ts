@@ -1,4 +1,4 @@
-import type { CameraPose } from './camera.ts';
+import type { CameraPose, Vec3 } from './camera.ts';
 import { clamp } from './time.ts';
 
 /*
@@ -25,11 +25,7 @@ export function cameraTransform(pose: CameraPose, perspectivePx: number): string
   );
 }
 
-export interface Vec3 {
-  x: number;
-  y: number;
-  z: number;
-}
+export type { Vec3 } from './camera.ts';
 
 /** World point in camera space (before translateZ(P)); points in front of the camera have z < 0. */
 export function worldToCamera(pose: CameraPose, point: Vec3): Vec3 {
@@ -75,4 +71,21 @@ export function anchorTransform(anchor: { x: number; y: number; z: number; yaw: 
     `translate3d(${fmt(anchor.x)}px, ${fmt(anchor.y)}px, ${fmt(anchor.z)}px) ` +
     `rotateY(${fmt(anchor.yaw)}deg) rotateZ(${fmt(anchor.roll)}deg)`
   );
+}
+
+/**
+ * World point in an anchor's local frame (inverse of anchorTransform: translate, rotateY(yaw), rotateZ(roll)).
+ * The work's face lies in the local z = 0 plane, centred on the origin.
+ */
+export function worldToAnchor(anchor: { x: number; y: number; z: number; yaw: number; roll: number }, point: Vec3): Vec3 {
+  const vx = point.x - anchor.x;
+  const vy = point.y - anchor.y;
+  const vz = point.z - anchor.z;
+  // Undo rotateY(yaw): rotateY(-yaw).
+  const ay = -anchor.yaw * DEG;
+  const x1 = Math.cos(ay) * vx + Math.sin(ay) * vz;
+  const z1 = -Math.sin(ay) * vx + Math.cos(ay) * vz;
+  // Undo rotateZ(roll): rotateZ(-roll).
+  const az = -anchor.roll * DEG;
+  return { x: Math.cos(az) * x1 - Math.sin(az) * vy, y: Math.sin(az) * x1 + Math.cos(az) * vy, z: z1 };
 }

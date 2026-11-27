@@ -1,4 +1,5 @@
-import type { MusicTrackConfig } from '../audio/tracks.ts';
+import { loopLengthS, type MusicTrackConfig } from '../audio/tracks.ts';
+import { masterCycleS } from './tempo.ts';
 import type { CameraScheduleEntry } from './timeline.ts';
 import { wrapTime } from './time.ts';
 
@@ -38,7 +39,10 @@ export interface AccentAlignment {
   /** Where the accent falls on the loop timeline. */
   accentTimelineS: number;
   transitionStartS: number;
-  /** Signed, shortest way round the loop: positive = the accent comes after the transition starts. */
+  /**
+   * Signed offset to the nearest start of that transition over the whole master timeline (the music loop and the
+   * camera cycle have different lengths, so the accent meets the cue at several places): positive = after.
+   */
   offsetMs: number;
 }
 
@@ -62,17 +66,31 @@ export function validateAccentMap(map: MusicAccentMap, track: MusicTrackConfig, 
 }
 
 /** Report only: how far each paired accent is from its camera transition start. The schedule is not touched. */
-export function accentAlignment(map: MusicAccentMap, track: MusicTrackConfig, schedule: readonly CameraScheduleEntry[], cycleS: number): AccentAlignment[] {
+export function accentAlignment(
+  map: MusicAccentMap,
+  track: MusicTrackConfig,
+  schedule: readonly CameraScheduleEntry[],
+  cameraCycleS: number,
+): AccentAlignment[] {
   if (track.loopInS === null) return [];
   const loopIn = track.loopInS;
+  const loopS = loopLengthS(track);
+  const master = masterCycleS(cameraCycleS);
+  const loops = Math.max(1, Math.round(master / loopS));
+  const periods = Math.max(1, Math.round(master / cameraCycleS));
   const byCue = new Map(schedule.map((entry) => [entry.cueId, entry]));
   return map.accents.flatMap((accent) => {
     const entry = accent.cameraCueId ? byCue.get(accent.cameraCueId) : undefined;
     if (!entry) return [];
-    const accentTimelineS = wrapTime(accent.timeS - loopIn, cycleS);
-    let diff = accentTimelineS - entry.transitionStartS;
-    if (diff > cycleS / 2) diff -= cycleS;
-    if (diff < -cycleS / 2) diff += cycleS;
-    return [{ accentId: accent.id, cameraCueId: entry.cueId, accentTimelineS, transitionStartS: entry.transitionStartS, offsetMs: Math.round(diff * 1000) }];
+    const accentTimelineS = wrapTime(accent.timeS - loopIn, loopS);
+    let best = Infinity;
+    for (let j = 0; j < loops; j += 1) {
+      for (let i = 0; i < periods; i += 1) {
+        let diff = wrapTime(accentTimelineS + j * loopS - (entry.transitionStartS + i * cameraCycleS), master);
+        if (diff > master / 2) diff -= master;
+        if (Math.abs(diff) < Math.abs(best)) best = diff;
+      }
+    }
+    return [{ accentId: accent.id, cameraCueId: entry.cueId, accentTimelineS, transitionStartS: entry.transitionStartS, offsetMs: Math.round(best * 1000) }];
   });
 }

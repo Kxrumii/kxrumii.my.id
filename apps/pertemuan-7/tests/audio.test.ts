@@ -1,29 +1,31 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { equalPowerCurve, planLoopSegments } from '../src/audio/loopSchedule.ts';
-import { ACTIVE_TRACK_ID, TRACKS, fileTimeAt, validateTrack, type MusicTrackConfig } from '../src/audio/tracks.ts';
+import { ACTIVE_TRACK_ID, TRACKS, fileTimeAt, loopLengthS, validateTrack, type MusicTrackConfig } from '../src/audio/tracks.ts';
 import { LANDSCAPE_PROFILE, PORTRAIT_PROFILE, TRANSIT_S } from '../src/showroom/choreography.ts';
 import { accentAlignment, validateAccentMap, type MusicAccentMap } from '../src/showroom/musicAccents.ts';
+import { BEAT_S, LOOP_BEATS, masterCycleS } from '../src/showroom/tempo.ts';
 import { HOLD_S, buildTimeline, cameraSchedule, fixedSchedule } from '../src/showroom/timeline.ts';
 
 const near = (a: number, b: number, tol = 1e-9) => assert.ok(Math.abs(a - b) <= tol, `${a} vs ${b}`);
 const timeline = buildTimeline(LANDSCAPE_PROFILE, fixedSchedule(LANDSCAPE_PROFILE));
 const CYCLE = timeline.cycleS;
+const MASTER = masterCycleS(CYCLE);
 
 /* ---------- camera schedule (authoritative) ---------- */
 
-test('owner decision: every hold and every transition has the same length; the cycle stays 27.5 s', () => {
+test('owner decision: every hold (6 beats) and every transition (2 beats) has the same length', () => {
   for (const profile of [LANDSCAPE_PROFILE, PORTRAIT_PROFILE]) {
     for (const segment of profile.segments) assert.equal(segment.durationS, TRANSIT_S, segment.id);
   }
   const schedule = cameraSchedule(timeline);
   assert.equal(schedule.length, 5);
   for (const entry of schedule) {
-    near(entry.holdS, HOLD_S);
+    near(entry.holdS, HOLD_S, 1e-9);
     assert.equal(entry.transitionS, TRANSIT_S);
   }
-  near(CYCLE, 27.5);
-  assert.deepEqual(schedule.map((e) => e.transitionStartS), [0, 5.5, 11, 16.5, 22]);
+  near(CYCLE, 40 * BEAT_S, 1e-9);
+  schedule.forEach((e, i) => near(e.transitionStartS, i * 8 * BEAT_S, 1e-9));
   assert.deepEqual(schedule.map((e) => `${e.fromSlug}>${e.toSlug}`).slice(-1), ['sample-work-05>sample-work-01']);
 });
 
@@ -38,13 +40,15 @@ test('cameraSchedule is a read-only view of the timeline', () => {
 
 /* ---------- track registry ---------- */
 
-test('both candidate tracks are registered and their (provisional) loops are exactly one camera cycle long', () => {
+test('both candidate tracks loop on one musical period (32 beats) and the master cycle is a whole number of loops', () => {
   assert.deepEqual(Object.keys(TRACKS).sort(), ['on-sight', 'shelter-piano']);
   assert.ok(ACTIVE_TRACK_ID in TRACKS);
   for (const track of Object.values(TRACKS)) {
-    assert.deepEqual(validateTrack(track, CYCLE), [], track.id);
+    near(loopLengthS(track), LOOP_BEATS * BEAT_S, 1e-9);
+    assert.deepEqual(validateTrack(track, MASTER), [], track.id);
     assert.ok(track.provisional, `${track.id} loop points still await the owner's listening check`);
   }
+  near(MASTER / loopLengthS(TRACKS['on-sight']), 5, 1e-9);
 });
 
 test('outside a dev build no track has a URL (licensed audio is never referenced by production code)', () => {
@@ -53,13 +57,14 @@ test('outside a dev build no track has a URL (licensed audio is never referenced
 
 test('track validation rejects loops that do not match the cycle or lack crossfade margins', () => {
   const base: MusicTrackConfig = { ...TRACKS['on-sight'] };
-  assert.ok(validateTrack({ ...base, loopOutS: (base.loopInS ?? 0) + CYCLE + 0.01 }, CYCLE).some((e) => /must equal the camera cycle/.test(e)));
-  assert.ok(validateTrack({ ...base, loopInS: null, loopOutS: null }, CYCLE).some((e) => /not set/.test(e)));
-  assert.ok(validateTrack({ ...base, loopInS: 0.5, loopOutS: 0.5 + CYCLE, crossfadeMs: 2000 }, CYCLE).some((e) => /before it/.test(e)));
-  assert.ok(validateTrack({ ...base, loopInS: base.durationS - CYCLE, loopOutS: base.durationS, crossfadeMs: 1000 }, CYCLE).some((e) => /after it/.test(e)));
-  assert.ok(validateTrack({ ...base, crossfadeMs: CYCLE * 600 }, CYCLE).some((e) => /half a cycle/.test(e)));
-  // One sample of tolerance at 48 kHz, no more.
-  assert.deepEqual(validateTrack({ ...base, loopOutS: (base.loopInS ?? 0) + CYCLE + 1 / 96000 }, CYCLE), []);
+  const loop = loopLengthS(base);
+  assert.ok(validateTrack({ ...base, loopOutS: (base.loopInS ?? 0) + loop + 0.01 }, MASTER).some((e) => /whole number of loops/.test(e)));
+  assert.ok(validateTrack({ ...base, loopInS: null, loopOutS: null }, MASTER).some((e) => /not set/.test(e)));
+  assert.ok(validateTrack({ ...base, loopInS: 0.5, loopOutS: 0.5 + loop, crossfadeMs: 2000 }, MASTER).some((e) => /before it/.test(e)));
+  assert.ok(validateTrack({ ...base, loopInS: base.durationS - loop, loopOutS: base.durationS, crossfadeMs: 1000 }, MASTER).some((e) => /after it/.test(e)));
+  assert.ok(validateTrack({ ...base, crossfadeMs: loop * 600 }, MASTER).some((e) => /half a loop/.test(e)));
+  // Within a sample per loop of tolerance at 48 kHz.
+  assert.deepEqual(validateTrack({ ...base, loopOutS: (base.loopInS ?? 0) + loop + 1 / 480000 }, MASTER), []);
 });
 
 test('timeline position maps to file time from loop-in', () => {
@@ -123,7 +128,8 @@ test('accent alignment only reports the offset to the paired camera cue', () => 
     trackId: track.id,
     accents: [
       { id: 'a1', timeS: loopIn + schedule[1].transitionStartS + 0.02, kind: 'downbeat', cameraCueId: schedule[1].cueId },
-      { id: 'a2', timeS: loopIn + CYCLE - 0.05, kind: 'hit', cameraCueId: schedule[0].cueId }, // just before the loop start
+      // Just before the loop's end: after 5 loops (= 4 camera cycles) it lands 50 ms before cue 1 starts again.
+      { id: 'a2', timeS: loopIn + loopLengthS(track) - 0.05, kind: 'hit', cameraCueId: schedule[0].cueId },
       { id: 'a3', timeS: loopIn + 3, kind: 'phrase' }, // documented, not paired
     ],
   };
