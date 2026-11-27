@@ -1,5 +1,5 @@
 /*
- * Wheel/trackpad normalisation, extracted from the old spiral hook. Pure: no DOM types, so it runs under node.
+ * Wheel/trackpad normalisation, extracted from the previous (spiral) gallery hook. Pure: no DOM types, so it runs under node.
  * Wheel input scrubs the timeline continuously; it is never "one wheel event = one project".
  */
 

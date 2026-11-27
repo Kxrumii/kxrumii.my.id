@@ -6,6 +6,8 @@ import { StatusBadge } from './StatusBadge';
 
 interface WorkRowProps {
   work: Work;
+  /** 0-based position in the list; shown as the project number (the number only exists in List mode). */
+  index: number;
   active: boolean;
   onActivate: (slug: string) => void;
 }
@@ -18,7 +20,7 @@ interface WorkRowProps {
  * open/close and return focus to the link. A plain router link: the stage must
  * not play a page transition when the sheet opens over it.
  */
-export function WorkRow({ work, active, onActivate }: WorkRowProps) {
+export function WorkRow({ work, index, active, onActivate }: WorkRowProps) {
   const { play } = useSound();
 
   return (
@@ -34,7 +36,9 @@ export function WorkRow({ work, active, onActivate }: WorkRowProps) {
         onFocus={() => onActivate(work.slug)}
         onClick={() => play('click')}
       >
-        <span className="work-row-category">{CATEGORY_LABELS[work.category]}</span>
+        <span className="work-row-category">
+          <span className="work-row-index">{String(index + 1).padStart(2, '0')}</span> {CATEGORY_LABELS[work.category]}
+        </span>
         <span className="work-row-title" data-work-title="">
           {work.title}
         </span>

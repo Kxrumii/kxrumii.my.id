@@ -4,8 +4,8 @@
  * page readiness is signalled by usePageReady() after the shell commits.
  *
  * Canvas: every document lands on LANDING_CANVAS (what the Portal predicts),
- * then revealCanvas() hands the page off to LIGHT_CANVAS, Huy-style. The
- * published colour for `task-7` is always kept at LANDING_CANVAS.
+ * then revealCanvas() hands the page off to STAGE_CANVAS (Cinema Black; the app
+ * is dark-only). The published colour for `task-7` is always kept at LANDING_CANVAS.
  *
  * Scopes: same-document route changes run with `data-route-scope="stage"`, so
  * only the stage moves while the shell (`[data-shell]`) stays put. Document
@@ -23,11 +23,14 @@ import {
 import { useCallback, useEffect, type CSSProperties } from 'react';
 import { useNavigate, type To } from 'react-router';
 import { prefersReducedMotion } from './hooks/useReducedMotion';
+import { cancelMorph, playMorph } from './motion/morphRunner';
+import { MORPH_PRESETS } from './motion/morphShapes';
 
 export const PAGE_ID = 'task-7';
 /** Landing colour; must stay equal to the Portal's `canvasFallback` for task-7. */
 export const LANDING_CANVAS = '#10110f';
-export const LIGHT_CANVAS = '#ececec';
+/** Cinema Black: the canvas of the showroom after the gate. */
+export const STAGE_CANVAS = '#0c0c0d';
 const REVEAL_MS = 640;
 
 const root = document.documentElement;
@@ -49,7 +52,7 @@ function participants(elements: HTMLElement[]): HTMLElement[] {
 }
 
 /*
- * "Depth" motion: regions holding a CSS 3D scene (the Works spiral) move with
+ * "Depth" motion: regions holding a CSS 3D scene (the Works gallery) move with
  * opacity + transform instead of the bridge's clip-path, so no clip ever sits
  * on top of the 3D chain. Everything else uses the bridge's own keyframes.
  */
@@ -93,9 +96,35 @@ export function animatePageElements(
   return { all: [...animateDefault(rest, kind), ...own], own };
 }
 
+/*
+ * About Shape Morph. The bridge keeps owning the route lifecycle, the interaction lock and the stage's own motion;
+ * the morph only rides on its exit/enter hooks and only writes clip-path on a leaf mask (never on a bridge element).
+ * It plays between the Gallery and About only: leaving one of them for the other folds the visible mask to a slit,
+ * and the new page's mask opens from a slit. The exit morph must fit inside the depth exit (about 160 ms), far
+ * below the bridge's exitMaxMs. Reduced motion never reaches these hooks (the bridge skips them).
+ */
+const ABOUT_MASK = '.work-display[data-active="true"] [data-morph-mask], [data-about-morph]';
+let morphedExit = false;
+
+function aboutMorphApplies(): boolean {
+  const target = root.dataset.routeTarget;
+  return root.dataset.routeScope === 'stage' && !root.dataset.gate && (target === '/' || target === '/about');
+}
+
 async function animateParticipants(ctx: ExitEnterContext, kind: 'exit' | 'enter'): Promise<void> {
   const { all, own } = animatePageElements(participants(ctx.elements), kind, ctx.animateElements);
-  await Promise.allSettled(all.map((animation) => animation.finished));
+  const morphs: Array<Promise<unknown>> = [];
+  if (aboutMorphApplies()) {
+    const mask = document.querySelector<HTMLElement>(ABOUT_MASK);
+    if (mask && kind === 'exit') {
+      morphedExit = true;
+      morphs.push(playMorph(mask, 'about-open').finished);
+    } else if (mask && kind === 'enter' && morphedExit) {
+      morphedExit = false;
+      morphs.push(playMorph(mask, 'about-close', { from: MORPH_PRESETS.slit }).finished);
+    }
+  }
+  await Promise.allSettled([...all.map((animation) => animation.finished), ...morphs]);
   // The bridge cancels the animations it tracks; enter animations started here end in the natural state too.
   if (kind === 'enter') own.forEach((animation) => animation.cancel());
 }
@@ -113,13 +142,21 @@ function keepLandingPublished(): void {
   publishCanvasColor(PAGE_ID, LANDING_CANVAS);
 }
 
-const currentCanvas = () => (root.dataset.tone === 'light' ? LIGHT_CANVAS : LANDING_CANVAS);
+// Before the gate hand-off the page still sits on the landing colour; afterwards it is Cinema Black.
+const currentCanvas = () => (revealPromise ? STAGE_CANVAS : LANDING_CANVAS);
 
 // The stage scope ends together with the transition that set it.
 document.addEventListener(transitionEvents.transition, (event) => {
   const phase = (event as CustomEvent<{ phase?: string }>).detail?.phase;
   if (phase === 'enter-end' || phase === 'recovered') {
     delete root.dataset.routeScope;
+    delete root.dataset.routeTarget;
+    morphedExit = false;
+    // A transition that was recovered (no new page) must not leave the old page's mask folded.
+    if (phase === 'recovered') {
+      const mask = document.querySelector<HTMLElement>(ABOUT_MASK);
+      if (mask) cancelMorph(mask);
+    }
     keepLandingPublished();
   }
 });
@@ -127,15 +164,13 @@ document.addEventListener(transitionEvents.transition, (event) => {
 let revealPromise: Promise<void> | null = null;
 
 /**
- * Hands the canvas off from LANDING_CANVAS to LIGHT_CANVAS. Text tone flips
- * halfway, where both inks still contrast with the mid-grey canvas.
- * Idempotent: later calls return the same promise.
+ * Hands the canvas off from LANDING_CANVAS to STAGE_CANVAS. Both are near-black, so
+ * the ink needs no tone flip. Idempotent: later calls return the same promise.
  */
 export function revealCanvas(): Promise<void> {
   if (revealPromise) return revealPromise;
   const finish = () => {
-    root.dataset.tone = 'light';
-    bridge.setPageCanvasColor(LIGHT_CANVAS);
+    bridge.setPageCanvasColor(STAGE_CANVAS);
     keepLandingPublished();
   };
   if (prefersReducedMotion()) {
@@ -143,21 +178,17 @@ export function revealCanvas(): Promise<void> {
     revealPromise = Promise.resolve();
     return revealPromise;
   }
-  const animation = root.animate([{ backgroundColor: LANDING_CANVAS }, { backgroundColor: LIGHT_CANVAS }], {
+  const animation = root.animate([{ backgroundColor: LANDING_CANVAS }, { backgroundColor: STAGE_CANVAS }], {
     duration: REVEAL_MS,
     easing: 'cubic-bezier(.4, 0, .2, 1)',
     fill: 'forwards',
   });
-  const flip = window.setTimeout(() => {
-    root.dataset.tone = 'light';
-  }, REVEAL_MS / 2);
   revealPromise = animation.finished
     .then(() => {
       finish();
       animation.cancel();
     })
     .catch(() => {
-      window.clearTimeout(flip);
       finish();
     });
   return revealPromise;
@@ -240,6 +271,9 @@ export function useTransitionNavigate(): (to: To) => Promise<boolean> {
     async (to: To) => {
       if (root.dataset.transitionState) return false;
       root.dataset.routeScope = 'stage';
+      // The bridge's exit/enter context does not know the destination; the About morph needs it.
+      const targetPath = typeof to === 'string' ? to : (to.pathname ?? '');
+      root.dataset.routeTarget = targetPath.length > 1 ? targetPath.replace(/\/+$/, '') : targetPath;
       const started = await bridge.transitionTo(
         async () => {
           const committed = nextRouteCommit(1500);
@@ -248,7 +282,10 @@ export function useTransitionNavigate(): (to: To) => Promise<boolean> {
         },
         { canvasColor: currentCanvas() },
       );
-      if (!started) delete root.dataset.routeScope;
+      if (!started) {
+        delete root.dataset.routeScope;
+        delete root.dataset.routeTarget;
+      }
       keepLandingPublished();
       return started;
     },

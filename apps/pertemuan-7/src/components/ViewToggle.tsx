@@ -1,13 +1,13 @@
-export type WorksView = 'spiral' | 'list';
+export type WorksView = 'gallery' | 'list';
 
 interface ViewToggleProps {
   view: WorksView;
   onChange: (view: WorksView) => void;
 }
 
-const VIEWS: WorksView[] = ['spiral', 'list'];
+const VIEWS: WorksView[] = ['gallery', 'list'];
 
-/** Pacôme's "spiral • list" switch, as two pressed-state buttons. */
+/** "gallery • list" switch, as two pressed-state buttons. */
 export function ViewToggle({ view, onChange }: ViewToggleProps) {
   return (
     <div className="view-toggle" role="group" aria-label="Tampilan karya">

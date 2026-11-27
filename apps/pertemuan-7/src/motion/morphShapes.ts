@@ -23,7 +23,8 @@ export interface MorphShape {
 export const MORPH_PRESETS: Readonly<Record<PresetName, MorphShape>> = {
   frame: { inset: [0, 0, 0, 0], radiusPx: 4, perforation: 0 },
   hover: { inset: [1.5, 1.5, 1.5, 1.5], radiusPx: 10, perforation: 0.6 },
-  fragment: { inset: [35, 0, 35, 0], radiusPx: 2, perforation: 1 },
+  // A short strip cut from the sides: the top and bottom edges stay, which is where the sprocket holes sit.
+  fragment: { inset: [0, 22, 0, 22], radiusPx: 2, perforation: 1 },
   slit: { inset: [0, 49, 0, 49], radiusPx: 2, perforation: 0 },
 };
 
@@ -74,6 +75,13 @@ export function interpolateShape(a: MorphShape, b: MorphShape, p: number): Morph
     radiusPx: lerp(a.radiusPx, b.radiusPx),
     perforation: perforationAt(a.perforation, b.perforation, p),
   };
+}
+
+/** Rough distance between two shapes, used to scale the duration of a morph that starts part-way. */
+export function shapeDistance(a: MorphShape, b: MorphShape): number {
+  let sum = Math.abs(a.radiusPx - b.radiusPx) / 10 + Math.abs(a.perforation - b.perforation);
+  for (let i = 0; i < 4; i += 1) sum += Math.abs(a.inset[i] - b.inset[i]);
+  return sum;
 }
 
 const num = (value: number): string => String(Number(value.toFixed(3)));

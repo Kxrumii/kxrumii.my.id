@@ -4,11 +4,11 @@
  * Layers inside the transparent <dialog>:
  *   .sheet-card            the sheet's background card (scales from the origin, fades)
  *   [data-sheet-hero]      the element that travels between the stage and the sheet:
- *                          "media" when opened from the spiral, "title" when opened from the list
+ *                          "media" when opened from the gallery, "title" when opened from the list
  *   [data-sheet-reveal]    everything else: fades in with a small rise, fades out first
  *
  * Origin modes:
- *   spiral  the hero media flies from the orbit card (uniform scale, centre to centre)
+ *   gallery the hero media flies from the gallery display (uniform scale, centre to centre)
  *   list    the hero title flies from the row title (uniform scale, transform-origin top left)
  *   none    direct load, Back/Forward or no usable origin: the whole dialog fades with scale .96 -> 1
  *
@@ -16,7 +16,7 @@
  * state (fill: forwards, then an inline opacity 0 on the dialog) until React unmounts it, so no
  * frame can snap back to the open state.
  */
-export type OriginMode = 'spiral' | 'list';
+export type OriginMode = 'gallery' | 'list';
 
 const OPEN_MS = 500;
 const CLOSE_MS = 340;
@@ -26,6 +26,9 @@ const EASE_OUT = 'cubic-bezier(0.16, 1, 0.3, 1)';
 const EASE_IN = 'cubic-bezier(0.45, 0, 0.2, 1)';
 
 const round = (value: number) => Math.round(value * 1000) / 1000;
+
+/** Open animations per dialog, so a close that starts while they still run can reverse them instead of jumping. */
+const opening = new WeakMap<HTMLElement, Animation[]>();
 /** Font size of the list title the sheet title travels from (set right before measuring). */
 let originFontSize = 16;
 
@@ -51,7 +54,7 @@ function usable(rect: DOMRect | null): rect is DOMRect {
   );
 }
 
-/** Rect of the stage element the sheet travels from/to: the orbit card, or the row's title text. */
+/** Rect of the stage element the sheet travels from/to: the gallery display, or the row's title text. */
 export function originRect(slug: string, mode: OriginMode | null): DOMRect | null {
   if (!mode) return null;
   const row = document.querySelector<HTMLElement>(`[data-work-slug="${CSS.escape(slug)}"]`);
@@ -64,7 +67,7 @@ export function originRect(slug: string, mode: OriginMode | null): DOMRect | nul
 function partsOf(dialog: HTMLElement, mode: OriginMode | null): SheetParts | null {
   const card = dialog.querySelector<HTMLElement>('.sheet-card');
   if (!card) return null;
-  const hero = mode ? dialog.querySelector<HTMLElement>(`[data-sheet-hero="${mode === 'spiral' ? 'media' : 'title'}"]`) : null;
+  const hero = mode ? dialog.querySelector<HTMLElement>(`[data-sheet-hero="${mode === 'gallery' ? 'media' : 'title'}"]`) : null;
   // The hero of the other mode is just one more piece of content.
   const reveals = Array.from(dialog.querySelectorAll<HTMLElement>('[data-sheet-reveal], [data-sheet-hero]')).filter((el) => el !== hero);
   return { dialog, card, hero, reveals };
@@ -99,6 +102,12 @@ function setOriginFont(slug: string, mode: OriginMode) {
 
 /** Starts the open motion right after showModal(); every animation ends in the natural state. */
 export function playSheetOpen(dialog: HTMLElement, slug: string, mode: OriginMode | null, origin: DOMRect | null): Animation[] {
+  const animations = openAnimations(dialog, slug, mode, origin);
+  opening.set(dialog, animations);
+  return animations;
+}
+
+function openAnimations(dialog: HTMLElement, slug: string, mode: OriginMode | null, origin: DOMRect | null): Animation[] {
   const parts = partsOf(dialog, origin ? mode : null);
   if (!parts || !origin || !mode || !parts.hero) {
     return [
@@ -143,6 +152,19 @@ export function playSheetOpen(dialog: HTMLElement, slug: string, mode: OriginMod
  * The end state is held (fill: forwards + inline opacity 0) until the dialog unmounts.
  */
 export async function playSheetClose(dialog: HTMLElement, slug: string, mode: OriginMode | null, origin: DOMRect | null): Promise<void> {
+  // Closing while the open motion is still running: play it backwards from where it is. Every layer ends at its
+  // origin state (hero on the origin, card and reveals transparent), which is exactly where a close ends.
+  const stillOpening = (opening.get(dialog) ?? []).filter((animation) => animation.playState === 'running');
+  opening.delete(dialog);
+  if (stillOpening.length > 0) {
+    stillOpening.forEach((animation) => animation.reverse());
+    const backdropOut = document
+      .getAnimations()
+      .filter((a) => a.effect instanceof KeyframeEffect && a.effect.target === dialog && a.effect.pseudoElement === '::backdrop');
+    await Promise.allSettled([...stillOpening, ...backdropOut].map((animation) => animation.finished));
+    dialog.style.opacity = '0';
+    return;
+  }
   const parts = partsOf(dialog, origin ? mode : null);
   const animations: Animation[] = [];
   // Opacity runs linearly on its own animation, separate from the curved transform, so the fade is spread evenly

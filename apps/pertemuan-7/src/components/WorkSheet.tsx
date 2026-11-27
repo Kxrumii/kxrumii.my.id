@@ -4,6 +4,7 @@ import { unduck } from '../audio/soundEngine';
 import { useSound } from '../audio/useSound';
 import { CATEGORY_LABELS, works } from '../data/works';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { cancelMorph, currentShape, playMorph } from '../motion/morphRunner';
 import { originRect, playSheetClose, playSheetOpen, type OriginMode } from '../motion/sheetMotion';
 import { useShell } from '../shell/shellContext';
 import { INK_DARK, INK_LIGHT, cardFace, haloFor } from '../utils/cardFace';
@@ -13,12 +14,15 @@ import { SoundToggle } from './SoundToggle';
 import { StatusBadge } from './StatusBadge';
 import { VideoEmbed } from './VideoEmbed';
 
-/** The hero media wears the orbit card's face; the inverse ink keeps the hovered play icon visible. */
+/** The hero media wears the gallery display's face; the inverse ink keeps the hovered play icon visible. */
 const heroStyle = (work: { slug: string; thumbnail: string | null }): CSSProperties => {
   const face = cardFace(work);
   const ink = face.inks.center;
   return { '--hero-bg': face.background, '--hero-ink': ink, '--hero-halo': haloFor(ink), '--hero-ink-inverse': ink === INK_DARK ? INK_LIGHT : INK_DARK } as CSSProperties;
 };
+
+const galleryMask = (slug: string) =>
+  document.querySelector<HTMLElement>(`[data-work-slug="${CSS.escape(slug)}"] [data-morph-mask]`);
 
 const focusTrigger = (slug: string) => {
   const trigger = document.querySelector<HTMLElement>(`[data-work-slug="${CSS.escape(slug)}"] a`);
@@ -31,7 +35,7 @@ const focusTrigger = (slug: string) => {
  * stage (view mode, filters, active work) stays mounted underneath.
  *
  * Layers: .sheet-card (background), [data-sheet-hero] (the element that travels
- * from the stage: media from the spiral, title from the list) and
+ * from the stage: media from the gallery, title from the list) and
  * [data-sheet-reveal] content; see src/motion/sheetMotion.ts.
  *
  * Every way out funnels into requestClose(), which animates and then updates
@@ -54,6 +58,7 @@ export function WorkSheet() {
 
   const dialogRef = useRef<HTMLDialogElement>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
+  const heroMaskRef = useRef<HTMLDivElement>(null);
   const closingRef = useRef(false);
   const mountedRef = useRef(false);
   const pointerDownOnBackdrop = useRef(false);
@@ -65,7 +70,7 @@ export function WorkSheet() {
   const linkState = location.state as { fromStage?: boolean; originMode?: OriginMode } | null;
   const openedFromStage = linkState?.fromStage === true;
   const originMode: OriginMode | null =
-    openedFromStage && navigationType === 'PUSH' && (linkState?.originMode === 'spiral' || linkState?.originMode === 'list')
+    openedFromStage && navigationType === 'PUSH' && (linkState?.originMode === 'gallery' || linkState?.originMode === 'list')
       ? linkState.originMode
       : null;
   const originModeRef = useRef(originMode);
@@ -82,6 +87,10 @@ export function WorkSheet() {
     if (!reducedMotion) {
       const mode = originModeRef.current;
       playSheetOpen(dialog, slugRef.current, mode, originRect(slugRef.current, mode));
+      // Shape Morph (independent of the FLIP above): the hero mask continues from the shape the gallery display is in.
+      const heroMask = heroMaskRef.current;
+      const source = mode === 'gallery' ? galleryMask(slugRef.current) : null;
+      if (heroMask && source) playMorph(heroMask, 'detail-open', { from: currentShape(source) });
     }
   }, [locked]);
 
@@ -92,6 +101,9 @@ export function WorkSheet() {
     return () => {
       mountedRef.current = false;
       if (dialog?.isConnected) return;
+      // Back at the gallery: its display is the same element that was measured, so it only needs its mask reset.
+      const source = galleryMask(slugRef.current);
+      if (source) cancelMorph(source);
       unduck();
       focusTrigger(slugRef.current);
     };
@@ -111,6 +123,8 @@ export function WorkSheet() {
     if (dialog) dialog.dataset.closing = 'true';
     if (dialog && !reducedMotion) {
       const mode = originModeRef.current;
+      const heroMask = heroMaskRef.current;
+      if (heroMask && mode === 'gallery') playMorph(heroMask, 'detail-close');
       await playSheetClose(dialog, slugRef.current, mode, originRect(slugRef.current, mode));
     } else if (dialog) {
       dialog.style.opacity = '0';
@@ -192,12 +206,15 @@ export function WorkSheet() {
                 data-sheet-hero="media"
                 style={heroStyle(work)}
               >
-                <VideoEmbed
-                  key={`video-${work.slug}`}
-                  title={work.title}
-                  youtubeVideoId={work.youtubeVideoId}
-                  externalUrl={work.externalUrl}
-                />
+                <div className="sheet-hero-mask" ref={heroMaskRef} data-morph-mask="">
+                  <VideoEmbed
+                    key={`video-${work.slug}`}
+                    title={work.title}
+                    youtubeVideoId={work.youtubeVideoId}
+                    externalUrl={work.externalUrl}
+                  />
+                  <span className="work-perforation" data-morph-perforation="" aria-hidden="true" />
+                </div>
               </div>
               <div data-sheet-reveal="">
                 <DisclosurePanel key={`notes-${work.slug}`} title="Catatan produksi">

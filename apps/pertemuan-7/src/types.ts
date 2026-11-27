@@ -17,6 +17,8 @@ export interface Work {
   thumbnail: string | null;
   youtubeVideoId: string | null;
   externalUrl: string | null;
+  /** Lebar / tinggi media asli; null/kosong = belum diketahui (Gallery memakai 16:9 sementara). Jangan menebak. */
+  aspectRatio?: number | null;
   featured: boolean;
   /** true selama entri masih data contoh dan belum diganti karya nyata. */
   isSample: boolean;

@@ -14,6 +14,7 @@ import {
   MORPH_PRESETS,
   MORPH_SPECS,
   interpolateShape,
+  shapeDistance,
   perforationAt,
   perforationKeyframes,
   toClipPath,
@@ -88,7 +89,7 @@ test('small trackpad deltas stay small (continuous scrub, not one step per event
 test('morph presets belong to one inset-rectangle family and render as clip-path inset()', () => {
   assert.equal(toClipPath(MORPH_PRESETS.frame), 'inset(0% 0% 0% 0% round 4px)');
   assert.equal(toClipPath(MORPH_PRESETS.hover), 'inset(1.5% 1.5% 1.5% 1.5% round 10px)');
-  assert.equal(toClipPath(MORPH_PRESETS.fragment), 'inset(35% 0% 35% 0% round 2px)');
+  assert.equal(toClipPath(MORPH_PRESETS.fragment), 'inset(0% 22% 0% 22% round 2px)');
   assert.equal(toClipPath(MORPH_PRESETS.slit), 'inset(0% 49% 0% 49% round 2px)');
   for (const shape of Object.values(MORPH_PRESETS)) assert.match(toClipPath(shape), /^inset\(/);
 });
@@ -106,6 +107,14 @@ test('interpolateShape returns the exact end shapes and is linear in between', (
     assert.ok(inset >= last);
     last = inset;
   }
+});
+
+test('shapeDistance is zero for equal shapes and grows with the difference', () => {
+  const { frame, hover, slit } = MORPH_PRESETS;
+  assert.equal(shapeDistance(frame, frame), 0);
+  assert.ok(shapeDistance(frame, hover) > 0);
+  assert.ok(shapeDistance(frame, slit) > shapeDistance(frame, hover));
+  assert.equal(shapeDistance(frame, hover), shapeDistance(hover, frame));
 });
 
 test('the perforation overlay rises late and falls early, independent of the clip-path', () => {

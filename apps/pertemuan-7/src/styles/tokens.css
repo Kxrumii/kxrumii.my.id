@@ -1,19 +1,31 @@
 /*
- * Design tokens. Composition and type follow HuyML (UI grotesk 11–14px,
- * uppercase display, label/value pairs); colours start on the dark landing
- * canvas and switch to Huy's light palette when <html data-tone="light">.
- * The canvas itself is painted by the transition bridge (--page-canvas).
+ * Design tokens. Dark-only "Cinema & Warm" palette (no light theme, no mood selector). The canvas itself is
+ * painted by the transition bridge (--page-canvas); --canvas mirrors it for text that sits on it.
+ * Existing token names are kept so shell, pages and the sheet restyle without being rewritten.
  */
 :root {
-  --canvas: #10110f;
-  --ink: #ececec;
-  --ink-soft: rgba(236, 236, 236, 0.78);
-  --muted: #8a8b85;
-  --line: rgba(236, 236, 236, 0.16);
-  --line-strong: rgba(236, 236, 236, 0.32);
-  --surface: rgba(236, 236, 236, 0.05);
-  --accent: #ff4949;
-  --sheet: #1b1c1a;
+  /* Cinema & Warm */
+  --cinema-black: #0c0c0d;
+  --warm-charcoal: #191817;
+  --dark-brown: #302a25;
+  --ivory: #ece7df;
+  --warm-gray: #a59d93;
+  --amber: #f28a55;
+  /* Ambient lights: accents of light only, never UI colours. */
+  --light-violet: #6b39bb;
+  --light-magenta: #a93678;
+  --light-red: #e34b47;
+  --light-orange: #e78b42;
+
+  --canvas: var(--cinema-black);
+  --ink: var(--ivory);
+  --ink-soft: rgba(236, 231, 223, 0.78);
+  --muted: var(--warm-gray);
+  --line: rgba(236, 231, 223, 0.16);
+  --line-strong: rgba(236, 231, 223, 0.32);
+  --surface: rgba(236, 231, 223, 0.05);
+  --accent: var(--amber);
+  --sheet: var(--warm-charcoal);
 
   --font-ui: 'Inter Tight', 'Inter Tight Fallback', 'Helvetica Neue', Arial, sans-serif;
   --font-display: 'Bricolage Grotesque', 'Bricolage Grotesque Fallback', 'Helvetica Neue', Arial, sans-serif;
@@ -39,21 +51,6 @@
   --ease-spring: var(--ease-out);
 
   color-scheme: dark;
-}
-
-:root[data-tone='light'] {
-  --canvas: #ececec;
-  --ink: #181818;
-  --ink-soft: rgba(24, 24, 24, 0.78);
-  /* Huy uses #8c8c8c; darkened to keep ≥4.5:1 for small labels on #ececec. */
-  --muted: #6b6b6b;
-  --line: rgba(24, 24, 24, 0.14);
-  --line-strong: rgba(24, 24, 24, 0.3);
-  --surface: rgba(24, 24, 24, 0.04);
-  --sheet: #f7f7f5;
-  /* The dark-canvas red is only 2.8:1 on #ececec; this one keeps the focus ring >= 3:1 (4.1:1) on both light surfaces. */
-  --accent: #d92d2d;
-  color-scheme: light;
 }
 
 @media (min-width: 1100px) {

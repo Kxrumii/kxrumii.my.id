@@ -6,7 +6,7 @@ export const INK_DARK = '#141414';
 
 /**
  * Soft halo in the opposite tone of the ink. A row can still straddle the highlight/shade boundary, where no single
- * ink beats every pixel under the text; the halo evens out the local background without a filter (the spiral's 3D
+ * ink beats every pixel under the text; the halo evens out the local background without a filter (the gallery's 3D
  * chain must never get one) or a visible box.
  */
 export const haloFor = (ink: string): string =>
@@ -108,7 +108,7 @@ function sampleFace(swatches: [Rgb, Rgb, Rgb], angle: number, aspect: number, x:
   return color.map((v, i) => v * (1 - glow) + s1[i] * glow) as Rgb;
 }
 
-/** Text rows as fractions of the face: where each label sits in the spiral card, the play face and the sheet hero. */
+/** Text rows as fractions of the face: where each label sits in the gallery display, the play face and the sheet hero. */
 const ROWS: Record<keyof FaceInks, { xs: number[]; ys: number[] }> = {
   top: { xs: [0.05, 0.08, 0.12], ys: [0.08, 0.13] },
   middle: { xs: [0.05, 0.2, 0.35, 0.5, 0.65], ys: [0.4, 0.5, 0.6] },

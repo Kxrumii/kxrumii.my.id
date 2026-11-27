@@ -45,8 +45,10 @@ html:has(.work-sheet[open]) { overflow: hidden; }
 .sheet-info .meta-list { margin: 0 0 20px; }
 .sheet-media { display: grid; align-content: start; gap: 8px; min-width: 0; }
 .sheet-media .video-frame { margin-top: 0; }
-/* Hero media wears the orbit card's face, so the flight from the spiral reads as one object. */
+/* Hero media wears the gallery display's face, so the flight from the room reads as one object. */
 .sheet-hero { position: relative; z-index: 1; will-change: transform; }
+/* Leaf the detail Shape Morph clips; the FLIP only ever transforms the hero around it. */
+.sheet-hero-mask { position: relative; display: block; border-radius: 14px; overflow: hidden; }
 .sheet-hero .video-frame { border-color: transparent; background: var(--hero-bg); color: var(--hero-ink); }
 .sheet-hero .video-facade, .sheet-hero .video-fallback { color: var(--hero-ink); text-shadow: var(--hero-halo); }
 .sheet-hero .video-play { border-color: currentColor; color: currentColor; }

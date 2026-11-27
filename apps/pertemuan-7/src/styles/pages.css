@@ -41,7 +41,8 @@
 .play-card .badge-row { margin-bottom: 4px; }
 .play-card .disclosure { margin: 8px 0 0; }
 
-/* About: Pacôme's word reveal on Huy's two-column grid. */
+/* About: Pacôme's word reveal on Huy's two-column grid. The mask is the leaf the About Shape Morph clips. */
+.about-mask { display: block; }
 .about-layout { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 4fr); gap: clamp(28px, 5vw, 96px); align-items: start; }
 .about-copy { margin: 0; font: 400 clamp(24px, 2.7vw, 48px) / 1.25 var(--font-display-mixed); letter-spacing: -0.01em; }
 .word { display: inline-block; animation: word-in 0.7s var(--ease-out) both; animation-delay: calc(260ms + var(--w) * 25ms); }
