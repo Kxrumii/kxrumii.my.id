@@ -1,0 +1,95 @@
+import { useEffect, useRef, useState } from 'react';
+import { playSound } from '../audio/sound';
+import { CATEGORY_LABELS } from '../data/works';
+import { useReducedMotion } from '../hooks/useReducedMotion';
+import type { Work } from '../types';
+import { workNumber } from '../utils/works';
+import { TransitionLink } from './TransitionLink';
+import { WorkCover } from './WorkCover';
+
+interface ListViewProps {
+  works: Work[];
+}
+
+const FOLLOW = 0.18;
+
+/**
+ * The works as large centred titles. Hovering one dims the others and shows its cover, which trails the
+ * cursor (pointer devices only; the cover simply sits still under reduced motion).
+ */
+export function ListView({ works }: ListViewProps) {
+  const reducedMotion = useReducedMotion();
+  const [hovered, setHovered] = useState<number | null>(null);
+  const preview = useRef<HTMLDivElement>(null);
+  const target = useRef({ x: 0, y: 0 });
+  const position = useRef({ x: 0, y: 0, raf: 0, placed: false });
+
+  useEffect(() => {
+    const p = position.current;
+    if (hovered === null) {
+      cancelAnimationFrame(p.raf);
+      p.raf = 0;
+      return;
+    }
+    const tick = () => {
+      const el = preview.current;
+      if (!el) return;
+      const k = reducedMotion || !p.placed ? 1 : FOLLOW;
+      p.x += (target.current.x - p.x) * k;
+      p.y += (target.current.y - p.y) * k;
+      p.placed = true;
+      el.style.transform = `translate3d(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px, 0) translate(-50%, -50%) rotate(-4deg)`;
+      p.raf = requestAnimationFrame(tick);
+    };
+    p.raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(p.raf);
+      p.raf = 0;
+    };
+  }, [hovered, reducedMotion]);
+
+  if (works.length === 0) return <p className="empty">No works yet.</p>;
+
+  const shown = hovered === null ? null : works[hovered];
+
+  return (
+    <div
+      className="list"
+      onPointerMove={(event) => {
+        target.current = { x: event.clientX, y: event.clientY };
+      }}
+      onPointerLeave={() => {
+        setHovered(null);
+        position.current.placed = false;
+      }}
+    >
+      <ol className="list-items">
+        {works.map((work, index) => (
+          <li key={work.slug} className="list-item">
+            <TransitionLink
+              to={`/work/${work.slug}`}
+              className={`list-link${hovered === index ? ' hovered' : ''}`}
+              onPointerEnter={(event) => {
+                if (event.pointerType === 'mouse' || event.pointerType === 'pen') {
+                  target.current = { x: event.clientX, y: event.clientY };
+                  setHovered(index);
+                }
+                playSound('hover');
+              }}
+              onFocus={() => setHovered(null)}
+              onClick={() => playSound('click')}
+            >
+              <span className="list-title">{work.title}</span>
+              <sup className="list-meta">
+                {workNumber(index)} · {CATEGORY_LABELS[work.category]}
+              </sup>
+            </TransitionLink>
+          </li>
+        ))}
+      </ol>
+      <div ref={preview} className={`list-preview${shown ? ' show' : ''}`} aria-hidden="true">
+        {shown ? <WorkCover work={shown} number={workNumber(hovered ?? 0)} eager /> : null}
+      </div>
+    </div>
+  );
+}
