@@ -1,19 +1,16 @@
 import { playSound } from '../audio/sound';
+import { profile } from '../data/profile';
 import type { SocialLink } from '../types';
-
-/** Short icon-free monogram for a social network, shown inside the round buttons. */
-function monogram(label: string): string {
-  const known: Record<string, string> = { youtube: 'yt', instagram: 'ig', behance: 'be', linkedin: 'in', x: 'x', vimeo: 'vi', tiktok: 'tt' };
-  return known[label.toLowerCase()] ?? label.slice(0, 2).toLowerCase();
-}
+import { SocialIcon } from './SocialIcon';
 
 interface SocialLinksProps {
   links: SocialLink[];
-  /** round: circular buttons (menu); labelled: text links (about). */
+  /** round: icon buttons with the handle appearing underneath on hover (menu); labelled: icon + handle (about). */
   variant: 'round' | 'labelled';
   className?: string;
 }
 
+/** The same four links and icons as the Pertemuan 1 footer. */
 export function SocialLinks({ links, variant, className }: SocialLinksProps) {
   return (
     <ul className={[`socials socials-${variant}`, className].filter(Boolean).join(' ')}>
@@ -24,16 +21,22 @@ export function SocialLinks({ links, variant, className }: SocialLinksProps) {
             href={link.url}
             target="_blank"
             rel="noreferrer noopener"
-            aria-label={variant === 'round' ? link.label : undefined}
+            aria-label={`Kunjungi ${link.label} ${profile.handle}`}
             onPointerEnter={() => playSound('hover')}
           >
             {variant === 'round' ? (
-              <span className="social-inner" aria-hidden="true">
-                {monogram(link.label)}
-              </span>
+              <>
+                <span className="social-inner">
+                  <SocialIcon name={link.icon} className="social-icon" />
+                </span>
+                <span className="social-handle" aria-hidden="true">
+                  {link.handle}
+                </span>
+              </>
             ) : (
               <>
-                <span>{link.label}</span>
+                <SocialIcon name={link.icon} className="social-icon" />
+                <span aria-hidden="true">{link.handle}</span>
                 <span className="social-arrow" aria-hidden="true">
                   ↗
                 </span>

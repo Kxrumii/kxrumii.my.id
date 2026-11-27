@@ -1,30 +1,37 @@
 import { useCallback, useLayoutEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router';
-import { works } from '../data/works';
 import { notifyRouteCommit, usePageReady } from '../transition';
-import { workNumber } from '../utils/works';
-import { FeaturedBadge } from './FeaturedBadge';
-import { Loader } from './Loader';
+import { Loader, type GateLeave } from './Loader';
 import { Logo } from './Logo';
 import { Menu } from './Menu';
 import { SoundButton } from './SoundButton';
+import { StarField } from './StarField';
 
 export interface LayoutContext {
-  /** False while the intro loader is up: pages stay still and silent. */
+  /** False while the gate is up: pages stay still. */
   entered: boolean;
   /** The menu panel covers part of the page: the spiral pauses. */
   menuOpen: boolean;
 }
 
+/** gate: the intro is up · entering: the logo is flying and the page comes in · entered: normal. */
+type Phase = 'gate' | 'entering' | 'entered';
+
 /**
- * App frame: the intro loader, the fixed chrome (logo, menu, featured card, sound) and the routed page.
- * The chrome carries `data-shell`, so same-document transitions move only the page.
+ * App frame: the persistent background canvas, the gate, the fixed chrome (logo, menu, sound) and the routed
+ * page. The chrome carries `data-shell`, so same-document transitions move only the page.
  */
 export function Layout() {
   const location = useLocation();
-  const [entered, setEntered] = useState(false);
+  const [phase, setPhase] = useState<Phase>('gate');
+  const [origin, setOrigin] = useState<GateLeave['origin'] | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const handleEntered = useCallback(() => setEntered(true), []);
+
+  const handleLeave = useCallback((leave: GateLeave) => {
+    setOrigin(leave.origin);
+    setPhase('entering');
+  }, []);
+  const handleEntered = useCallback(() => setPhase('entered'), []);
 
   useLayoutEffect(() => {
     notifyRouteCommit();
@@ -37,20 +44,21 @@ export function Layout() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  const featured = works[0];
-  const showFeatured = featured && !location.pathname.startsWith('/work/');
+  const entered = phase !== 'gate';
+  // On a project the white card has its own close button (as on the reference), so the menu steps aside.
+  const onProject = location.pathname.startsWith('/work/');
   const context: LayoutContext = { entered, menuOpen };
 
   return (
     <>
-      {!entered ? <Loader onEntered={handleEntered} /> : null}
-      <div className="chrome" data-shell inert={!entered}>
+      <StarField starsOn={entered} origin={origin} />
+      {phase !== 'entered' ? <Loader onLeave={handleLeave} onEntered={handleEntered} /> : null}
+      <div className="chrome" data-shell data-phase={phase} data-route={onProject ? 'project' : 'default'} inert={!entered}>
         <Logo />
         <Menu open={menuOpen} onOpenChange={setMenuOpen} />
-        {showFeatured ? <FeaturedBadge work={featured} number={workNumber(0)} /> : null}
         <SoundButton />
       </div>
-      <main className="page" key={location.pathname} inert={!entered || menuOpen} data-entered={entered}>
+      <main className="page" key={location.pathname} inert={!entered || menuOpen} data-phase={phase}>
         <Outlet context={context} />
       </main>
     </>

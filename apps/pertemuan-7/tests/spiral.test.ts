@@ -77,3 +77,54 @@ test('nearest position takes the shortest way round to a work', () => {
   // No loop: clamp into the list.
   assert.equal(nearestPositionFor(5, 0, 2), 1);
 });
+
+/* ---- No overlap: projected card polygons of visible cards never intersect ---- */
+import { geometryFor, polygonsOverlap, projectCard } from '../src/spiral/geometry.ts';
+
+/** Card size from the CSS rule `width: clamp(170px, 21vw, 340px); aspect-ratio: 16 / 10`. */
+function cardFor(viewportWidth: number) {
+  const width = Math.min(Math.max(170, viewportWidth * 0.21), 340);
+  return { width, height: (width * 10) / 16 };
+}
+
+test('the separating-axis helper detects overlap and clearance', () => {
+  const square = (x: number, y: number) => [[x, y], [x + 10, y], [x + 10, y + 10], [x, y + 10]] as const;
+  assert.equal(polygonsOverlap(square(0, 0), square(5, 5)), true);
+  assert.equal(polygonsOverlap(square(0, 0), square(20, 0)), false);
+  assert.equal(polygonsOverlap(square(0, 0), square(10, 0)), false, 'touching edges are not an overlap');
+});
+
+for (const viewport of [
+  { width: 1440, height: 900 },
+  { width: 1920, height: 1080 },
+  { width: 1024, height: 768 },
+  { width: 390, height: 844 },
+]) {
+  for (const workCount of [2, 5, 6, 9]) {
+    test(`visible spiral cards never overlap (${viewport.width}×${viewport.height}, ${workCount} works)`, () => {
+      const card = cardFor(viewport.width);
+      const geometry = geometryFor(card.width, card.height);
+      const slots = slotCount(workCount);
+      const looping = workCount >= 3;
+      for (let step = 0; step <= 96; step += 1) {
+        const p = looping ? step / 8 - 3 : Math.min(step / 48, workCount - 1);
+        const visible = [];
+        for (let slot = 0; slot < slots; slot += 1) {
+          if (cardPose(slot, p, slots, looping, geometry).opacity <= 0.05) continue;
+          const polygon = projectCard(slot, p, slots, looping, geometry, card, viewport);
+          assert.ok(polygon, `slot ${slot} at p=${p} is behind the camera while visible`);
+          visible.push({ slot, polygon });
+        }
+        for (let i = 0; i < visible.length; i += 1) {
+          for (let j = i + 1; j < visible.length; j += 1) {
+            assert.equal(
+              polygonsOverlap(visible[i].polygon, visible[j].polygon),
+              false,
+              `slots ${visible[i].slot} and ${visible[j].slot} overlap at p=${p}`,
+            );
+          }
+        }
+      }
+    });
+  }
+}

@@ -1,5 +1,5 @@
-/* Fixed chrome: logo (top left), view switch (top centre), menu (top right), featured card (bottom left),
-   sound (bottom right). */
+/* Fixed chrome: logo (top left), view switch (top centre), menu (top right), sound (bottom right). The works
+   caption (bottom left) lives in works.css. */
 
 /* ---- Logo ---- */
 .logo {
@@ -398,10 +398,15 @@
   }
 }
 
-/* ---- Socials ---- */
+/* ---- Socials (same links and icons as the Pertemuan 1 footer) ---- */
 .socials-round {
   display: flex;
   gap: 8px;
+}
+
+.socials-round .social-link {
+  position: relative;
+  display: block;
 }
 
 .socials-round .social-inner {
@@ -413,108 +418,82 @@
   border-radius: 50%;
   background: var(--color-bg-dark);
   color: var(--color-white);
-  font-size: 15px;
-  font-weight: 500;
   transition:
     transform 0.3s ease,
     background-color 0.3s ease,
     color 0.3s ease;
 }
 
-.socials-round:has(.social-link:hover) .social-link:not(:hover) .social-inner {
-  background: var(--color-grey);
-  color: var(--color-black);
-  transform: scale(0.9);
+.socials-round .social-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.socials-round .social-handle {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, -4px);
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.3s var(--ease-spring);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .socials-round .social-link:hover .social-inner {
+    color: var(--color-pop);
+    transform: scale(1.06);
+  }
+  .socials-round .social-link:hover .social-handle {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  .socials-round:has(.social-link:hover) .social-link:not(:hover) .social-inner {
+    background: var(--color-grey);
+    color: var(--color-black);
+    transform: scale(0.9);
+  }
+}
+
+.socials-round .social-link:focus-visible .social-handle {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 .socials-labelled {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .socials-labelled .social-link {
   display: inline-flex;
-  gap: 6px;
+  align-items: center;
+  gap: 10px;
   font-size: 24px;
   font-weight: 500;
-  transition: opacity 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    color 0.3s ease;
+}
+
+.socials-labelled .social-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.socials-labelled .social-link:hover {
+  color: var(--color-pop);
 }
 
 .socials-labelled:has(.social-link:hover) .social-link:not(:hover) {
   opacity: 0.4;
-}
-
-/* ---- Featured card ---- */
-.featured {
-  position: fixed;
-  left: var(--grid-margin);
-  bottom: var(--grid-margin);
-  z-index: 10;
-  width: 0;
-  height: 0;
-}
-
-.featured-card {
-  position: absolute;
-  left: -130px;
-  top: -70px;
-  display: block;
-  width: 280px;
-  aspect-ratio: 16 / 9;
-  transform: rotate(-15deg);
-  transition: transform 0.3s var(--ease-spring);
-}
-
-.featured-cover {
-  width: 100%;
-  height: 100%;
-  border-radius: var(--radius-xl);
-  box-shadow: 0 4px 8px rgb(0 0 0 / 0.2);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .featured-card:hover {
-    transform: rotate(-13deg) scale(1.05);
-  }
-}
-
-.featured-marquee {
-  position: absolute;
-  left: -12px;
-  top: -12px;
-  width: 304px;
-  height: 182px;
-  pointer-events: none;
-}
-
-.featured-marquee-text {
-  position: absolute;
-  top: 0;
-  left: 0;
-  offset-path: var(--track);
-  offset-anchor: center bottom;
-  offset-rotate: auto;
-  font-size: 16px;
-  font-weight: 500;
-  white-space: nowrap;
-  animation: marquee-along 16s linear infinite;
-  animation-delay: calc(var(--m) * -16s / var(--m-count));
-}
-
-@keyframes marquee-along {
-  from {
-    offset-distance: 0%;
-  }
-  to {
-    offset-distance: 100%;
-  }
-}
-
-@media (max-width: 600px) {
-  .featured {
-    display: none;
-  }
 }
 
 /* ---- Sound ---- */
@@ -587,4 +566,13 @@
   to {
     transform: scaleY(1);
   }
+}
+
+/* ---- Project route: the card brings its own close button; logo and sound invert over the white card ---- */
+.chrome[data-route='project'] :is(.menu, .menu-backdrop) {
+  display: none;
+}
+
+.chrome[data-route='project'] :is(.logo, .sound-button) {
+  mix-blend-mode: difference;
 }

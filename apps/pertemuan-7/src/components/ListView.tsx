@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { playSound } from '../audio/sound';
 import { CATEGORY_LABELS } from '../data/works';
 import { useReducedMotion } from '../hooks/useReducedMotion';
@@ -65,7 +65,7 @@ export function ListView({ works }: ListViewProps) {
     >
       <ol className="list-items">
         {works.map((work, index) => (
-          <li key={work.slug} className="list-item">
+          <li key={work.slug} className="list-item" style={{ '--i': index } as CSSProperties}>
             <TransitionLink
               to={`/work/${work.slug}`}
               className={`list-link${hovered === index ? ' hovered' : ''}`}
@@ -79,10 +79,12 @@ export function ListView({ works }: ListViewProps) {
               onFocus={() => setHovered(null)}
               onClick={() => playSound('click')}
             >
-              <span className="list-title">{work.title}</span>
-              <sup className="list-meta">
+              <span className="list-meta">
                 {workNumber(index)} · {CATEGORY_LABELS[work.category]}
-              </sup>
+              </span>
+              <span className="list-mask">
+                <span className="list-title">{work.title}</span>
+              </span>
             </TransitionLink>
           </li>
         ))}

@@ -13,15 +13,23 @@ export interface Work {
   notes: string | null;
   /** URL gambar sampul milik sendiri; null = pakai thumbnail YouTube atau sampul generatif. */
   thumbnail: string | null;
+  /** Gambar tambahan (styleframes) di halaman proyek; kosong = tidak ditampilkan (entri sampel memakai sampul generatif). */
+  styleframes?: string[];
   youtubeVideoId: string | null;
   externalUrl: string | null;
   /** true selama entri masih data contoh dan belum diganti karya nyata. */
   isSample: boolean;
 }
 
+export type SocialIconName = 'github' | 'instagram' | 'tiktok' | 'youtube';
+
 export interface SocialLink {
+  /** Network name, e.g. "GitHub". */
   label: string;
   url: string;
+  icon: SocialIconName;
+  /** Handle shown under the icon on hover. */
+  handle: string;
 }
 
 export interface Profile {

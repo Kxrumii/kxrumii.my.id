@@ -52,6 +52,8 @@ export function AboutPage() {
           <p className="about-label">credits</p>
           <p>design &amp; development {profile.handle}</p>
           <p>layout and interaction modelled on the portfolio of Pacôme Pertant</p>
+          <p>pixel stars adapted from @uicapsule, ASCII wake after @nikolas-sapa (21st.dev)</p>
+          <p>music: Shelter (Official Piano Version), Porter Robinson &amp; Madeon</p>
           <p>type: Inter Tight (SIL OFL)</p>
         </div>
       </footer>

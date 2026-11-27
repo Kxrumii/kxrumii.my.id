@@ -1,5 +1,16 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
-import { activeWorkIndex, cardPose, loops, nearestPositionFor, slotCount, type SpiralGeometry } from './geometry.ts';
+import {
+  activeWorkIndex,
+  cardPose,
+  geometryFor,
+  loops,
+  nearestPositionFor,
+  ORIGIN_Y,
+  PERSPECTIVE_PX,
+  sceneTransform,
+  slotCount,
+  type SpiralGeometry,
+} from './geometry.ts';
 
 /*
  * Spiral physics (adapted from the earlier Task 7 spiral, commit f2dcdec). Position `p` is measured in slots;
@@ -23,8 +34,6 @@ const MAX_VELOCITY = 9;
 const DRAG_THRESHOLD_PX = 6;
 const DRAG_FLING = 0.55;
 const MAX_DRAG_VELOCITY = 5;
-const RADIUS_PER_WIDTH = 1.25;
-const RISE_PER_HEIGHT = 0.58;
 
 export interface SpiralOptions {
   workCount: number;
@@ -99,6 +108,7 @@ export function useSpiral({ workCount, initialIndex, reducedMotion, paused, onAc
       el.style.visibility = pose.opacity < 0.02 ? 'hidden' : 'visible';
       el.style.pointerEvents = pose.interactive ? 'auto' : 'none';
       el.dataset.front = pose.facing > 0.9 ? 'true' : 'false';
+      el.style.setProperty('--ad', Math.abs(pose.offset).toFixed(2));
     }
     const active = activeWorkIndex(s.p, n);
     if (active !== s.active) {
@@ -250,9 +260,17 @@ export function useSpiral({ workCount, initialIndex, reducedMotion, paused, onAc
       const card = cards.current.find(Boolean);
       const width = finite(card?.offsetWidth ?? 0) || 300;
       const height = finite(card?.offsetHeight ?? 0) || 200;
-      state.current.geometry = { radius: width * RADIUS_PER_WIDTH, rise: height * RISE_PER_HEIGHT };
-      state.current.pxPerSlot = Math.max(height * 0.9, 90);
-      node.style.setProperty('--spiral-radius', `${(width * RADIUS_PER_WIDTH).toFixed(1)}px`);
+      const geometry = geometryFor(width, height);
+      state.current.geometry = geometry;
+      state.current.pxPerSlot = Math.max(geometry.rise * 0.9, 90);
+      // Camera values come from geometry.ts, the same numbers the overlap test projects with.
+      node.style.perspective = `${PERSPECTIVE_PX}px`;
+      node.style.perspectiveOrigin = `50% ${ORIGIN_Y * 100}%`;
+      const scene = node.querySelector<HTMLElement>('.spiral-scene');
+      if (scene) {
+        scene.style.top = `${ORIGIN_Y * 100}%`;
+        scene.style.transform = sceneTransform(geometry.radius);
+      }
       render();
     };
     measure();

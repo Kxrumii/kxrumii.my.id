@@ -1,25 +1,31 @@
+import { startMusic, type MusicStatus } from './music';
+
 /*
- * Sound for the portfolio: ONE lazily created AudioContext, Web Audio only, no audio files.
+ * Sound for the portfolio: ONE lazily created AudioContext, Web Audio only.
  *
- *   SFX voices  -> sfxBus     ─┐
- *   ambient pad -> ambientBus ─┴─> master -> compressor -> destination
+ *   music (Shelter loop, see music.ts) -> musicBus ─┐
+ *   interface SFX (procedural)          -> sfxBus   ─┴─> master -> compressor -> destination
  *
- * - One switch ("sound"). Every document load starts silent; the loader asks ("enter with sound" / "enter
- *   without sound"), like the reference site, and the bottom-right button toggles it afterwards.
+ * - One switch ("sound") drives music and SFX together. Every document load starts silent; the gate asks
+ *   ("enter with sound" / "enter without sound") and the bottom-right button toggles it afterwards.
  * - The context is only created from a user gesture (autoplay-policy safe).
- * - Hidden tab or sound off: master faded out and the context suspended, so it costs no CPU.
- * - The ambient pad is procedural (no copyrighted music is shipped).
+ * - Sound off or hidden tab: master fades out and the context is suspended. Suspending freezes the context clock,
+ *   so the music schedule simply pauses and resumes in place.
+ * - A playing video ducks the music.
  */
-export type SoundName = 'hover' | 'click' | 'open' | 'close' | 'enter';
+export type SoundName = 'hover' | 'click' | 'open' | 'close' | 'enter' | 'switch' | 'next' | 'stars' | 'trail' | 'ripple' | 'shoot';
 
 export interface SoundSnapshot {
   supported: boolean;
   enabled: boolean;
+  music: MusicStatus;
 }
 
 const MASTER_LEVEL = 0.85;
-const AMBIENT_LEVEL = 0.22;
+const MUSIC_LEVEL = 0.55;
+const MUSIC_DUCK_LEVEL = 0.12;
 const HOVER_THROTTLE_MS = 70;
+const TRAIL_THROTTLE_MS = 95;
 
 const AudioContextCtor: typeof AudioContext | null =
   typeof window !== 'undefined' && 'AudioContext' in window ? window.AudioContext : null;
@@ -27,13 +33,14 @@ const AudioContextCtor: typeof AudioContext | null =
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let sfxBus: GainNode | null = null;
-let ambientBus: GainNode | null = null;
+let musicBus: GainNode | null = null;
 let noise: AudioBuffer | null = null;
-let ambientStarted = false;
+let ducked = false;
 let lastHoverAt = 0;
+let lastTrailAt = 0;
 let suspendTimer = 0;
 
-let snapshot: SoundSnapshot = { supported: AudioContextCtor !== null, enabled: false };
+let snapshot: SoundSnapshot = { supported: AudioContextCtor !== null, enabled: false, music: 'idle' };
 const listeners = new Set<() => void>();
 
 function emit(next: Partial<SoundSnapshot>): void {
@@ -60,10 +67,10 @@ function ensureContext(): AudioContext | null {
   master.gain.value = 0;
   sfxBus = ctx.createGain();
   sfxBus.gain.value = 1;
-  ambientBus = ctx.createGain();
-  ambientBus.gain.value = 0;
+  musicBus = ctx.createGain();
+  musicBus.gain.value = 0;
   sfxBus.connect(master);
-  ambientBus.connect(master);
+  musicBus.connect(master);
   master.connect(compressor).connect(ctx.destination);
   noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
   const data = noise.getChannelData(0);
@@ -71,44 +78,15 @@ function ensureContext(): AudioContext | null {
   return ctx;
 }
 
-/** Two slow detuned voices through a breathing low-pass: a quiet bed under the interface sounds. */
-function startAmbient(): void {
-  if (!ctx || !ambientBus || ambientStarted) return;
-  ambientStarted = true;
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'lowpass';
-  filter.frequency.value = 520;
-  filter.Q.value = 0.6;
-  const lfo = ctx.createOscillator();
-  const lfoGain = ctx.createGain();
-  lfo.frequency.value = 0.07;
-  lfoGain.gain.value = 220;
-  lfo.connect(lfoGain).connect(filter.frequency);
-  lfo.start();
-  for (const [freq, type, level] of [
-    [110, 'sine', 0.5],
-    [164.81, 'triangle', 0.18],
-    [220.6, 'sine', 0.16],
-  ] as const) {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = type;
-    osc.frequency.value = freq;
-    gain.gain.value = level;
-    osc.connect(gain).connect(filter);
-    osc.start();
-  }
-  filter.connect(ambientBus);
-}
-
 function applyLevels(): void {
-  if (!ctx || !master || !ambientBus) return;
+  if (!ctx || !master || !musicBus) return;
   const now = ctx.currentTime;
   const audible = snapshot.enabled && document.visibilityState === 'visible';
   master.gain.cancelScheduledValues(now);
   master.gain.setTargetAtTime(audible ? MASTER_LEVEL : 0, now, audible ? 0.12 : 0.05);
-  ambientBus.gain.cancelScheduledValues(now);
-  ambientBus.gain.setTargetAtTime(audible ? AMBIENT_LEVEL : 0, now, 0.8);
+  musicBus.gain.cancelScheduledValues(now);
+  // Music swells in slowly (about 1.5 s) and ducks under a playing video.
+  musicBus.gain.setTargetAtTime(audible ? (ducked ? MUSIC_DUCK_LEVEL : MUSIC_LEVEL) : 0, now, audible ? 0.5 : 0.05);
   window.clearTimeout(suspendTimer);
   if (audible) {
     if (ctx.state === 'suspended') void ctx.resume();
@@ -124,8 +102,8 @@ export function setSoundEnabled(enabled: boolean): void {
   if (!snapshot.supported) return;
   emit({ enabled });
   if (enabled) {
-    ensureContext();
-    startAmbient();
+    const context = ensureContext();
+    if (context && musicBus) startMusic(context, musicBus, (music) => emit({ music }));
   }
   applyLevels();
 }
@@ -134,30 +112,37 @@ export function toggleSound(): void {
   setSoundEnabled(!snapshot.enabled);
 }
 
+/** Ducks the music while a video plays. */
+export function setMusicDucked(value: boolean): void {
+  if (ducked === value) return;
+  ducked = value;
+  applyLevels();
+}
+
 function envelope(gain: GainNode, at: number, peak: number, attack: number, release: number): void {
   gain.gain.setValueAtTime(0, at);
   gain.gain.linearRampToValueAtTime(peak, at + attack);
   gain.gain.exponentialRampToValueAtTime(0.0001, at + attack + release);
 }
 
-function tone(freq: number, at: number, peak: number, release: number, type: OscillatorType = 'sine'): void {
+function tone(freq: number, at: number, peak: number, release: number, type: OscillatorType = 'sine', attack = 0.004): void {
   if (!ctx || !sfxBus) return;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.type = type;
   osc.frequency.value = freq;
-  envelope(gain, at, peak, 0.004, release);
+  envelope(gain, at, peak, attack, release);
   osc.connect(gain).connect(sfxBus);
   osc.start(at);
-  osc.stop(at + release + 0.05);
+  osc.stop(at + attack + release + 0.05);
 }
 
-function whoosh(at: number, from: number, to: number, duration: number, peak: number): void {
+function filteredNoise(at: number, from: number, to: number, duration: number, peak: number, type: BiquadFilterType = 'bandpass'): void {
   if (!ctx || !sfxBus || !noise) return;
   const source = ctx.createBufferSource();
   source.buffer = noise;
   const filter = ctx.createBiquadFilter();
-  filter.type = 'bandpass';
+  filter.type = type;
   filter.Q.value = 1.4;
   filter.frequency.setValueAtTime(from, at);
   filter.frequency.exponentialRampToValueAtTime(to, at + duration);
@@ -170,32 +155,66 @@ function whoosh(at: number, from: number, to: number, duration: number, peak: nu
   source.stop(at + duration + 0.05);
 }
 
-/** Plays an interface sound when sound is on (no-op otherwise). */
-export function playSound(name: SoundName): void {
+/** Pentatonic steps (A minor-ish) so stacked sparkles never clash with each other. */
+const SPARKLE = [880, 987.77, 1174.66, 1318.51, 1567.98, 1760, 1975.53, 2349.32];
+
+/**
+ * Plays an interface sound when sound is on (no-op otherwise). `amount` (0–1) shapes the continuous ones:
+ * the cursor speed for `trail`.
+ */
+export function playSound(name: SoundName, amount = 0.5): void {
   if (!snapshot.enabled || !ctx || ctx.state !== 'running' || document.visibilityState !== 'visible') return;
   const at = ctx.currentTime + 0.005;
+  const nowMs = performance.now();
   switch (name) {
-    case 'hover': {
-      const nowMs = performance.now();
+    case 'hover':
       if (nowMs - lastHoverAt < HOVER_THROTTLE_MS) return;
       lastHoverAt = nowMs;
       tone(2100, at, 0.05, 0.04);
       break;
-    }
     case 'click':
       tone(880, at, 0.12, 0.08, 'triangle');
       tone(1320, at + 0.03, 0.06, 0.08);
       break;
     case 'open':
-      whoosh(at, 300, 2400, 0.42, 0.22);
+      filteredNoise(at, 300, 2400, 0.42, 0.22);
       break;
     case 'close':
-      whoosh(at, 2400, 260, 0.36, 0.2);
+      filteredNoise(at, 2400, 260, 0.36, 0.2);
       break;
     case 'enter':
       tone(523.25, at, 0.12, 0.6);
       tone(783.99, at + 0.09, 0.1, 0.7);
       tone(1046.5, at + 0.18, 0.07, 0.9);
+      break;
+    case 'switch':
+      filteredNoise(at, 900, 3200, 0.22, 0.12);
+      tone(660, at + 0.05, 0.06, 0.12, 'triangle');
+      break;
+    case 'next':
+      filteredNoise(at, 200, 3000, 0.6, 0.18);
+      tone(659.25, at + 0.12, 0.09, 0.5);
+      tone(987.77, at + 0.22, 0.07, 0.7);
+      break;
+    case 'stars':
+      // A rising shimmer while the stars come out.
+      SPARKLE.forEach((freq, i) => tone(freq, at + i * 0.07, 0.035, 0.5, 'sine', 0.01));
+      break;
+    case 'trail': {
+      if (nowMs - lastTrailAt < TRAIL_THROTTLE_MS) return;
+      lastTrailAt = nowMs;
+      const k = Math.min(Math.max(amount, 0), 1);
+      const freq = SPARKLE[Math.min(SPARKLE.length - 1, Math.floor(k * SPARKLE.length))] * 2;
+      tone(freq, at, 0.012 + 0.02 * k, 0.05, 'sine', 0.002);
+      break;
+    }
+    case 'ripple':
+      tone(110, at, 0.14, 0.35, 'sine', 0.005);
+      tone(1318.51, at + 0.02, 0.05, 1.1, 'sine', 0.01);
+      tone(1975.53, at + 0.05, 0.03, 1.3, 'sine', 0.01);
+      break;
+    case 'shoot':
+      filteredNoise(at, 5200, 1400, 0.5, 0.035, 'highpass');
       break;
   }
 }
@@ -203,3 +222,12 @@ export function playSound(name: SoundName): void {
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', applyLevels);
 }
+
+declare global {
+  interface Window {
+    /** Development-only read-out for scripted QA. */
+    __t7Sound?: () => SoundSnapshot;
+  }
+}
+
+if (import.meta.env?.DEV && typeof window !== 'undefined') window.__t7Sound = getSoundSnapshot;

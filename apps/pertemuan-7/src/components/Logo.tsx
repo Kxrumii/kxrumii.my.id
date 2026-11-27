@@ -1,11 +1,9 @@
 import { playSound } from '../audio/sound';
 import { profile } from '../data/profile';
+import { LogoMark } from './LogoMark';
 import { TransitionLink } from './TransitionLink';
 
-/**
- * Top-left mark (the owner's own monogram, not the reference site's logo). Hovering tilts a name tag out of
- * it with a spring.
- */
+/** Top-left mark. Hovering tilts a name tag out of it with a spring. */
 export function Logo() {
   return (
     <TransitionLink
@@ -15,10 +13,7 @@ export function Logo() {
       onPointerEnter={() => playSound('hover')}
       onClick={() => playSound('click')}
     >
-      <svg className="logo-mark" viewBox="0 0 64 64" aria-hidden="true">
-        <circle cx="32" cy="32" r="31" fill="currentColor" />
-        <path d="M22 17v30M22 33l15-16M27 28l14 19" stroke="var(--color-bg-dark)" strokeWidth="5.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-      </svg>
+      <LogoMark className="logo-mark" />
       <span className="logo-tag" aria-hidden="true">
         <span className="logo-tag-pill">
           {profile.handle}

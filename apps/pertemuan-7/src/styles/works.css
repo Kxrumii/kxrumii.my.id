@@ -14,8 +14,7 @@
 
 .spiral-viewport {
   overflow: hidden;
-  perspective: 1500px;
-  perspective-origin: 50% 46%;
+  /* perspective and the scene transform are written by useSpiral from spiral/geometry.ts */
   touch-action: none;
   cursor: grab;
   user-select: none;
@@ -37,7 +36,6 @@
   width: 0;
   height: 0;
   transform-style: preserve-3d;
-  transform: translateZ(calc(var(--spiral-radius, 340px) * -1)) rotateX(-7deg) rotateZ(-4deg);
 }
 
 .spiral-card {
@@ -78,18 +76,15 @@
 
 .spiral-caption {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: calc(var(--grid-margin) + 4px);
+  left: var(--grid-margin);
+  bottom: var(--grid-margin);
   z-index: 5;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
-  width: max-content;
-  max-width: calc(100vw - 2 * (var(--grid-margin) + var(--control) + 20px));
-  margin-inline: auto;
-  text-align: center;
+  max-width: calc(100vw - var(--grid-margin) * 2 - var(--control) - 20px);
+  text-align: left;
   pointer-events: none;
 }
 
@@ -124,13 +119,13 @@
 
 .spiral-hint {
   position: fixed;
-  left: var(--grid-margin);
+  right: var(--grid-margin);
   top: 50%;
   z-index: 5;
   font-size: 14px;
   opacity: 0.4;
   writing-mode: vertical-rl;
-  transform: translateY(-50%) rotate(180deg);
+  transform: translateY(-50%);
   pointer-events: none;
 }
 
@@ -159,21 +154,40 @@
   z-index: 10;
 }
 
+.list-item {
+  display: flex;
+  justify-content: center;
+}
+
+/* Meta sits above the title, so the title itself is exactly centred. */
 .list-link {
-  display: inline-block;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
   padding: calc(var(--grid-gutter) / 2) 0;
-  font-size: 60px;
-  font-weight: 500;
-  letter-spacing: -0.05em;
   transition: opacity 0.3s ease;
 }
 
 .list-meta {
-  margin-left: 8px;
-  font-size: 14px;
-  letter-spacing: -0.02em;
-  vertical-align: 2.1em;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
   opacity: 0.5;
+}
+
+.list-mask {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+}
+
+.list-title {
+  display: block;
+  font-size: 60px;
+  font-weight: 500;
+  letter-spacing: -0.05em;
+  line-height: 1;
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -209,10 +223,56 @@
 }
 
 @media (max-width: 900px) {
-  .list-link {
+  .list-title {
     font-size: 40px;
   }
   .list {
     padding-top: 20vh;
+  }
+}
+
+/* ---- Spiral ↔ list: enter motion (the exit runs in WorksPage via WAAPI) ---- */
+.works-stage[data-view='spiral'] .spiral-face {
+  animation: face-in 0.7s var(--ease-spring) both;
+  animation-delay: calc(min(var(--ad, 0), 3) * 70ms);
+}
+
+.works-stage[data-view='spiral'] .spiral-caption {
+  animation: caption-rise 0.6s var(--ease-expo-out) 0.2s both;
+}
+
+.works-stage[data-view='list'] .list-title {
+  animation: title-up 0.75s var(--ease-expo-out) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+.works-stage[data-view='list'] .list-meta {
+  animation: meta-in 0.6s ease both;
+  animation-delay: calc(120ms + var(--i, 0) * 60ms);
+}
+
+@keyframes face-in {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
+
+@keyframes caption-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@keyframes title-up {
+  from {
+    transform: translateY(105%);
+  }
+}
+
+@keyframes meta-in {
+  from {
+    opacity: 0;
   }
 }
