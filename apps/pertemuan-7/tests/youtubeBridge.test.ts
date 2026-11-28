@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { command, embedUrl, INITIAL_SNAPSHOT, listening, parseMessage, playedFraction, reduce, seekTarget } from '../src/video/youtubeBridge.ts';
+import { command, embedUrl, INITIAL_SNAPSHOT, listening, parseMessage, playedFraction, reduce, seekTarget, CAPTIONS_OFF, captionTrackActive } from '../src/video/youtubeBridge.ts';
 
 test('the embed URL hides YouTube chrome, enables the JS API and uses the no-cookie host', () => {
   const url = new URL(embedUrl('X7lZLkjGXXk', 'https://kxrumii.my.id'));
@@ -45,4 +45,13 @@ test('seeking and progress are clamped', () => {
   assert.equal(seekTarget(150, 100, 0, 60), 0);
   assert.equal(playedFraction({ currentTime: 30, duration: 60 }), 0.5);
   assert.equal(playedFraction({ currentTime: 5, duration: 0 }), 0);
+});
+
+test('caption state is read from apiInfoDelivery messages only', () => {
+  const asr = { languageCode: 'en', kind: 'asr' };
+  assert.equal(captionTrackActive({ event: 'apiInfoDelivery', info: { namespaces: ['captions'], captions: { track: asr } } }), true);
+  assert.equal(captionTrackActive({ event: 'apiInfoDelivery', info: { namespaces: ['captions'], captions: { track: {} } } }), false);
+  assert.equal(captionTrackActive({ event: 'apiInfoDelivery', info: { namespaces: ['spherical'] } }), null);
+  assert.equal(captionTrackActive({ event: 'infoDelivery', info: { currentTime: 3 } }), null);
+  assert.deepEqual(JSON.parse(command(...CAPTIONS_OFF)).args, ['captions', 'track', {}]);
 });

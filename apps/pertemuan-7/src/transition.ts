@@ -18,6 +18,10 @@ export const PAGE_ID = 'task-7';
 /** Harus tetap sama dengan `canvasFallback` Portal buat task-7 dan `--color-bg-dark`. */
 export const CANVAS = '#0a0a0a';
 
+/** Portal tugas (dokumen Astro di luar app ini) dan warna canvas cadangannya, sama dengan link balik P1/P6/P8. */
+export const PORTAL_HREF = '/tugas/';
+export const CANVAS_PORTAL = '#0b0b0b';
+
 const root = document.documentElement;
 
 declare global {
@@ -105,6 +109,25 @@ document.addEventListener(transitionEvents.transition, (event) => {
     publishCanvasColor(PAGE_ID, CANVAS);
   }
 });
+
+/** Resolve begitu nggak ada transisi yang jalan (bridge nolak navigasi baru selama masih sibuk). */
+export function whenTransitionIdle(timeoutMs = 2500): Promise<void> {
+  if (!root.dataset.transitionState) return Promise.resolve();
+  return new Promise((resolve) => {
+    const done = () => {
+      document.removeEventListener(transitionEvents.transition, onPhase);
+      window.clearTimeout(timer);
+      // Kasih satu frame biar bridge selesai beres-beres (busy = false) sebelum klik berikutnya.
+      requestAnimationFrame(() => resolve());
+    };
+    const onPhase = (event: Event) => {
+      const phase = (event as CustomEvent<{ phase?: string }>).detail?.phase;
+      if (phase === 'enter-end' || phase === 'recovered') done();
+    };
+    const timer = window.setTimeout(done, timeoutMs);
+    document.addEventListener(transitionEvents.transition, onPhase);
+  });
+}
 
 /** Tandai page-ready setelah route commit. Idempoten, jadi double effect StrictMode aman. */
 export function usePageReady(routeKey?: string): void {

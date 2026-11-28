@@ -116,7 +116,6 @@ export const StarField = memo(function StarField({ starsOn, origin }: StarFieldP
         if (nowMs >= nextShootingAt) {
           shooting.push(createShootingStar(width, Math.random));
           nextShootingAt = nowMs + nextShootingDelayMs(Math.random);
-          playSound('shoot');
         }
       }
       stepWake(wake, dt, still ? 0.3 : 0.9);

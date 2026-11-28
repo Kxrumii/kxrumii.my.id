@@ -62,6 +62,9 @@ const accessibleLabel = `${project.number}, ${project.title.id}, ${project.categ
         <figure class="preview-tile" data-preview={preview.key}>
           <span class="preview-veil">
             <img
+              src={preview.image}
+              width={preview.image ? 960 : undefined}
+              height={preview.image ? 640 : undefined}
               alt=""
               loading="eager"
               data-alt-id={preview.altId}

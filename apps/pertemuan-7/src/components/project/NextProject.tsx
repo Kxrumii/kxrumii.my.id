@@ -2,7 +2,7 @@ import type { CSSProperties, Ref } from 'react';
 import { playSound } from '../../audio/sound';
 import { useTransitionNavigate } from '../../transition';
 import type { Work } from '../../types';
-import { assetUrl } from '../../utils/works';
+import { assetUrl, isSquare } from '../../utils/works';
 import { TransitionLink } from '../TransitionLink';
 import { WorkCover } from '../WorkCover';
 
@@ -26,6 +26,7 @@ export function NextProject({ next, number, fillRef }: NextProjectProps) {
       <a
         href={assetUrl(`work/${next.slug}`)}
         className="next-image"
+        data-shape={isSquare(next) ? 'square' : undefined}
         aria-label={`next project: ${next.title}`}
         onPointerEnter={() => playSound('hover')}
         onClick={(event) => {

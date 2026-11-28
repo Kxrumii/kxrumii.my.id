@@ -20,6 +20,11 @@ export interface Work {
   styleframes: string[];
   /** Rasio tampilan video (lebar / tinggi), hasil ffprobe file asli. */
   aspect: number;
+  /**
+   * Rasio video yang di-upload ke YouTube kalau beda dengan isinya (mis. kotak 1:1 di dalam file 16:9):
+   * player melebarkan embed segini biar bar hitamnya jatuh di luar frame.
+   */
+  embedAspect: number;
   /** Ada loop preview bisu (`<slug>.mp4`): dev dari local-media/previews, prod dari media/previews. */
   preview: boolean;
   /** null = video belum ada di YouTube (tampil "video segera hadir"). */

@@ -60,6 +60,20 @@
   cursor: pointer;
 }
 
+/* Karya persegi (Sundays): media tampil kotak utuh di tengah, kiri-kanannya latar gelap preview. */
+.project-preview[data-shape='square'] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  container-type: size;
+}
+
+.project-preview[data-shape='square'] :is(.project-preview-cover, .project-preview-video) {
+  width: min(100cqw, 100cqh);
+  height: auto;
+  aspect-ratio: 1;
+}
+
 .project-preview-cover,
 .project-preview-video {
   display: block;
@@ -208,6 +222,10 @@
   transform: scale(calc(1.5 - 0.5 * var(--sf)));
 }
 
+.styleframes[data-shape='square'] .styleframe-image {
+  aspect-ratio: 1;
+}
+
 /* Project berikutnya: satu layar penuh di bawah kartu; terus scroll buat ngisi bar di kanan. */
 .next-project {
   position: relative;
@@ -255,6 +273,14 @@
   width: 100%;
   aspect-ratio: 16 / 9;
   border-radius: var(--radius-m);
+}
+
+.next-image[data-shape='square'] {
+  width: calc(var(--grid-column) * 3 + var(--grid-gutter) * 2);
+}
+
+.next-image[data-shape='square'] .next-cover {
+  aspect-ratio: 1;
 }
 
 .next-tag {
@@ -624,10 +650,11 @@
  */
 .player-frame iframe {
   position: absolute;
-  left: 0;
+  /* --embed-scale > 1: file YouTube-nya lebih lebar dari isinya, jadi embed dilebarkan dan bar kiri-kanannya kepotong. */
+  left: calc(50% - 50% * var(--embed-scale, 1));
   top: -90px;
   display: block;
-  width: 100%;
+  width: calc(100% * var(--embed-scale, 1));
   height: calc(100% + 180px);
   border: 0;
 }

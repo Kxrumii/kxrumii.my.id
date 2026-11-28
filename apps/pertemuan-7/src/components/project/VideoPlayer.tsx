@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties, type Poin
 import { createPortal } from 'react-dom';
 import { playSound, setMusicDucked } from '../../audio/sound';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
-import { command, embedUrl, INITIAL_SNAPSHOT, listening, parseMessage, playedFraction, reduce, seekTarget, type Command, type PlayerSnapshot } from '../../video/youtubeBridge';
+import { CAPTIONS_OFF, captionTrackActive, command, embedUrl, INITIAL_SNAPSHOT, listening, parseMessage, playedFraction, reduce, seekTarget, type Command, type PlayerSnapshot } from '../../video/youtubeBridge';
 
 interface VideoPlayerProps {
   videoId: string;
@@ -10,6 +10,8 @@ interface VideoPlayerProps {
   poster: string | null;
   /** Lebar / tinggi video: frame disesuaikan, jadi nggak ada letterbox yang nutupin poster blur. */
   aspect: number;
+  /** Rasio file di YouTube; lebih lebar dari `aspect` artinya ada bar hitam yang perlu dibuang. */
+  embedAspect?: number;
   /** Empat still buat scrubber, urut waktu. */
   thumbs: string[];
   onClose: () => void;
@@ -25,7 +27,7 @@ const SEEK_STEP_S = 5;
  * sendiri, dikendalikan lewat postMessage (lihat video/youtubeBridge.ts).
  * Tombol: Space/K play-pause, M mute, ←/→ ±5 s, Esc close. Musik dibisukan selama player kebuka.
  */
-export function VideoPlayer({ videoId, title, poster, aspect, thumbs, onClose }: VideoPlayerProps) {
+export function VideoPlayer({ videoId, title, poster, aspect, embedAspect = aspect, thumbs, onClose }: VideoPlayerProps) {
   const reducedMotion = useReducedMotion();
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const playRef = useRef<HTMLButtonElement>(null);
@@ -37,6 +39,7 @@ export function VideoPlayer({ videoId, title, poster, aspect, thumbs, onClose }:
   const progressRef = useRef<HTMLSpanElement>(null);
   const anchor = useRef({ time: 0, at: 0 });
   const idleTimer = useRef(0);
+  const captionsOn = useRef(false);
 
   const send = useCallback((func: Command, args: unknown[] = []) => {
     iframeRef.current?.contentWindow?.postMessage(command(func, args), 'https://www.youtube-nocookie.com');
@@ -73,12 +76,15 @@ export function VideoPlayer({ videoId, title, poster, aspect, thumbs, onClose }:
       if (event.source !== iframeRef.current?.contentWindow) return;
       const message = parseMessage(event.origin, event.data);
       if (!message) return;
+      const captions = captionTrackActive(message);
+      if (captions !== null) captionsOn.current = captions;
       setSnapshot((current) => {
         const next = reduce(current, message);
-        // Caption otomatis jangan nutupin gambar: dimatiin pas ready dan sekali lagi pas playback mulai
-        // (YouTube memuat modul caption belakangan).
-        if ((next.ready && !current.ready) || (next.playing && !current.playing)) {
-          send('unloadModule', ['captions']);
+        // YouTube suka nyalain caption otomatis sendiri. Begitu ketahuan nyala dan videonya sudah main, track-nya
+        // dikosongin (unloadModule nggak mempan, dan setOption sebelum main malah ngeberhentiin playback).
+        if (captionsOn.current && next.playing) {
+          captionsOn.current = false;
+          send(...CAPTIONS_OFF);
         }
         if (next.currentTime !== current.currentTime) anchor.current = { time: next.currentTime, at: performance.now() };
         return next;
@@ -170,7 +176,7 @@ export function VideoPlayer({ videoId, title, poster, aspect, thumbs, onClose }:
       role="dialog"
       aria-modal="true"
       aria-label={`${title} — video`}
-      style={{ '--aspect': String(aspect), ...(poster ? { '--poster': `url("${poster}")` } : {}) } as CSSProperties}
+      style={{ '--aspect': String(aspect), '--embed-scale': String(Math.max(1, embedAspect / aspect)), ...(poster ? { '--poster': `url("${poster}")` } : {}) } as CSSProperties}
       onPointerMove={wake}
       // Event React bubble lewat portal: klik di player jangan sampai ke preview yang membukanya.
       onClick={(event) => event.stopPropagation()}

@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import type { Work } from '../../types';
-import { assetUrl } from '../../utils/works';
+import { assetUrl, isSquare } from '../../utils/works';
 import { WorkCover } from '../WorkCover';
 
 interface ProjectStyleframesProps {
@@ -52,7 +52,7 @@ export function ProjectStyleframes({ work, number }: ProjectStyleframesProps) {
   if (frames.length === 0) return null;
 
   return (
-    <section ref={ref} className="styleframes" aria-label="Styleframes">
+    <section ref={ref} className="styleframes" data-shape={isSquare(work) ? 'square' : undefined} aria-label="Styleframes">
       {frames.map((src, i) => (
         <figure key={i} className="styleframe">
           <WorkCover work={work} number={number} image={src ? assetUrl(src) : null} seed={`${work.slug}-frame-${i}`} className="styleframe-image" />

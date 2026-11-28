@@ -17,6 +17,7 @@
  *   3. Kalau nggak, tiga momen sampel paling detail, urut waktu (nggak pernah frame hitam).
  *   4. Nggak ada video lokal tapi ada di YouTube: frame otomatis YouTube (hq1–hq3, sekitar 25/50/75 %), dicrop ke 16:9.
  *   Kalau jumlahnya bukan 3, set jumlah yang sama di src/data/works.ts (`{ frames: n }`).
+ *   Karya dengan `crop: "w:h:x:y"` (mis. Sundays yang isinya kotak) di-crop dulu: cover, styleframe, dan preview-nya ikut.
  *
  * Loop preview (local-media/previews/<slug>.mp4, TIDAK di-commit; upload manual ke
  *   <webroot>/tugas/pertemuan-7/media/previews/<slug>.mp4): 6 detik, muted, 720p, mulai dari styleframe pertama.
@@ -46,7 +47,8 @@ const WORKS = [
   { slug: 'uin-one-for-all', file: '', youtube: 'KbnBCMy2QwM' },
   { slug: 'ilusi-garis-kemiskinan', file: 'ILUSI GARIS KEMISKINAN.mp4' },
   { slug: 'rahmatan-lil-alamin', file: 'RLAA.mp4' },
-  { slug: 'sundays', file: 'Sundays2.mp4' },
+  // Sumbernya 1920×1080 dengan isi kotak 1072×1072 di tengah (cropdetect): bar hitam kiri-kanan dibuang.
+  { slug: 'sundays', file: 'Sundays2.mp4', crop: '1072:1072:424:4' },
 ];
 
 /** Momen kandidat (pecahan durasi) yang diskor detailnya. */
@@ -72,6 +74,11 @@ function duration(file) {
   return Number.parseFloat(String(out));
 }
 
+/** Tempel `crop=w:h:x:y` di depan filter kalau karyanya punya crop (dipakai cuma buat sumber video lokal). */
+function withCrop(crop, filter) {
+  return crop ? `crop=${crop},${filter}` : filter;
+}
+
 /** Satu frame video (di detik `atS`), atau gambar diam, sebagai webp lebar 1280. */
 function still(file, atS, out, filter = STILL_FILTER) {
   const seek = atS === null ? [] : ['-ss', atS.toFixed(2)];
@@ -90,10 +97,10 @@ function detail(file, atS) {
   return Math.sqrt(variance / raw.length);
 }
 
-function preview(file, atS, out) {
+function preview(file, atS, out, crop = null) {
   execFileSync('ffmpeg', [
     '-v', 'error', '-y', '-ss', atS.toFixed(2), '-t', String(PREVIEW_S), '-i', file,
-    '-an', '-vf', 'scale=-2:720,fps=30', '-c:v', 'libx264', '-preset', 'slow', '-crf', '27', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', out,
+    '-an', '-vf', withCrop(crop, 'scale=-2:720,fps=30'), '-c:v', 'libx264', '-preset', 'slow', '-crf', '27', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', out,
   ]);
 }
 
@@ -167,7 +174,7 @@ for (const work of WORKS) {
       continue;
     }
     const at = work.cover ? parseTimestamp(work.cover) : scored[0].at;
-    still(source, at, join(dir, 'cover.webp'));
+    still(source, at, join(dir, 'cover.webp'), withCrop(work.crop, STILL_FILTER));
     done.push(`cover @ ${at.toFixed(1)} s`);
   }
 
@@ -189,7 +196,7 @@ for (const work of WORKS) {
       ? work.frames.map(parseTimestamp)
       : scored.slice(skip, skip + AUTO_FRAMES).map((s) => s.at).sort((a, b) => a - b);
     for (const at of moments) if (at > length) throw new Error(`${work.slug}: ${at} s is past the end (${length.toFixed(1)} s)`);
-    moments.forEach((at, i) => still(source, at, join(dir, `f${i + 1}.webp`)));
+    moments.forEach((at, i) => still(source, at, join(dir, `f${i + 1}.webp`), withCrop(work.crop, STILL_FILTER)));
     pruneFrames(dir, moments.length);
     firstFrameAt = moments[0];
     done.push(`${moments.length} frames @ ${moments.map((at) => at.toFixed(1)).join(', ')} s`);
@@ -198,7 +205,7 @@ for (const work of WORKS) {
   if (!onlyStills && hasSource) {
     mkdirSync(join(media, 'previews'), { recursive: true });
     const start = Math.max(0, Math.min(firstFrameAt, length - PREVIEW_S));
-    preview(source, start, join(media, 'previews', `${work.slug}.mp4`));
+    preview(source, start, join(media, 'previews', `${work.slug}.mp4`), work.crop);
     done.push('preview');
   }
   console.log(`ok ${work.slug}: ${done.join(', ')}`);

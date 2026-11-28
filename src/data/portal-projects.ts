@@ -4,6 +4,8 @@ export interface PortalPreview {
   key: string;
   altId: string;
   altEn: string;
+  /** Screenshot asli halamannya (960×640, dari folder public); kosong = placeholder SVG di portal.ts. */
+  image?: string;
 }
 
 export interface PortalProject {
@@ -27,8 +29,8 @@ export const portalProjects: PortalProject[] = [
     title: { id: 'Profil', en: 'Profile' },
     category: { id: '[HTML5]', en: '[HTML5]' },
     previews: [
-      { key: 'profile-home', altId: 'Tampilan utama profil', altEn: 'Profile homepage preview' },
-      { key: 'profile-details', altId: 'Bagian biodata dan detail', altEn: 'Profile details preview' },
+      { key: 'profile-home', altId: 'Tampilan utama profil', altEn: 'Profile homepage preview', image: '/portal/previews/profile-home.webp' },
+      { key: 'profile-details', altId: 'Bagian biodata dan detail', altEn: 'Profile details preview', image: '/portal/previews/profile-details.webp' },
     ],
   },
   {
@@ -39,8 +41,8 @@ export const portalProjects: PortalProject[] = [
     title: { id: 'Task Manager', en: 'Task Manager' },
     category: { id: '[TypeScript · Vite]', en: '[TypeScript · Vite]' },
     previews: [
-      { key: 'task-list', altId: 'Daftar tugas', altEn: 'Task list preview' },
-      { key: 'task-form', altId: 'Form tambah atau edit tugas', altEn: 'Task form preview' },
+      { key: 'task-list', altId: 'Daftar tugas', altEn: 'Task list preview', image: '/portal/previews/task-list.webp' },
+      { key: 'task-form', altId: 'Form tambah atau edit tugas', altEn: 'Task form preview', image: '/portal/previews/task-form.webp' },
     ],
   },
   {
@@ -51,8 +53,8 @@ export const portalProjects: PortalProject[] = [
     title: { id: 'Showreel', en: 'Showreel' },
     category: { id: '[Karya Edit · React]', en: '[Edit Works · React]' },
     previews: [
-      { key: 'portfolio-spiral', altId: 'Showreel dalam bentuk spiral', altEn: 'Showreel spiral view' },
-      { key: 'portfolio-list', altId: 'Showreel dalam bentuk daftar', altEn: 'Showreel list view' },
+      { key: 'portfolio-spiral', altId: 'Showreel dalam bentuk spiral', altEn: 'Showreel spiral view', image: '/portal/previews/portfolio-spiral.webp' },
+      { key: 'portfolio-list', altId: 'Showreel dalam bentuk daftar', altEn: 'Showreel list view', image: '/portal/previews/portfolio-list.webp' },
     ],
   },
   {

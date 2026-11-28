@@ -13,7 +13,7 @@ import { startMusic, type MusicStatus } from './music';
  *   jadi jadwal musik tinggal pause dan lanjut di tempat.
  * - Video yang lagi main bikin musik ducking.
  */
-export type SoundName = 'hover' | 'click' | 'open' | 'close' | 'enter' | 'switch' | 'spiral' | 'list' | 'next' | 'stars' | 'trail' | 'ripple' | 'shoot';
+export type SoundName = 'hover' | 'click' | 'open' | 'close' | 'enter' | 'switch' | 'spiral' | 'list' | 'next' | 'stars' | 'trail' | 'ripple';
 
 export interface SoundSnapshot {
   supported: boolean;
@@ -234,9 +234,6 @@ export function playSound(name: SoundName, amount = 0.5, afterResume = false): v
       tone(110, at, 0.14, 0.35, 'sine', 0.005);
       tone(1318.51, at + 0.02, 0.05, 1.1, 'sine', 0.01);
       tone(1975.53, at + 0.05, 0.03, 1.3, 'sine', 0.01);
-      break;
-    case 'shoot':
-      filteredNoise(at, 5200, 1400, 0.5, 0.056, 'highpass');
       break;
   }
 }

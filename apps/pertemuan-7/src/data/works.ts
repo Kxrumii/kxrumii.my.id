@@ -30,6 +30,8 @@ interface WorkDetails {
   notes?: string | null;
   /** Rasio tampilan video (lebar / tinggi); default 16:9. */
   aspect?: number;
+  /** Rasio file yang di-upload ke YouTube kalau beda dengan `aspect`; default sama. */
+  embedAspect?: number;
   /** Jumlah styleframe di public/works/<slug>/ (f1…fN); default 3. */
   frames?: number;
   /** Ada loop preview lokal (local-media/previews/<slug>.mp4); default true. */
@@ -37,7 +39,7 @@ interface WorkDetails {
 }
 
 const work = (slug: string, title: string, details: WorkDetails): Work => {
-  const { youtubeVideoId, category, year = null, role = null, summary = null, notes = null, aspect = 16 / 9, frames = 3, preview = true } = details;
+  const { youtubeVideoId, category, year = null, role = null, summary = null, notes = null, aspect = 16 / 9, embedAspect = aspect, frames = 3, preview = true } = details;
   return {
     slug,
     title,
@@ -49,6 +51,7 @@ const work = (slug: string, title: string, details: WorkDetails): Work => {
     cover: `works/${slug}/cover.webp`,
     styleframes: Array.from({ length: frames }, (_, i) => `works/${slug}/f${i + 1}.webp`),
     aspect,
+    embedAspect,
     preview,
     youtubeVideoId,
     externalUrl: youtubeVideoId ? `https://www.youtube.com/watch?v=${youtubeVideoId}` : null,
@@ -117,6 +120,9 @@ export const works: Work[] = [
   work('sundays', 'Sundays', {
     youtubeVideoId: null,
     category: 'edit',
+    // Isinya kotak 1072×1072 di tengah file 1920×1080: media di-crop 1:1 (tools/media.mjs), embed YouTube-nya nanti tetap 16:9.
+    aspect: 1,
+    embedAspect: 16 / 9,
     role: 'editing',
     summary:
       'Editan ini kubikin sebagai rasa terima kasihku buat teman-temanku atas waktunya selama SMA. Thx for everything. Aeta nara tomo ni warao. 会えたなら共に笑おう.',

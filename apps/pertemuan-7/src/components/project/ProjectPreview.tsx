@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { playSound } from '../../audio/sound';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import type { Work } from '../../types';
-import { assetUrl, coverImage, previewUrl } from '../../utils/works';
+import { assetUrl, coverImage, isSquare, previewUrl } from '../../utils/works';
 import { Letters } from '../PillButton';
 import { WorkCover } from '../WorkCover';
 import { VideoPlayer } from './VideoPlayer';
@@ -33,7 +33,7 @@ export function ProjectPreview({ work, number }: ProjectPreviewProps) {
   };
 
   return (
-    <div className={`project-preview${playable ? ' playable' : ''}`} onClick={openPlayer}>
+    <div className={`project-preview${playable ? ' playable' : ''}`} data-shape={isSquare(work) ? 'square' : undefined} onClick={openPlayer}>
       {loop ? (
         <video
           className="project-preview-video"
@@ -66,7 +66,7 @@ export function ProjectPreview({ work, number }: ProjectPreviewProps) {
         <span className="project-play project-play-soon">video segera hadir</span>
       )}
       {open && work.youtubeVideoId ? (
-        <VideoPlayer videoId={work.youtubeVideoId} title={work.title} poster={poster} aspect={work.aspect} thumbs={thumbs} onClose={() => setOpen(false)} />
+        <VideoPlayer videoId={work.youtubeVideoId} title={work.title} poster={poster} aspect={work.aspect} embedAspect={work.embedAspect} thumbs={thumbs} onClose={() => setOpen(false)} />
       ) : null}
     </div>
   );

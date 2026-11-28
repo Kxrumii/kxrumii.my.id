@@ -74,6 +74,11 @@ export function coverPalette(slug: string): CoverPalette {
 }
 
 /** URL gambar cover karya: still sendiri, kalau nggak ada still YouTube, kalau nggak ada null (cover generatif). */
+/** Karya yang isinya kotak (1:1): halaman detailnya nampilin media persegi utuh, bukan di-crop ke bingkai lebar. */
+export function isSquare(work: Pick<Work, 'aspect'>): boolean {
+  return Math.abs(work.aspect - 1) < 0.01;
+}
+
 export function coverImage(work: Work): string | null {
   if (work.cover) return assetUrl(work.cover);
   if (work.youtubeVideoId) return `https://i.ytimg.com/vi/${encodeURIComponent(work.youtubeVideoId)}/hqdefault.jpg`;

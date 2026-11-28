@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { categoryLabel, works } from '../src/data/works.ts';
 import type { Work } from '../src/types.ts';
 import { interleave } from '../src/utils/interleave.ts';
-import { coverImage, coverPalette, findWork, nextWork, prevWork, workNumber } from '../src/utils/works.ts';
+import { coverImage, coverPalette, findWork, isSquare, nextWork, prevWork, workNumber } from '../src/utils/works.ts';
 
 const publicDir = fileURLToPath(new URL('../public/', import.meta.url));
 
@@ -20,6 +20,7 @@ const make = (slug: string, extra: Partial<Work> = {}): Work => ({
   cover: null,
   styleframes: [],
   aspect: 16 / 9,
+  embedAspect: 16 / 9,
   preview: false,
   youtubeVideoId: null,
   externalUrl: null,
@@ -110,4 +111,15 @@ test('interleave caps images to the gaps that exist', () => {
   assert.equal(interleave('a b', 5).filter((p) => p.kind === 'image').length, 1);
   assert.equal(interleave('solo', 3).filter((p) => p.kind === 'image').length, 0);
   assert.deepEqual(interleave('', 2), []);
+});
+
+test('Sundays is shown square while its future YouTube upload stays 16:9', () => {
+  const sundays = works.find((work) => work.slug === 'sundays')!;
+  assert.equal(sundays.aspect, 1);
+  assert.equal(sundays.embedAspect, 16 / 9);
+  assert.equal(isSquare(sundays), true);
+  for (const work of works.filter((w) => w.slug !== 'sundays')) {
+    assert.equal(isSquare(work), false);
+    assert.equal(work.embedAspect, work.aspect);
+  }
 });

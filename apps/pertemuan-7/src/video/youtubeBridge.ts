@@ -27,7 +27,7 @@ export interface PlayerSnapshot {
 
 export const INITIAL_SNAPSHOT: PlayerSnapshot = { ready: false, playing: false, ended: false, muted: false, currentTime: 0, duration: 0 };
 
-export type Command = 'playVideo' | 'pauseVideo' | 'mute' | 'unMute' | 'seekTo' | 'unloadModule';
+export type Command = 'playVideo' | 'pauseVideo' | 'mute' | 'unMute' | 'seekTo' | 'setOption';
 
 /** URL embed: tanpa chrome YouTube (kontrol kita yang gantiin), JS API on, autoplay setelah klik user. */
 export function embedUrl(videoId: string, origin: string): string {
@@ -99,6 +99,22 @@ export function reduce(snapshot: PlayerSnapshot, message: YouTubeMessage): Playe
   }
   return snapshot;
 }
+
+/**
+ * Status caption dari pesan `apiInfoDelivery` embed: true kalau ada track yang nyala (mis. "English
+ * (auto-generated)" yang dinyalain YouTube sendiri), false kalau track-nya kosong, null kalau pesannya bukan
+ * soal caption.
+ */
+export function captionTrackActive(message: YouTubeMessage): boolean | null {
+  if (message.event !== 'apiInfoDelivery' || !message.info || typeof message.info !== 'object') return null;
+  const info = message.info as { namespaces?: unknown; captions?: { track?: unknown } };
+  if (!Array.isArray(info.namespaces) || !info.namespaces.includes('captions')) return null;
+  const track = info.captions?.track as { languageCode?: unknown } | undefined;
+  return typeof track?.languageCode === 'string' && track.languageCode !== '';
+}
+
+/** Perintah buat matiin track caption. Cuma aman dikirim pas video lagi main (sebelum itu playback-nya berhenti). */
+export const CAPTIONS_OFF: [Command, unknown[]] = ['setOption', ['captions', 'track', {}]];
 
 /** Target seek (detik) buat pointer di `x` pada scrubber yang membentang [left, left + width]. */
 export function seekTarget(x: number, left: number, width: number, duration: number): number {
