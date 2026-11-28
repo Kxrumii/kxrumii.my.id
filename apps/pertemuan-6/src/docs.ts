@@ -17,11 +17,11 @@ try {
 
   initThemeToggle(requireElement(document, '#theme-toggle', HTMLButtonElement));
 
-  // Nilai env hanya ditulis lewat textContent.
+  // Nilai env cuma ditulis lewat textContent.
   requireElement(document, '#env-app-name', HTMLElement).textContent = appName;
   requireElement(document, '#env-app-version', HTMLElement).textContent = appVersion;
   requireElement(document, '#current-year', HTMLElement).textContent = String(new Date().getFullYear());
 } finally {
-  // Selalu beri sinyal siap agar dokumen dokumentasi tidak pernah tertahan di pre-state transisi.
+  // Selalu kirim sinyal siap, biar halaman dokumentasi nggak nyangkut di pre-state transisi.
   bridge.markPageReady();
 }

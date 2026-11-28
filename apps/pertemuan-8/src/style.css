@@ -25,11 +25,11 @@ h1 { max-width: 800px; margin: 12px 0 20px; font: 700 clamp(42px, 8vw, 76px)/.98
 @media (max-width: 760px) { .book-grid { grid-template-columns: 1fr; } .site-header { align-items: flex-start; flex-direction: column; } }
 
 /*
- * Placeholder page motion (POC v0.4 Task 8 exit); final motion ships with the
- * Task 8 design. Enter also starts from a negative offset so the 100vh shell
- * never gains a temporary horizontal scrollbar.
+ * Gerak halaman sementara (POC v0.4 exit Task 8); gerak finalnya ikut desain Task 8.
+ * Enter juga mulai dari offset negatif supaya shell 100vh nggak sempat dapat
+ * scrollbar horizontal.
  */
-/* Timing values are unitless milliseconds: the bridge reads them with parseFloat, and CSS minification would rewrite `520ms` as `.52s`. */
+/* Timing sengaja unitless (ms): bridge bacanya pakai parseFloat, dan minify CSS bakal ngubah `520ms` jadi `.52s`. */
 [data-transition-exit] {
   --transition-exit-duration: 460;
   --transition-stagger: 60;
@@ -41,9 +41,8 @@ h1 { max-width: 800px; margin: 12px 0 20px; font: 700 clamp(42px, 8vw, 76px)/.98
   --transition-enter-from-clip: inset(0 100% 0 0);
 }
 
-/* Transition interaction lock: while the shared transition is leaving or
-   entering, elements that are not already hovered stop receiving the pointer,
-   so no new hover effect starts mid-transition. Ends with the bridge state. */
+/* Kunci interaksi saat transisi: elemen yang belum di-hover berhenti nerima pointer,
+   supaya nggak ada efek hover baru di tengah transisi. Selesai bareng state bridge. */
 :root[data-transition-state] body :not(:hover) {
   pointer-events: none !important;
 }

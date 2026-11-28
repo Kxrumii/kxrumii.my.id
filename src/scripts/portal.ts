@@ -21,8 +21,8 @@ const themeColors: Record<Mood, string> = {
 const MOOD_STORAGE_KEY = 'kxrumii-portal-mood-v2';
 const LANGUAGE_STORAGE_KEY = 'kxrumii-portal-language';
 const LANGUAGE_DURATION = 850;
-// A balanced ease keeps the hand-off visibly moving instead of almost jumping
-// to its destination in the first 100 ms.
+// Ease yang seimbang biar hand-off kelihatan bergerak, nggak hampir loncat ke tujuan
+// di 100 ms pertama.
 const LANGUAGE_EASING = 'cubic-bezier(.16, 1, .3, 1)';
 
 let currentLanguage: Language = 'id';
@@ -152,9 +152,9 @@ function allLanguageTargets(): HTMLElement[] {
 }
 
 function languageTargets(): HTMLElement[] {
-  // Only animate content the user can currently see. Closed About copy and the
-  // off-screen skip link are localized immediately after the visible hand-off,
-  // so they do not create a long artificial stagger on the project list.
+  // Animasikan cuma konten yang lagi kelihatan. Copy About yang tertutup dan skip link
+  // di luar layar dilokalisasi langsung setelah hand-off kelihatan, supaya nggak
+  // bikin stagger panjang buatan di daftar proyek.
   return allLanguageTargets().filter((element) => {
     if (element.closest('#about-panel') && !getRoot().classList.contains('about-open')) return false;
     if (element.matches('.skip-link') && document.activeElement !== element) return false;
@@ -203,7 +203,7 @@ function setMood(value: Mood, persist = false): void {
     try {
       localStorage.setItem(MOOD_STORAGE_KEY, value);
     } catch {
-      // The current page theme still works when storage is unavailable.
+      // Tema halaman saat ini tetap jalan walau storage nggak tersedia.
     }
   }
 }
@@ -266,7 +266,7 @@ function updateLanguageSemantics(value: Language, persist: boolean): void {
     try {
       localStorage.setItem(LANGUAGE_STORAGE_KEY, value);
     } catch {
-      // The selected language remains active for this page view.
+      // Bahasa terpilih tetap aktif selama page view ini.
     }
   }
 }
@@ -341,9 +341,9 @@ async function animateElementLanguageSwap(
   if (window.getComputedStyle(element).display === 'inline') {
     element.style.display = 'inline-block';
   }
-  // Clip only vertically. Keeping the horizontal axis visible lets a longer
-  // translated title remain legible while its host width and category position
-  // morph together; the clipped stage still creates the vertical text roll.
+  // Clip cuma vertikal. Sumbu horizontal dibiarkan kelihatan supaya judul terjemahan yang
+  // lebih panjang tetap terbaca selagi lebar host dan posisi kategori ber-morph bareng;
+  // stage yang di-clip tetap bikin efek gulung teks vertikal.
   element.style.overflowX = 'visible';
   element.style.overflowY = 'clip';
   element.style.width = `${oldWidth}px`;
@@ -358,9 +358,9 @@ async function animateElementLanguageSwap(
   const newWidth = flow ? oldWidth : Math.max(newRect.width + horizontalPadding, 1);
   const newHeight = Math.max(newRect.height + verticalPadding, 1);
 
-  // Both language lines occupy one clipped viewport. The old line exits upward
-  // while the new line rises from below; the host geometry morphs at the same
-  // time so the number/category layout follows the changing title width.
+  // Kedua baris bahasa ada di satu viewport yang di-clip. Baris lama keluar ke atas, baris
+  // baru naik dari bawah; geometri host ber-morph bersamaan supaya layout nomor/kategori
+  // ngikutin lebar judul yang berubah.
   oldLine.style.height = `${oldHeight}px`;
   newLine.style.height = `${newHeight}px`;
   oldLine.style.boxSizing = 'border-box';
@@ -394,8 +394,8 @@ async function animateElementLanguageSwap(
   await Promise.allSettled([trackAnimation.finished, sizeAnimation.finished]);
   const finalNodes = Array.from(newLine.childNodes);
   element.replaceChildren(...finalNodes);
-  // WAAPI fill effects remain active after `finished`; cancel them explicitly
-  // so subsequent language swaps never inherit stale dimensions or transforms.
+  // Efek fill WAAPI tetap aktif setelah `finished`; di-cancel eksplisit supaya pergantian
+  // bahasa berikutnya nggak mewarisi dimensi atau transform yang basi.
   trackAnimation.cancel();
   sizeAnimation.cancel();
   restoreInlineStyles(element, previousStyles);
@@ -538,13 +538,13 @@ function initializePortalPage(): void {
     if (isMood(savedMood)) initialMood = savedMood;
     if (savedLanguage === 'id' || savedLanguage === 'en') initialLanguage = savedLanguage;
   } catch {
-    // Keep the default Dark / Indonesian state without browser storage.
+    // Default Dark / Indonesia tetap jalan tanpa browser storage.
   }
 
   setMood(initialMood);
   if (isPortalContentPrepared(initialLanguage)) {
-    // The transition module pre-localizes a detached Portal document before
-    // swap. Do not rebuild its text nodes while the entrance animation runs.
+    // Modul transisi sudah melokalisasi dokumen Portal yang belum dipasang sebelum swap.
+    // Jangan bangun ulang text node-nya selagi animasi masuk jalan.
     currentLanguage = initialLanguage;
     updateLanguageSemantics(initialLanguage, false);
   } else {

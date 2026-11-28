@@ -131,7 +131,7 @@ describe('createMotionRegistry (grup, pembatalan, dan pembersihan)', () => {
 
     assert.equal(registry.activeCount(), 0);
 
-    // Pembatalan ulang saat animasi sudah selesai tidak melempar error
+    // Pembatalan ulang saat animasi sudah selesai nggak melempar error
     const alreadyDone: AnimationLike = {
       finished: Promise.resolve(),
       cancel() {
@@ -165,7 +165,7 @@ describe('bindBridgeCancellation (integrasi Shared Transition Bridge)', () => {
 
     const unbind = bindBridgeCancellation(target, registry, flushes);
 
-    // Fase lain tidak membatalkan
+    // Fase lain nggak membatalkan
     target.dispatchEvent(new CustomEvent('kxrumii:transition', { detail: { phase: 'enter-start' } }));
     assert.equal(anim.cancelled(), false);
     assert.equal(flushCalls, 0);
@@ -216,7 +216,7 @@ describe('createDeleteCoordinator (persist-first, fallback 300ms, dan flush)', (
     assert.equal(coordinator.isPending(), true);
 
     completeAnim();
-    // Pemanggilan ganda callback tidak dieksekusi dua kali
+    // Pemanggilan ganda callback nggak dieksekusi dua kali
     completeAnim();
     assert.deepEqual(log, [
       'persist',
@@ -296,7 +296,7 @@ describe('createDeleteCoordinator (persist-first, fallback 300ms, dan flush)', (
       clearTimer: () => {},
     });
 
-    // Hapus kedua sebelum pertama selesai (atau target tidak ada di DOM)
+    // Hapus kedua sebelum pertama selesai (atau target nggak ada di DOM)
     coordinator.start({
       persist: () => log.push('persist-2'),
       hasTarget: false,
@@ -355,7 +355,7 @@ describe('CP1 FLIP & view-switch geometry helpers', () => {
   });
 
   it('computeFlipDelta menghitung delta pusat, mengkompensasi parentScale, mengekang skala, dan meredam sub-pixel <= 1px', () => {
-    // Sub-pixel threshold <= 1px dianggap tidak bergerak
+    // Sub-pixel threshold <= 1px dianggap nggak bergerak
     const tiny = computeFlipDelta(
       { left: 100, top: 200, width: 300, height: 120 },
       { left: 100.8, top: 199.3, width: 300, height: 120 },
@@ -638,7 +638,7 @@ describe('reconcileOrbitalStage (keyed DOM & invariants)', () => {
     assert.equal(box2.disabled, true);
     assert.equal(box2.tabIndex, -1);
     assert.equal(cap2.dataset.captionFor, '2');
-    // Transform luar tetap tidak disentuh selama exit
+    // Transform luar tetap nggak disentuh selama exit
     assert.equal((box2 as unknown as MockHTMLButtonElement).style.transform, 'translate3d(40px, 12px, 0)');
     assert.equal((cap2 as unknown as MockHTMLElement).style.transform, 'translate3d(20px, 90px, 0)');
 

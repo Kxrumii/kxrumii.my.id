@@ -1,8 +1,8 @@
 @import './fonts.css';
 
 /*
- * Theme tokens. Dark is the default; theme.ts / the inline head script sets data-theme.
- * Light border `--t6-line-2` (#6b6961) satisfies WCAG 1.4.11 >= 3:1 against canvas & surfaces.
+ * Token tema. Default-nya gelap; theme.ts / script inline di head yang set data-theme.
+ * Border terang `--t6-line-2` (#6b6961) lolos WCAG 1.4.11 (>= 3:1) terhadap canvas & surface.
  */
 :root,
 :root[data-theme='dark'] {
@@ -103,7 +103,7 @@ p {
   color: var(--t6-muted);
 }
 
-/* Primary Orbital Stage Shell */
+/* Cangkang panggung orbital utama */
 .stage-shell {
   display: flex;
   flex-direction: column;
@@ -144,7 +144,7 @@ p {
   gap: 14px;
 }
 
-/* Utility Bar (Status Filters + Real-Time Search) */
+/* Utility Bar (filter status + pencarian real-time) */
 .utility-bar {
   flex: none;
   display: flex;
@@ -384,7 +384,7 @@ p {
   font-variant-numeric: tabular-nums;
 }
 
-/* Individual Art-Directed Print Boxes (NO transparent/outline style) */
+/* Kotak print dengan art direction masing-masing (TANPA gaya transparan/outline) */
 .task-box {
   position: absolute;
   top: 50%;
@@ -498,7 +498,7 @@ p {
   display: none;
 }
 
-/* Solid Curated Surfaces — Light & Dark verified >= 4.5:1 contrast */
+/* Surface solid pilihan: kontras >= 4.5:1 sudah dicek di terang & gelap */
 :root[data-theme='light'] .task-box[data-tone='paper'] .box-print {
   background: #f4f3ef;
   color: #141413;
@@ -563,7 +563,7 @@ p {
   color: #f4efe6;
 }
 
-/* Texture Surface — subtle architectural grain, drafting dots, or hairline grid */
+/* Surface texture: grain arsitektural halus, titik gambar teknik, atau grid garis tipis */
 :root[data-theme='light'] .task-box[data-surface='texture'] .box-print {
   background-color: #efede7;
   color: #141413;
@@ -611,7 +611,7 @@ p {
   background-size: 18px 18px;
 }
 
-/* Completed task state: readable muted studio print */
+/* Tugas selesai: print studio yang kebaca tapi redup */
 :root[data-theme='light'] .task-box[data-done='true'] .box-print {
   background-color: #dbd9d0;
   color: #3d3c37;
@@ -627,7 +627,7 @@ p {
   text-decoration-thickness: 1.5px;
 }
 
-/* Six Expressive Typographic Archetypes (5 SIL OFL 1.1 families) */
+/* Enam arketipe tipografi ekspresif (5 keluarga SIL OFL 1.1) */
 .task-box[data-archetype='serif-split'] .box-cover-lines {
   font: 400 20cqw / 0.96 var(--t6-font-serif);
   letter-spacing: -0.04em;
@@ -700,7 +700,7 @@ p {
   letter-spacing: -0.03em;
 }
 
-/* External Floating Caption Pill */
+/* Pill caption melayang di luar kotak */
 .box-caption {
   position: absolute;
   top: 0;
@@ -723,7 +723,7 @@ p {
   opacity: 0.78;
 }
 
-/* Accessible List View (Two-Column Editorial Grid on Desktop/Tablet, 1-Col Mobile) */
+/* List View aksesibel (grid editorial 2 kolom di desktop/tablet, 1 kolom di mobile) */
 .list-view {
   flex: 1 1 0;
   min-height: 0;
@@ -915,7 +915,7 @@ p {
   color: var(--t6-muted);
 }
 
-/* Checkbox grouped beside status badge */
+/* Checkbox sebelahan dengan badge status */
 .status-toggle {
   display: inline-flex;
   align-items: center;
@@ -954,7 +954,7 @@ p {
   outline-offset: 2px;
 }
 
-/* Empty States */
+/* Empty state */
 .empty-stage {
   flex: 1 1 0;
   min-height: 0;
@@ -991,7 +991,7 @@ p {
   color: var(--t6-muted);
 }
 
-/* Archival Footer */
+/* Footer arsip */
 .stage-footer {
   flex: none;
   display: flex;
@@ -1202,7 +1202,7 @@ p {
   outline-offset: 2px;
 }
 
-/* Reader Dialog (af-reader inspired full sheet) */
+/* Reader Dialog (terinspirasi af-reader, sheet penuh) */
 .reader-dialog {
   width: 100%;
   max-width: none;
@@ -1401,7 +1401,7 @@ p {
   outline-offset: 2px;
 }
 
-/* Task Add/Edit & Delete Dialogs */
+/* Dialog tambah/edit & hapus */
 .task-dialog {
   width: min(480px, calc(100% - 32px));
   max-height: 92dvh;
@@ -1491,7 +1491,7 @@ p {
   font-weight: 600;
 }
 
-/* Documentation Page Compatibility */
+/* Kompatibilitas halaman Dokumentasi */
 .shell {
   width: min(1200px, calc(100% - 40px));
   margin: 0 auto;
@@ -1683,7 +1683,7 @@ p {
   color: var(--t6-muted);
 }
 
-/* Responsive Breakpoints */
+/* Breakpoint responsif */
 @media (max-width: 767px) {
   .topbar {
     gap: 6px 12px;
@@ -1908,7 +1908,7 @@ p {
   }
 }
 
-/* Shared Transition Bridge (vertical clip-hidden aligned with Task 6 motion language; unitless ms) */
+/* Shared Transition Bridge (clip-hidden vertikal, searah bahasa gerak Task 6; ms tanpa satuan) */
 [data-transition-exit],
 [data-transition-enter] {
   --transition-exit-duration: 360;

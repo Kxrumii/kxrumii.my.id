@@ -1,0 +1,803 @@
+/* ---- Project (layout mengikuti referensi: kartu putih, lalu karya berikutnya) ---- */
+.project {
+  position: relative;
+  z-index: 1;
+}
+
+.project-card {
+  /* Route enter: naik dan membesar ke tempatnya, bukan wipe default. */
+  --transition-enter-from-transform: translate3d(0, 80px, 0) scale(0.96);
+  --transition-enter-from-clip: inset(0 0 0 0);
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  margin: var(--grid-margin);
+  overflow: hidden;
+  border-radius: var(--radius-l);
+  background: var(--color-white);
+  color: var(--color-bg-dark);
+}
+
+.project-card :focus-visible {
+  outline-color: var(--color-bg-dark);
+}
+
+.project-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control);
+  height: var(--control);
+  border-radius: 50%;
+  background: var(--color-bg-dark);
+  color: var(--color-white);
+}
+
+.project-close svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.2s ease;
+}
+
+.project-close:hover svg {
+  transform: rotate(90deg);
+}
+
+.project-preview {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - var(--grid-margin));
+  overflow: hidden;
+  background: var(--color-bg-grey);
+}
+
+.project-preview.playable {
+  cursor: pointer;
+}
+
+/* Karya persegi (Sundays): media tampil kotak utuh di tengah, kiri-kanannya latar gelap preview. */
+.project-preview[data-shape='square'] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  container-type: size;
+}
+
+.project-preview[data-shape='square'] :is(.project-preview-cover, .project-preview-video) {
+  width: min(100cqw, 100cqh);
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.project-preview-cover,
+.project-preview-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  object-fit: cover;
+}
+
+/* "video segera hadir": pill gelap yang inert (karyanya belum ada di YouTube). */
+.project-play.project-play-soon {
+  background: var(--color-bg-dark);
+  color: var(--color-white);
+  white-space: nowrap;
+  cursor: default;
+}
+
+.project-play.project-play-soon::before {
+  display: none;
+}
+
+.project-play.project-play-soon:hover {
+  transform: translate(-50%, -50%);
+}
+
+.project-play {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 24px;
+  border-radius: 50px;
+  background: var(--color-white);
+  color: var(--color-bg-dark);
+  font-size: 18px;
+  font-weight: 500;
+  transform: translate(-50%, -50%);
+  transition: transform 0.3s var(--ease-spring);
+}
+
+.project-play::before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 10px solid currentColor;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+}
+
+.project-play:hover {
+  transform: translate(-50%, -50%) scale(1.06);
+}
+
+.project-infos {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--grid-gutter);
+  width: 100%;
+  padding: 60px calc(var(--grid-column) + var(--grid-gutter));
+}
+
+.project-title {
+  width: calc(var(--grid-column) * 5 + var(--grid-gutter) * 4);
+  font-size: 56px;
+  font-weight: 500;
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+.project-right {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 40px;
+  padding-top: 8px;
+}
+
+.project-meta {
+  font-size: 14px;
+  opacity: 0.55;
+}
+
+.project-text {
+  max-width: calc(var(--grid-column) * 3 + var(--grid-gutter) * 2);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+.project-sample {
+  font-size: 14px;
+  color: #0b8f6a;
+}
+
+/* Tiap blok naik dari mask-nya sendiri pas pertama kali kelihatan. */
+.reveal {
+  display: block;
+  overflow: hidden;
+  /* Ruang buat ekor huruf (g, y, p, j) biar nggak kepotong mask-nya. */
+  padding-bottom: 0.18em;
+  margin-bottom: -0.18em;
+}
+
+.reveal > span {
+  display: block;
+  transform: translateY(110%);
+  transition: transform 0.9s var(--ease-expo-out);
+  transition-delay: inherit;
+}
+
+.reveal.in > span {
+  transform: none;
+}
+
+.styleframes {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  width: 100%;
+  padding: 60px calc(var(--grid-column) + var(--grid-gutter)) calc(var(--grid-column) + var(--grid-gutter));
+}
+
+.styleframe {
+  --sf: 0;
+  display: flex;
+  width: calc(var(--grid-column) * 5 + var(--grid-gutter) * 4);
+  margin: 0;
+  overflow: hidden;
+  border-radius: 14px;
+  opacity: var(--sf);
+  transform: scale(calc(0.5 + 0.5 * var(--sf)));
+  transform-origin: center;
+}
+
+.styleframe:nth-child(2n) {
+  align-self: flex-end;
+}
+
+.styleframe-image {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  transform: scale(calc(1.5 - 0.5 * var(--sf)));
+}
+
+.styleframes[data-shape='square'] .styleframe-image {
+  aspect-ratio: 1;
+}
+
+/* Project berikutnya: satu layar penuh di bawah kartu; terus scroll buat ngisi bar di kanan. */
+.next-project {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap-l);
+  height: 100vh;
+  padding: var(--grid-margin);
+}
+
+.next-back {
+  position: absolute;
+  top: var(--grid-margin);
+  font-size: 14px;
+  opacity: 0.7;
+}
+
+.next-back::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.15s ease-in-out;
+}
+
+.next-back:hover::before {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.next-image {
+  position: relative;
+  display: block;
+  width: calc(var(--grid-column) * 6 + var(--grid-gutter) * 5);
+}
+
+.next-cover {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-m);
+}
+
+.next-image[data-shape='square'] {
+  width: calc(var(--grid-column) * 3 + var(--grid-gutter) * 2);
+}
+
+.next-image[data-shape='square'] .next-cover {
+  aspect-ratio: 1;
+}
+
+.next-tag {
+  position: absolute;
+  padding: 8px 16px;
+  border-radius: 50px;
+  background: var(--color-white);
+  color: var(--color-bg-dark);
+  font-size: 24px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: transform 0.4s var(--ease-spring);
+}
+
+.next-tag-top {
+  top: -20px;
+  right: -60px;
+  background: var(--color-pop);
+  rotate: -8deg;
+}
+
+.next-tag-bottom {
+  bottom: -20px;
+  left: -60px;
+  rotate: 9deg;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .next-image:hover .next-tag-top {
+    transform: translate(6px, -6px);
+  }
+  .next-image:hover .next-tag-bottom {
+    transform: translate(-6px, 6px);
+  }
+}
+
+.next-title {
+  position: absolute;
+  left: 50%;
+  bottom: -60px;
+  font-size: 24px;
+  font-weight: 500;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.next-progress {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: var(--grid-margin);
+  display: flex;
+  align-items: center;
+  width: 6px;
+}
+
+.next-progress::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 25%;
+  bottom: 25%;
+  border-radius: 100px;
+  background: var(--color-white-20);
+}
+
+.next-progress-fill {
+  --progress: 0;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 25%;
+  bottom: 25%;
+  border-radius: 100px;
+  background: var(--color-white);
+  transform: scaleY(var(--progress));
+  transform-origin: top center;
+}
+
+@media (max-width: 900px) {
+  .project-infos {
+    flex-direction: column;
+    gap: 30px;
+    padding: 40px var(--grid-margin);
+  }
+  .project-title {
+    width: 100%;
+    font-size: 40px;
+  }
+  .project-text {
+    max-width: 100%;
+    font-size: 16px;
+  }
+  .project-preview {
+    height: 60vh;
+  }
+  .styleframes {
+    gap: 24px;
+    padding: 24px var(--grid-margin);
+  }
+  .styleframe {
+    width: 100%;
+  }
+  .next-image {
+    width: 100%;
+  }
+  .next-tag-top {
+    display: none;
+  }
+  .next-tag-bottom {
+    top: -10px;
+    bottom: auto;
+    left: -5px;
+    background: var(--color-pop);
+    font-size: 18px;
+    rotate: -8deg;
+  }
+  .next-title {
+    bottom: -45px;
+    font-size: 18px;
+  }
+  .next-progress {
+    right: 8px;
+    width: 4px;
+  }
+}
+
+/* ---- About ---- */
+.about {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-xl);
+  padding: 150px var(--grid-margin) 160px;
+}
+
+.about-text {
+  max-width: calc(var(--grid-column) * 11 + var(--grid-gutter) * 10);
+  font-size: clamp(34px, 5vw, 84px);
+  font-weight: 500;
+  letter-spacing: -0.055em;
+  line-height: 1.04;
+}
+
+.about-image {
+  display: inline-block;
+  vertical-align: -0.08em;
+}
+
+.about-image .cover {
+  display: inline-block;
+  width: 1.45em;
+  height: 0.9em;
+  border-radius: 0.16em;
+  transform: rotate(-4deg);
+  transition: transform 0.5s var(--ease-spring);
+}
+
+.about-image:nth-of-type(even) .cover {
+  transform: rotate(5deg);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .about-image .cover:hover {
+    transform: rotate(0deg) scale(1.15);
+  }
+}
+
+.about-quote {
+  max-width: 34ch;
+  margin: calc(var(--gap-xl) * -0.5) 0 0;
+  font-size: 18px;
+  font-style: italic;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  opacity: 0.55;
+}
+
+.about-sample {
+  margin-top: calc(var(--gap-xl) * -0.6);
+  font-size: 14px;
+  color: var(--color-pop);
+}
+
+.about-footer {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--grid-gutter);
+  padding-top: var(--gap-m);
+  border-top: 1px solid var(--color-white-20);
+}
+
+.about-label {
+  margin-bottom: 14px;
+  font-size: 14px;
+  opacity: 0.5;
+}
+
+.about-mail {
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.about-credits {
+  display: grid;
+  gap: 6px;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.about-credits .about-label {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 900px) {
+  .about {
+    padding-top: 120px;
+  }
+  .about-footer {
+    grid-template-columns: 1fr;
+    gap: var(--gap-m);
+  }
+}
+
+/* ---- Not found ---- */
+.not-found {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--gap-m);
+  min-height: 100dvh;
+  text-align: center;
+}
+
+.not-found h1 {
+  font-size: clamp(48px, 8vw, 120px);
+  font-weight: 500;
+  letter-spacing: -0.06em;
+}
+
+/* ---- Hint project sebelumnya (scroll ke atas melewati puncak) ---- */
+.prev-hint {
+  position: fixed;
+  top: var(--grid-margin);
+  left: 0;
+  right: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  margin-inline: auto;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(-12px);
+  transition:
+    opacity 0.25s ease,
+    transform 0.4s var(--ease-spring);
+}
+
+.prev-hint[data-active='true'] {
+  opacity: 1;
+  transform: none;
+}
+
+.prev-pill {
+  padding: 8px 16px;
+  border-radius: 50px;
+  background: var(--color-pop);
+  color: var(--color-bg-dark);
+  font-size: 16px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.prev-bar {
+  position: relative;
+  width: 120px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 100px;
+  background: var(--color-white-20);
+}
+
+.prev-fill {
+  --progress: 0;
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--color-white);
+  transform: scaleX(var(--progress));
+  transform-origin: left center;
+}
+
+/* ---- Video player (mengikuti referensi): poster blur, video contain, pill kontrol putih ---- */
+.player {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow: hidden;
+  background-color: var(--color-bg-dark);
+  background-image: var(--poster, none);
+  background-position: center;
+  background-size: cover;
+  animation: player-in 0.4s ease-in-out 0.1s both;
+  transform-origin: bottom center;
+}
+
+.player::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgb(10 10 10 / 0.35);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  pointer-events: none;
+}
+
+.player[data-state='closing'] {
+  animation: player-out 0.4s ease-in-out both;
+}
+
+@keyframes player-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+    border-radius: 16px 16px 0 0;
+  }
+}
+
+@keyframes player-out {
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+    border-radius: 16px 16px 0 0;
+  }
+}
+
+.player-video {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  /* Ruang buat pill kontrol di bawah frame. */
+  padding: var(--grid-margin) var(--grid-margin) 110px;
+}
+
+/* Ukurannya ikut rasio videonya sendiri, sebesar yang muat: poster blur kelihatan di sekelilingnya. */
+.player-frame {
+  position: relative;
+  width: min(100%, calc((100vh - 110px - var(--grid-margin)) * var(--aspect, 1.7778)));
+  aspect-ratio: var(--aspect, 1.7778);
+  overflow: hidden;
+  border-radius: var(--radius-m);
+  background: #000;
+  box-shadow: 0 30px 80px rgb(0 0 0 / 0.45);
+}
+
+/*
+ * Embed-nya lebih tinggi dari frame lalu di-crop: YouTube menyesuaikan video ke lebar iframe, jadi gambar pas
+ * memenuhi frame, sementara strip di atas dan bawah (tempat YouTube naruh judul, "More videos", dan logo)
+ * jatuh di luar area yang kelihatan.
+ */
+.player-frame iframe {
+  position: absolute;
+  /* --embed-scale > 1: file YouTube-nya lebih lebar dari isinya, jadi embed dilebarkan dan bar kiri-kanannya kepotong. */
+  left: calc(50% - 50% * var(--embed-scale, 1));
+  top: -90px;
+  display: block;
+  width: calc(100% * var(--embed-scale, 1));
+  height: calc(100% + 180px);
+  border: 0;
+}
+
+.player-shield {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  cursor: pointer;
+}
+
+.player[data-idle='true'] .player-shield {
+  cursor: none;
+}
+
+.player-controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 30px;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  transition:
+    opacity 0.4s ease,
+    transform 0.4s var(--ease-expo-out);
+}
+
+.player[data-idle='true'] .player-controls {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.player[data-idle='true'] {
+  cursor: none;
+}
+
+.player-inner {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 20px;
+  padding: var(--gap-xs);
+  border-radius: var(--radius-xl);
+  background: var(--color-white);
+  pointer-events: auto;
+}
+
+.player-button,
+.player-close {
+  position: relative;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: var(--control);
+  height: var(--control);
+  border-radius: 50%;
+  color: var(--color-white);
+}
+
+.player-button svg,
+.player-close svg {
+  position: relative;
+  width: 22px;
+  height: 22px;
+}
+
+.player-button-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--color-bg-dark);
+  transition: transform 0.15s ease-out;
+}
+
+.player-button:hover .player-button-bg {
+  transform: scale(0.9);
+}
+
+.player-close {
+  margin-left: var(--gap-s);
+  background: var(--color-pop);
+  color: var(--color-bg-dark);
+  transition: transform 0.15s ease-out;
+}
+
+.player-close:hover {
+  transform: scale(0.9);
+}
+
+.player-thumbs {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin-left: var(--gap-s);
+  overflow: hidden;
+  border-radius: 10px;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.player-thumbs:focus-visible {
+  outline-color: var(--color-bg-dark);
+}
+
+.player-thumb {
+  display: block;
+  overflow: hidden;
+}
+
+.player-thumb img {
+  display: block;
+  width: auto;
+  height: 48px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+/* Bagian yang belum diputar diredupkan; tepi kirinya (garis putih) adalah playhead. */
+.player-progress {
+  --remaining: 1;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  border-left: 3px solid var(--color-white);
+  background: rgb(10 10 10 / 0.6);
+  transform: scaleX(var(--remaining));
+  transform-origin: center right;
+  pointer-events: none;
+}
+
+@media (max-width: 900px) {
+  .player-thumb img {
+    height: 36px;
+  }
+  .player-thumb:nth-child(n + 3) {
+    display: none;
+  }
+  .player-thumbs {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

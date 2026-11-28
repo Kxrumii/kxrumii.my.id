@@ -1,14 +1,14 @@
 /**
- * Shared Transition Bridge adapter for the Astro documents (Home and Portal).
+ * Adapter Shared Transition Bridge buat dokumen Astro (Home dan Portal).
  *
- * - Home ↔ Portal stays on Astro's ClientRouter and page-transitions.ts; those
- *   links carry no `data-transition-link`, so the bridge never intercepts them.
- * - Portal → Vite app links (`data-transition-link="document"` +
- *   `data-astro-reload`) leave through the bridge, reusing the approved Portal
- *   leaving choreography. Its measured length schedules the canvas hand-off.
- * - Arrivals from a Vite app reuse the approved Home/Portal entering state.
- * - ClientRouter swaps replace every <html> attribute, so the bridge is
- *   destroyed before each swap and installed again for the new page.
+ * - Home ↔ Portal tetap lewat ClientRouter Astro dan page-transitions.ts; link-nya
+ *   nggak punya `data-transition-link`, jadi bridge nggak pernah mencegatnya.
+ * - Link Portal → app Vite (`data-transition-link="document"` + `data-astro-reload`)
+ *   keluar lewat bridge, pakai ulang koreografi leaving Portal yang disetujui. Panjang
+ *   hasil ukurnya dipakai buat menjadwalkan hand-off canvas.
+ * - Kedatangan dari app Vite pakai ulang state entering Home/Portal yang disetujui.
+ * - Swap ClientRouter mengganti semua atribut <html>, jadi bridge di-destroy sebelum
+ *   tiap swap dan dipasang lagi buat halaman baru.
  */
 import {
   installTransitionBridge,
@@ -29,8 +29,8 @@ import {
 } from './page-transitions';
 
 const HOME_CANVAS = '#0b0b0b';
-// Safety ceiling only (same bound as the Home ↔ Portal fallback). The canvas
-// schedule comes from the measured choreography below, not from this value.
+// Cuma batas pengaman (sama dengan fallback Home ↔ Portal). Jadwal canvas diambil
+// dari koreografi hasil ukur di bawah, bukan dari nilai ini.
 const EXIT_MAX_MS = 1500;
 const EXIT_FALLBACK_PROPERTY = '--transition-exit-fallback-ms';
 const DEBUG_STORAGE_KEY = 'kxrumii:transition-debug';
@@ -53,15 +53,14 @@ function debugEnabled(): boolean {
 }
 
 /**
- * Portal exit: start the approved leaving choreography, measure the CSS
- * transitions it actually started (delays and stagger included), and publish
- * that length before returning so the bridge schedules the canvas from it
- * (start at 55 %, finish together with the content).
+ * Exit Portal: mulai koreografi leaving yang disetujui, ukur transisi CSS yang benar-benar
+ * jalan (delay dan stagger ikut), lalu publikasikan panjangnya sebelum return supaya
+ * bridge menjadwalkan canvas dari situ (mulai di 55 %, selesai bareng konten).
  */
 function portalDocumentExit(context: ExitEnterContext): Promise<unknown> {
   const transitions = beginPortalDocumentExit();
 
-  // Nothing measurable: keep the bridge's approved fallback timing.
+  // Nggak ada yang bisa diukur: pakai timing fallback bridge yang disetujui.
   if (!transitions.length) return Promise.resolve();
 
   const measured = remainingMs(transitions);
@@ -103,15 +102,15 @@ function install(): void {
     pageCanvasColor: HOME_CANVAS,
     getCanvasColor: kind === 'portal' ? currentMoodColor : () => HOME_CANVAS,
     exitMaxMs: EXIT_MAX_MS,
-    // ClientRouter already prefetches hovered/focused links on these pages;
-    // a second <link rel="prefetch"> from the bridge would duplicate it.
+    // ClientRouter sudah prefetch link yang di-hover/fokus di halaman ini; <link rel="prefetch">
+    // kedua dari bridge cuma duplikat.
     prefetch: false,
     exit: kind === 'portal' ? portalDocumentExit : undefined,
     enter: documentEnter,
   });
 
   if (bridge.incoming && !prefersReducedMotion()) armBridgeEnter(kind);
-  // The server-rendered shell is complete when this module runs.
+  // Shell hasil server-render sudah lengkap saat modul ini jalan.
   bridge.markPageReady();
 }
 
@@ -134,8 +133,8 @@ function guardNavigationDuringExit(event: MouseEvent): void {
     root.classList.contains('home-transition-leaving') ||
     (root.classList.contains('portal-transition-leaving') && !root.classList.contains(PORTAL_DOCUMENT_EXIT_CLASS));
 
-  // While the bridge leaves, no other navigation may start. While Astro leaves,
-  // only bridge links are held back; Astro ↔ Astro behaviour is unchanged.
+  // Selama bridge keluar, navigasi lain nggak boleh mulai. Selama Astro keluar, cuma link
+  // bridge yang ditahan; perilaku Astro ↔ Astro nggak berubah.
   if (bridgeLeaving || (astroLeaving && link.matches('a[data-transition-link]'))) {
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -146,7 +145,7 @@ const adapterWindow = window as Window & { __kxrumiiBridgeAdapterInstalled?: boo
 if (!adapterWindow.__kxrumiiBridgeAdapterInstalled) {
   adapterWindow.__kxrumiiBridgeAdapterInstalled = true;
 
-  // Registered before the bridge's own capture listener so it runs first.
+  // Didaftarkan sebelum capture listener milik bridge supaya jalan duluan.
   document.addEventListener('click', guardNavigationDuringExit, true);
 
   document.addEventListener(transitionEvents.transition, (event) => {

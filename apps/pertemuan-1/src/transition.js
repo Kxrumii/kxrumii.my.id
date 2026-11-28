@@ -1,7 +1,7 @@
 /*
- * Shared Transition Bridge for Task 1 (HTML-first page).
- * The page is usable as soon as this module runs, so page-ready is immediate.
- * The canvas colour follows the existing light/dark theme class on <html>.
+ * Shared Transition Bridge buat Task 1 (halaman HTML-first).
+ * Halaman langsung kepakai begitu modul ini jalan, jadi page-ready langsung.
+ * Warna canvas ngikutin class tema terang/gelap di <html>.
  */
 import { installTransitionBridge } from '@kxrumii/transition-bridge';
 
@@ -17,8 +17,8 @@ const bridge = installTransitionBridge({
   getCanvasColor: themeCanvas,
 });
 
-// The theme toggle lives in the page's inline script; observe its result
-// instead of changing that script.
+// Toggle tema ada di script inline halaman; aku amati hasilnya aja,
+// script-nya nggak diubah.
 let currentCanvas = themeCanvas();
 new MutationObserver(() => {
   const next = themeCanvas();

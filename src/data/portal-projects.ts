@@ -4,14 +4,16 @@ export interface PortalPreview {
   key: string;
   altId: string;
   altEn: string;
+  /** Screenshot asli halamannya (960×640, dari folder public); kosong = placeholder SVG di portal.ts. */
+  image?: string;
 }
 
 export interface PortalProject {
   number: string;
   href: string;
-  /** Shared Transition Bridge page id of the destination app. */
+  /** Page id Shared Transition Bridge dari app tujuan. */
   transitionPage: string;
-  /** Destination canvas colour used until that app has published its own. */
+  /** Warna canvas tujuan sampai app itu publikasikan warnanya sendiri. */
   canvasFallback: string;
   title: Record<PortalLanguage, string>;
   category: Record<PortalLanguage, string>;
@@ -27,8 +29,8 @@ export const portalProjects: PortalProject[] = [
     title: { id: 'Profil', en: 'Profile' },
     category: { id: '[HTML5]', en: '[HTML5]' },
     previews: [
-      { key: 'profile-home', altId: 'Tampilan utama profil', altEn: 'Profile homepage preview' },
-      { key: 'profile-details', altId: 'Bagian biodata dan detail', altEn: 'Profile details preview' },
+      { key: 'profile-home', altId: 'Tampilan utama profil', altEn: 'Profile homepage preview', image: '/portal/previews/profile-home.webp' },
+      { key: 'profile-details', altId: 'Bagian biodata dan detail', altEn: 'Profile details preview', image: '/portal/previews/profile-details.webp' },
     ],
   },
   {
@@ -39,20 +41,20 @@ export const portalProjects: PortalProject[] = [
     title: { id: 'Task Manager', en: 'Task Manager' },
     category: { id: '[TypeScript · Vite]', en: '[TypeScript · Vite]' },
     previews: [
-      { key: 'task-list', altId: 'Daftar tugas', altEn: 'Task list preview' },
-      { key: 'task-form', altId: 'Form tambah atau edit tugas', altEn: 'Task form preview' },
+      { key: 'task-list', altId: 'Daftar tugas', altEn: 'Task list preview', image: '/portal/previews/task-list.webp' },
+      { key: 'task-form', altId: 'Form tambah atau edit tugas', altEn: 'Task form preview', image: '/portal/previews/task-form.webp' },
     ],
   },
   {
     number: '07',
     href: '/tugas/pertemuan-7/',
     transitionPage: 'task-7',
-    canvasFallback: '#10110f',
-    title: { id: 'Portofolio', en: 'Portfolio' },
-    category: { id: '[Karya Kreatif · React]', en: '[Creative Work · React]' },
+    canvasFallback: '#0a0a0a',
+    title: { id: 'Showreel', en: 'Showreel' },
+    category: { id: '[Karya Edit · React]', en: '[Edit Works · React]' },
     previews: [
-      { key: 'portfolio-work', altId: 'Halaman karya terpilih', altEn: 'Selected works page preview' },
-      { key: 'portfolio-playground', altId: 'Halaman playground', altEn: 'Playground page preview' },
+      { key: 'portfolio-spiral', altId: 'Showreel dalam bentuk spiral', altEn: 'Showreel spiral view', image: '/portal/previews/portfolio-spiral.webp' },
+      { key: 'portfolio-list', altId: 'Showreel dalam bentuk daftar', altEn: 'Showreel list view', image: '/portal/previews/portfolio-list.webp' },
     ],
   },
   {

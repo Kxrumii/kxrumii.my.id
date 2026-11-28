@@ -29,15 +29,15 @@ const ARCHETYPE_TONES: Record<BoxArchetype, readonly SolidTone[]> = {
   'condensed-poster': ['terracotta', 'cobalt', 'charcoal'],
 };
 
-/** Hash 32-bit deterministik dari `id` tugas agar gaya visual tetap stabil antar-render. */
+/** Hash 32-bit dari `id` tugas, supaya gaya visual stabil tiap render. */
 export function hashTaskId(id: number): number {
   const safeId = Number.isFinite(id) ? Math.abs(Math.trunc(id)) : 1;
   return (Math.imul(safeId || 1, 2654435761) >>> 0);
 }
 
 /**
- * Memilih gaya latar bawaan tanpa gambar: hanya `'solid'` atau `'texture'`.
- * Stabil per tugas lintas edit, filter, muat ulang, dan perubahan tema.
+ * Pilih gaya latar bawaan (cuma 'solid' atau 'texture'), stabil per tugas
+ * walau diedit, difilter, dimuat ulang, atau ganti tema.
  */
 export function resolveFallbackSurface(taskId: number): FallbackSurface {
   return hashTaskId(taskId) % 3 === 0 ? 'texture' : 'solid';
@@ -95,8 +95,8 @@ export function resolveSolidTone(
 }
 
 /**
- * Memecah judul menjadi 1–3 baris visual untuk sampul kotak tugas.
- * Judul penuh tetap utuh pada `aria-label` dan Reader Dialog.
+ * Pecah judul jadi 1–3 baris buat sampul kotak. Judul penuh tetap utuh
+ * di `aria-label` dan Reader Dialog.
  */
 export function splitTitleLines(title: string, maxLines = 3): string[] {
   const normalized = title.trim().replace(/\s+/g, ' ');
@@ -133,7 +133,7 @@ export function splitTitleLines(title: string, maxLines = 3): string[] {
     lines.push(current);
   }
 
-  // Ringkas baris terakhir hanya jika sangat panjang agar poster tetap terbaca.
+  // Baris terakhir diringkas cuma kalau kepanjangan, biar poster tetap kebaca.
   const limit = 28;
   return lines.slice(0, maxLines).map((line, index) => {
     if (index === maxLines - 1 && lines.length > maxLines) {
@@ -147,7 +147,7 @@ export function splitTitleLines(title: string, maxLines = 3): string[] {
   });
 }
 
-/** Menghasilkan spesifikasi visual lengkap untuk satu kotak tugas (siap diperluas untuk cover M3a). */
+/** Spesifikasi visual satu kotak tugas (nanti bisa diperluas buat cover M3a). */
 export function resolveBoxVisual(task: Task, urgency: DeadlineState): BoxVisualSpec {
   const archetype = resolveBoxArchetype(task, urgency);
   const surface = resolveFallbackSurface(task.id);

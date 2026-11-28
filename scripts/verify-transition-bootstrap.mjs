@@ -1,11 +1,11 @@
 /**
- * Verifies the shared transition bootstrap in the built site (run after `npm run build`).
+ * Verifikasi bootstrap transisi bersama di situs hasil build (jalankan setelah `npm run build`).
  *
- * - The seven application documents contain exactly one bootstrap script.
- * - Its text is identical to packages/transition-bridge/src/bootstrap.inline.js.
- * - It follows <meta charset> and precedes the first stylesheet, <style> and module script.
- * - Static redirect documents are byte-identical to their source and carry no bootstrap.
- * - No other generated HTML document contains the bootstrap.
+ * - Delapan dokumen aplikasi memuat tepat satu script bootstrap.
+ * - Teksnya identik dengan packages/transition-bridge/src/bootstrap.inline.js.
+ * - Letaknya setelah <meta charset> dan sebelum stylesheet, <style>, dan module script pertama.
+ * - Dokumen redirect statis byte-identik dengan sumbernya dan nggak punya bootstrap.
+ * - Dokumen HTML hasil generate lainnya nggak memuat bootstrap.
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
@@ -103,8 +103,8 @@ for (const { built, source } of STATIC_REDIRECTS) {
   if (builtBytes.toString('utf8').includes(MARKER)) fail(built, 'must not contain the bootstrap');
 }
 
-// The bridge reads timing variables with parseFloat as milliseconds. A unit
-// (for example `.52s` produced by CSS minification) would silently break motion.
+// Bridge membaca variabel timing pakai parseFloat sebagai milidetik. Kalau ada satuan
+// (misalnya `.52s` hasil minifikasi CSS), motion-nya diam-diam rusak.
 const TIMING_VARIABLE = /(--transition-(?:exit-duration|enter-duration|exit-delay|enter-delay|stagger|canvas-delay|canvas-duration|exit-fallback-ms))\s*:\s*([^;}]*)/g;
 function listFiles(directory, extension) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {

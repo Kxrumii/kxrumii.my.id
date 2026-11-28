@@ -1,6 +1,6 @@
 /**
- * Continuous text hand-off between the homepage and PAW archive.
- * The root HTML element is the shared canvas; body and page contents stay transparent.
+ * Hand-off teks yang nyambung antara homepage dan arsip PAW.
+ * Elemen root HTML jadi canvas bersama; body dan isi halaman dibiarkan transparan.
  */
 
 type PageIntent = 'to-portal' | 'to-home';
@@ -208,9 +208,9 @@ function prepareHomeText(doc: Document): void {
 }
 
 /**
- * Pre-localize the detached destination document before Astro swaps it in.
- * This avoids an ID-first flash and prevents page-load initialization from
- * replacing incoming elements while their entrance motion is already running.
+ * Lokalisasi dulu dokumen tujuan yang belum dipasang sebelum Astro swap.
+ * Biar nggak ada flash ID-dulu, dan init page-load nggak ngeganti elemen yang datang
+ * waktu gerak masuknya sudah jalan.
  */
 function preparePortalDocument(doc: Document): void {
   const language = getSavedLanguage();
@@ -301,14 +301,14 @@ async function animateOutgoing(intent: PageIntent): Promise<void> {
 
   const root = document.documentElement;
   root.classList.add(intent === 'to-portal' ? 'home-transition-leaving' : 'portal-transition-leaving');
-  // Flush the class change so every CSS transform transition is registered.
+  // Flush perubahan class supaya semua transisi CSS transform terdaftar.
   void root.offsetHeight;
 
   const selectors = intent === 'to-portal'
     ? '.transition-copy-char, .transition-copy-decoration'
     : '.route-reveal-line, .role-line--archive .role-letter, .role-button:hover .role-line--about .role-letter, .role-button:focus-visible .role-line--about .role-letter, .row-title .letter';
 
-  // The maximum calculated stagger + .84s movement is below this fallback.
+  // Stagger maksimum hasil hitungan + gerak .84s masih di bawah batas fallback ini.
   await waitForAnimations(collectAnimations(selectors), 1500);
 }
 
@@ -336,11 +336,10 @@ function finishTransitionState(): void {
 }
 
 /*
- * Transition interaction lock. While a route transition runs, CSS keyed on
- * `data-transition-lock` stops new hover effects from starting (see
- * page-transitions.css). It spans the outgoing motion, the document swap and
- * the incoming motion, and is released when the incoming transitions finish,
- * on failure, on bfcache restore, or by a safety timeout — never left stale.
+ * Kunci interaksi transisi. Selama transisi rute, CSS yang pakai `data-transition-lock`
+ * mencegah efek hover baru mulai (lihat page-transitions.css). Kunci mencakup gerak keluar,
+ * swap dokumen, dan gerak masuk; dilepas saat transisi masuk selesai, saat gagal, saat
+ * restore bfcache, atau lewat timeout pengaman, jadi nggak pernah nyangkut.
  */
 const INTERACTION_LOCK_ATTRIBUTE = 'data-transition-lock';
 const INTERACTION_LOCK_MAX_MS = 4000;
@@ -355,7 +354,7 @@ function setInteractionLock(root: HTMLElement): number {
   return token;
 }
 
-/** Removes the lock; with a token, only if no newer transition took it over. */
+/** Lepas kunci; kalau ada token, cuma kalau belum diambil alih transisi yang lebih baru. */
 export function releaseInteractionLock(token?: number): void {
   if (token !== undefined && token !== interactionLockToken) return;
   window.clearTimeout(interactionLockTimer);
@@ -387,8 +386,8 @@ function releaseIncomingText(): void {
   enterReleaseScheduled = true;
 
   const root = document.documentElement;
-  // Keep the incoming state for one paint, then release the masks. This starts
-  // the entrance motion at astro:after-swap instead of waiting for page-load.
+  // State masuk dipertahankan satu paint, baru mask dilepas. Gerak masuk jadi mulai di
+  // astro:after-swap, nggak nunggu page-load.
   requestAnimationFrame(() => {
     void root.offsetHeight;
     requestAnimationFrame(() => {
@@ -451,7 +450,7 @@ function installTransitionListeners(): void {
     if (!pendingIntent) return;
     const event = rawEvent as Event & { newDocument: Document };
     const destination = event.newDocument;
-    // Root attributes are replaced by the swap, so the lock travels with the new document.
+    // Atribut root diganti oleh swap, jadi kunci ikut pindah ke dokumen baru.
     setInteractionLock(destination.documentElement);
 
     if (pendingIntent === 'to-portal') {
@@ -493,14 +492,14 @@ if (!transitionWindow.__kxrumiiPageTransitionsInstalled) {
 }
 
 /* -------------------------------------------------------------------------
- * Shared Transition Bridge support (document navigation to/from Vite apps).
- * These helpers reuse the approved choreography classes above without
- * changing the Home ↔ Portal flow, which never sets the classes below.
+ * Dukungan Shared Transition Bridge (navigasi dokumen dari/ke app Vite).
+ * Helper ini pakai ulang class koreografi di atas; alur Home ↔ Portal nggak
+ * berubah karena nggak pernah set class di bawah.
  * ---------------------------------------------------------------------- */
 
 export type BridgeDocumentKind = 'home' | 'portal';
 
-/** Root modifier that exists only while the Portal leaves for a Vite document. */
+/** Modifier root yang cuma ada saat Portal keluar menuju dokumen Vite. */
 export const PORTAL_DOCUMENT_EXIT_CLASS = 'portal-document-exit';
 
 const BRIDGE_ARMED_CLASSES: Record<BridgeDocumentKind, string> = {
@@ -513,7 +512,7 @@ const BRIDGE_ENTERING_CLASSES: Record<BridgeDocumentKind, string> = {
   portal: 'portal-transition-entering',
 };
 
-// Elements whose transforms carry the approved choreography.
+// Elemen yang transform-nya membawa koreografi yang disetujui.
 const BRIDGE_MOTION_TARGETS: Record<BridgeDocumentKind, string> = {
   home: '.transition-copy-char, .transition-copy-decoration',
   portal: '.route-reveal-line, .role-letter, .row-title .letter',
@@ -524,9 +523,8 @@ const PORTAL_DOCUMENT_EXIT_TARGETS = `${BRIDGE_MOTION_TARGETS.portal}, .project-
 const MOTION_PROPERTIES = new Set(['transform', 'translate']);
 
 /**
- * Runs `mutate` and returns only the CSS transitions it started on `selector`
- * targets: transitions that existed before, other properties, other elements,
- * and idle/finished (cancelled) transitions are excluded.
+ * Jalankan `mutate`, lalu kembalikan cuma transisi CSS yang dimulainya pada target `selector`.
+ * Dikecualikan: transisi yang sudah ada sebelumnya, properti/elemen lain, dan transisi idle/selesai (cancelled).
  */
 export function collectNewTransitions(selector: string, mutate: () => void): CSSTransition[] {
   const targets = Array.from(document.querySelectorAll(selector));
@@ -550,7 +548,7 @@ export function collectNewTransitions(selector: string, mutate: () => void): CSS
   return started;
 }
 
-/** Longest remaining time in ms (delay + duration − elapsed) of the given animations. */
+/** Sisa waktu terpanjang (ms) dari animasi yang diberikan (delay + duration − elapsed). */
 export function remainingMs(animations: readonly Animation[]): number {
   let longest = 0;
   for (const animation of animations) {
@@ -566,17 +564,17 @@ function cancelAnimations(animations: readonly Animation[]): void {
     try {
       animation.cancel();
     } catch {
-      // Already finished or removed.
+      // Sudah selesai atau sudah dihapus.
     }
   }
 }
 
-/** Actual canvas colour of the Portal for the current mood. */
+/** Warna canvas Portal yang sebenarnya untuk mood saat ini. */
 export function currentMoodColor(): string {
   return getMoodColor(document.documentElement.dataset.mood ?? 'dark');
 }
 
-/** Starts the approved Portal leaving choreography for a Vite document navigation. */
+/** Mulai koreografi leaving Portal yang disetujui buat navigasi ke dokumen Vite. */
 export function beginPortalDocumentExit(): CSSTransition[] {
   const root = document.documentElement;
   return collectNewTransitions(PORTAL_DOCUMENT_EXIT_TARGETS, () => {
@@ -585,8 +583,8 @@ export function beginPortalDocumentExit(): CSSTransition[] {
 }
 
 /**
- * Puts an incoming document into the approved entering pre-state without
- * visible motion (the transitions created by arming are cancelled at once).
+ * Pasang dokumen yang datang ke pre-state entering yang disetujui tanpa gerak kelihatan
+ * (transisi yang dibuat saat arming langsung di-cancel).
  */
 export function armBridgeEnter(kind: BridgeDocumentKind): void {
   const root = document.documentElement;
@@ -597,7 +595,7 @@ export function armBridgeEnter(kind: BridgeDocumentKind): void {
   cancelAnimations(created);
 }
 
-/** Releases the entering pre-state; returns the approved enter transitions. */
+/** Lepas pre-state entering; kembalikan transisi enter yang disetujui. */
 export function releaseBridgeEnter(kind: BridgeDocumentKind): CSSTransition[] {
   const root = document.documentElement;
   if (!root.classList.contains(BRIDGE_ARMED_CLASSES[kind])) return [];
@@ -606,15 +604,15 @@ export function releaseBridgeEnter(kind: BridgeDocumentKind): CSSTransition[] {
   });
 }
 
-/** Removes the bridge arming markers once the enter has finished. */
+/** Hapus penanda arming bridge setelah enter selesai. */
 export function clearBridgeEnter(): void {
   document.documentElement.classList.remove(BRIDGE_ARMED_CLASSES.home, BRIDGE_ARMED_CLASSES.portal);
 }
 
 /**
- * Restores the resting state instantly after bfcache restore or a stalled
- * navigation: bridge-only state is removed, the shared route state is reset,
- * and transitions started by the reset are cancelled (no visible motion).
+ * Balikin state diam secara instan setelah restore bfcache atau navigasi macet:
+ * state khusus bridge dihapus, state rute bersama direset, dan transisi yang dimulai
+ * reset di-cancel (nggak ada gerak kelihatan).
  */
 export function recoverBridgeDocumentState(): void {
   const root = document.documentElement;

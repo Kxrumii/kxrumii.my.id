@@ -26,6 +26,7 @@
     "build": "npm run clean:generated && npm run build:apps && astro build",
     "preview": "astro preview",
     "verify:transition": "node scripts/verify-transition-bootstrap.mjs",
+    "favicons": "node scripts/build-favicons.mjs",
     "astro": "astro"
   },
   "dependencies": {

@@ -385,7 +385,7 @@ describe('initReaderDialog (reopen visibility, close animation cleanup & interac
     assert.equal(fix.dialog.getAnimations().length, 0);
     assert.equal(activeElementRef, trigger1);
 
-    // Buka ulang tugas kedua: tidak boleh ada animasi tutup fill:forwards tersisa
+    // Buka ulang tugas kedua: nggak boleh ada animasi tutup fill:forwards tersisa
     fix.reader.open(2, sampleTasks, sampleTasks, () => trigger2 as unknown as HTMLElement, today);
     assert.equal(fix.dialog.open, true);
     assert.equal(fix.titleEl.textContent, 'Makalah Arsitektur');
@@ -414,7 +414,7 @@ describe('initReaderDialog (reopen visibility, close animation cleanup & interac
     // Animasi masuk harus berjalan ulang karena sebelumnya dialog sedang menutup ke opacity:0
     assert.equal(recordedAnimations.length, 3);
 
-    // Penyelesaian promise animasi tutup lama tidak boleh menutup dialog yang baru dibuka
+    // Penyelesaian promise animasi tutup lama nggak boleh menutup dialog yang baru dibuka
     await closeAnim.finishNow();
     await recordedAnimations[2]!.finishNow();
     assert.equal(fix.dialog.open, true);
@@ -619,7 +619,7 @@ describe('initReaderDialog (reopen visibility, close animation cleanup & interac
       assert.equal(scheduledTimers.every((t) => t.cleared), true);
       assert.equal(searchTimerFired, false);
 
-      // Idempoten: exit-start kedua tidak error atau mengeksekusi callback dua kali
+      // Idempoten: exit-start kedua nggak error atau mengeksekusi callback dua kali
       assert.doesNotThrow(() => eventBus.dispatchEvent(exitEvent));
       assert.deepEqual(log, ['persist', 'delete-anim-cancel', 'render', 'announce']);
       assert.equal(restoreFocusCalled, 0);
@@ -646,7 +646,7 @@ describe('initReaderDialog (reopen visibility, close animation cleanup & interac
       assert.equal(valid.bottom, 450);
       assert.equal(valid.clipPath, 'inset(200.0px 780.0px 450.0px 100.0px)');
 
-      // Dialog yang tidak dimulai dari (0, 0)
+      // Dialog yang nggak dimulai dari (0, 0)
       const offsetDialog = { left: 100, top: 60, width: 900, height: 700 };
       const offsetClip = computeViewportClipInset(
         { left: 250, top: 160, width: 300, height: 200 },

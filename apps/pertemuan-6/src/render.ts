@@ -4,11 +4,11 @@ import { countByStatus, deadlineLabel, deadlineState, formatDeadline } from './t
 import { STATUS_LABELS, type DeadlineState, type Task, type TaskList } from './types.ts';
 
 /**
- * Semua nilai yang berasal dari pengguna ditulis lewat `textContent`.
- * Modul ini tidak memakai API yang mem-parse string menjadi HTML.
+ * Semua nilai dari pengguna ditulis lewat `textContent`; modul ini nggak pakai
+ * API yang mem-parse string jadi HTML.
  */
 
-/** Mengambil elemen wajib dan memastikan tipenya; melempar error yang jelas bila tidak cocok. */
+/** Ambil elemen wajib dan pastikan tipenya; lempar error jelas kalau nggak cocok. */
 export function requireElement<T extends Element>(
   root: ParentNode,
   selector: string,
@@ -60,7 +60,7 @@ function createCaptionElement(): HTMLSpanElement {
   return caption;
 }
 
-/** Memperbarui isi & atribut kotak tugas dan caption secara in-place tanpa membuat node baru. */
+/** Update isi & atribut kotak tugas dan caption in-place, tanpa bikin node baru. */
 export function updateTaskBox(
   box: HTMLButtonElement,
   caption: HTMLElement,
@@ -108,7 +108,7 @@ export function updateTaskBox(
   caption.textContent = `${num} · ${shortTitle} · ${statusTag}`;
 }
 
-/** Membuat satu kotak print orbital dari `<template>`; `position` adalah nomor urut tampilan (mulai 1). */
+/** Bikin satu kotak print orbital dari `<template>`; `position` itu nomor urut tampilan (mulai 1). */
 export function createTaskBox(
   template: HTMLTemplateElement,
   task: Task,
@@ -124,7 +124,7 @@ export function createTaskBox(
   return { box, caption };
 }
 
-/** Menandai kotak & caption orbital sebagai keluar (inert, non-interaktif, tanpa mengubah transform luar). */
+/** Tandai kotak & caption orbital sebagai keluar (inert, nggak interaktif, transform luar tetap). */
 export function markOrbitNodeExiting(box: HTMLButtonElement, caption: HTMLElement | null): void {
   box.dataset.exiting = 'true';
   box.setAttribute('aria-hidden', 'true');
@@ -137,7 +137,7 @@ export function markOrbitNodeExiting(box: HTMLButtonElement, caption: HTMLElemen
   }
 }
 
-/** Memulihkan kotak & caption orbital yang keluar menjadi aktif kembali. */
+/** Balikin kotak & caption orbital yang keluar jadi aktif lagi. */
 export function restoreOrbitNodeActive(box: HTMLButtonElement, caption: HTMLElement | null): void {
   delete box.dataset.exiting;
   box.removeAttribute('aria-hidden');
@@ -151,9 +151,9 @@ export function restoreOrbitNodeActive(box: HTMLButtonElement, caption: HTMLElem
 }
 
 /**
- * Rekonsiliasi DOM panggung orbital berbasis `task.id` stabil:
- * node bertahan diperbarui di tempat, node baru disisipkan, dan node lama
- * ditandai keluar (atau langsung dihapus bila `immediate = true`).
+ * Rekonsiliasi DOM panggung orbital berdasar `task.id` yang stabil: node yang bertahan
+ * di-update di tempat, node baru disisipkan, node lama ditandai keluar (atau langsung
+ * dihapus kalau `immediate = true`).
  */
 export function reconcileOrbitalStage(
   stage: HTMLElement,
@@ -238,7 +238,6 @@ export function reconcileOrbitalStage(
   return { entered, updated, restored, exiting };
 }
 
-/** Merender kotak-kotak tugas beserta keterangan melayang secara langsung ke dalam panggung orbital. */
 export function renderOrbitalStage(
   stage: HTMLElement,
   template: HTMLTemplateElement,
@@ -260,7 +259,7 @@ export interface ListReconcileResult {
   removedCount: number;
 }
 
-/** Memperbarui isi & atribut baris daftar secara in-place tanpa mengganti node `<li>`. */
+/** Update isi & atribut baris daftar in-place, tanpa ganti node `<li>`. */
 export function updateListRow(
   row: HTMLLIElement,
   task: Task,
@@ -315,7 +314,7 @@ export function updateListRow(
   slot(row, 'delete').setAttribute('aria-label', `Hapus tugas: ${task.title}`);
 }
 
-/** Membuat satu baris daftar aksesibel untuk tampilan koleksi besar (>12 tugas) atau mode Daftar. */
+/** Bikin satu baris daftar aksesibel buat koleksi besar (>12 tugas) atau mode Daftar. */
 export function createListRow(
   template: HTMLTemplateElement,
   task: Task,
@@ -331,9 +330,8 @@ export function createListRow(
 }
 
 /**
- * Rekonsiliasi keyed daftar aksesibel berbasis `task.id`:
- * node bertahan diperbarui di tempat (mempertahankan fokus kontrol seperti checkbox)
- * dan hanya menyisipkan ulang jika posisi DOM berubah.
+ * Rekonsiliasi daftar aksesibel berdasar `task.id` (keyed): node yang bertahan di-update
+ * di tempat (fokus kontrol kayak checkbox terjaga) dan cuma disisipkan ulang kalau posisi DOM berubah.
  */
 export function reconcileAccessibleList(
   list: HTMLOListElement,
@@ -434,7 +432,7 @@ export function renderSummary(target: HTMLElement, tasks: TaskList): void {
   target.textContent = `${tasks.length} tugas · ${done} selesai`;
 }
 
-/** Memperbarui tombol filter: jumlah (dari seluruh daftar), `aria-pressed`, dan nama yang terbaca. */
+/** Update tombol filter: jumlah (dari seluruh daftar), `aria-pressed`, dan nama yang terbaca. */
 export function renderFilterBar(bar: HTMLElement, tasks: TaskList, active: TaskFilter): void {
   const counts = filterCounts(tasks);
   for (const button of bar.querySelectorAll<HTMLButtonElement>('[data-filter]')) {

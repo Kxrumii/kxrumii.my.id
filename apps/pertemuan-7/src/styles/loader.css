@@ -1,0 +1,222 @@
+/*
+ * Gate. Transparan: canvas background (ASCII wake, belum ada bintang) kelihatan tembus, jadi keluar dari gate
+ * nggak butuh wipe panel. Pas keluar teks dan tombol larut sementara logo F terbang ke pojok (FLIP di
+ * Loader.tsx) dan bintang-bintang muncul.
+ */
+.loader {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-white);
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.loader[data-phase='leaving'] {
+  pointer-events: none;
+}
+
+.loader-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 120px;
+  height: 120px;
+  margin-top: -100px;
+  margin-bottom: 28px;
+}
+
+.loader-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--color-white-20);
+  border-top-color: var(--color-pop);
+  animation: loader-spin 1.1s linear infinite;
+  transition:
+    opacity 0.4s ease,
+    transform 0.6s var(--ease-spring);
+}
+
+/* Di 100 ring menutup ke logo lalu hilang. */
+.loader:not([data-phase='loading']) .loader-ring {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.loader-count {
+  grid-area: 1 / 1;
+  font-size: 32px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.05em;
+  transition:
+    opacity 0.25s ease,
+    transform 0.4s var(--ease-expo-out),
+    filter 0.4s ease;
+}
+
+.loader-count.gone {
+  opacity: 0;
+  transform: scale(0.6);
+  filter: blur(4px);
+}
+
+/* Logo F: sembunyi pas menghitung, spring masuk di 100, lalu terbang ke pojok. */
+.loader-logo {
+  grid-area: 1 / 1;
+  width: 96px;
+  height: 96px;
+  color: var(--color-white);
+  opacity: 0;
+  transform: scale(0.35);
+  transition:
+    opacity 0.3s ease 0.08s,
+    transform 0.6s var(--ease-spring) 0.08s;
+}
+
+.loader:not([data-phase='loading']) .loader-logo {
+  opacity: 1;
+  transform: none;
+}
+
+@keyframes loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loader-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  max-width: calc(100% - var(--grid-margin) * 2);
+  margin-bottom: 32px;
+  text-align: center;
+  transition:
+    opacity 0.35s ease,
+    filter 0.35s ease,
+    transform 0.5s var(--ease-expo-out);
+}
+
+.loader-text .line {
+  display: block;
+  overflow: hidden;
+}
+
+.loader-text .line > span {
+  display: block;
+  animation: line-up 0.9s var(--ease-expo-out) both;
+}
+
+.loader-text .line:nth-child(2) > span {
+  animation-delay: 0.12s;
+  opacity: 0.6;
+}
+
+@keyframes line-up {
+  from {
+    transform: translateY(110%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.loader-enter {
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.3s ease-out 0.15s,
+    filter 0.35s ease,
+    transform 0.3s var(--ease-spring);
+}
+
+.loader-enter.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.loader-silent {
+  position: absolute;
+  bottom: var(--grid-margin);
+  font-size: 14px;
+  font-weight: 400;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px);
+  transition:
+    opacity 0.3s ease-out 0.3s,
+    transform 0.3s ease-out 0.3s;
+}
+
+.loader-silent::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(1);
+  transform-origin: right;
+  transition: transform 0.4s var(--ease-expo-out);
+}
+
+.loader-silent.show {
+  opacity: 0.7;
+  pointer-events: auto;
+  transform: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .loader-silent:hover {
+    opacity: 1;
+  }
+  .loader-silent:hover::before {
+    transform: scaleX(0);
+  }
+}
+
+/* Keluar: semuanya larut kecuali logo yang terbang. */
+.loader[data-phase='leaving'] :is(.loader-text, .loader-enter, .loader-silent) {
+  opacity: 0;
+  filter: blur(8px);
+  transition:
+    opacity 0.35s ease,
+    filter 0.35s ease;
+}
+
+.loader[data-phase='leaving'] .loader-text {
+  transform: translateY(12px);
+}
+
+/* F tanda tangan ditulis goresan demi goresan pas hitungan sampai 100: bar atas, batang melingkar, crossbar. */
+.loader-logo .ink path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.loader:not([data-phase='loading']) .loader-logo .ink path {
+  animation: ink-write 0.4s cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+
+.loader:not([data-phase='loading']) .loader-logo .ink-stroke-1 path {
+  animation-duration: 0.62s;
+  animation-delay: 0.36s;
+}
+
+.loader:not([data-phase='loading']) .loader-logo .ink-stroke-2 path {
+  animation-duration: 0.2s;
+  animation-delay: 0.96s;
+}
+
+@keyframes ink-write {
+  to {
+    stroke-dashoffset: 0;
+  }
+}

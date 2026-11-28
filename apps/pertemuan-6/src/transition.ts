@@ -1,8 +1,8 @@
 /*
- * Shared Transition Bridge installation for Task 6 (`task-6` and `task-6-docs`).
- * Installation happens at module initialisation; page readiness is signalled
- * separately by main.ts / docs.ts once the document shell has initialised.
- * The canvas colour and outgoing link fallbacks follow the active light/dark theme.
+ * Pasang Shared Transition Bridge buat Task 6 (`task-6` dan `task-6-docs`).
+ * Dipasang pas modul diinisialisasi; sinyal page-ready dikirim terpisah
+ * oleh main.ts / docs.ts setelah shell dokumen siap.
+ * Warna canvas dan fallback link keluar ngikutin tema terang/gelap yang aktif.
  */
 import '@kxrumii/transition-bridge/transition-bridge.css';
 import { installTransitionBridge, type TransitionBridge } from '@kxrumii/transition-bridge';
@@ -53,7 +53,7 @@ export function installTask6Transition(
   publishTask6CanvasColors(initialTheme);
   syncTransitionCanvasLinks(initialTheme);
 
-  // Saat tema diganti, perbarui warna bridge, publikasi kedua pageId, dan fallback atribut tautan.
+  // Pas tema ganti: update warna bridge, publikasikan kedua pageId, dan sinkronkan atribut fallback link.
   if (!window.__kxrumiiTask6ThemeObserver) {
     let lastTheme = initialTheme;
     const observer = new MutationObserver(() => {

@@ -8,7 +8,7 @@ export interface TaskDialogHandlers {
   onEdit(id: number, draft: TaskDraft): void;
 }
 
-/** Mengembalikan elemen tempat fokus dipulihkan; dievaluasi saat dialog menutup (setelah render ulang). */
+/** Elemen tujuan pemulihan fokus; dipanggil pas dialog nutup (setelah render ulang). */
 export type FocusTarget = () => HTMLElement | null;
 
 export interface TaskDialog {
@@ -17,8 +17,8 @@ export interface TaskDialog {
 }
 
 /**
- * Dialog tambah/edit berbasis `<dialog>` native: `showModal()` menyediakan focus trap, inert background,
- * dan penutupan lewat Escape. Nilai pengguna hanya ditulis lewat `.value` dan `textContent`.
+ * Dialog tambah/edit pakai `<dialog>` native: `showModal()` sudah kasih focus trap,
+ * background inert, dan tutup lewat Escape. Nilai pengguna cuma lewat `.value` dan `textContent`.
  */
 export function initTaskDialog(root: ParentNode, handlers: TaskDialogHandlers): TaskDialog {
   const dialog = requireElement(root, '#task-dialog', HTMLDialogElement);
@@ -111,7 +111,7 @@ export function initTaskDialog(root: ParentNode, handlers: TaskDialogHandlers): 
 
   cancel.addEventListener('click', () => dialog.close());
 
-  // Berlaku untuk simpan, batal, dan Escape. Fokus dipulihkan setelah daftar dirender ulang.
+  // Berlaku buat simpan, batal, dan Escape. Fokus dipulihkan setelah daftar dirender ulang.
   dialog.addEventListener('close', () => {
     editingId = null;
     if (deferCloseFocus) {

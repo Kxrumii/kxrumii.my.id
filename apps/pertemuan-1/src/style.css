@@ -15,10 +15,8 @@
 }
 
 /*
- * Shared transition canvas. The bridge paints the page colour on <html>, so the
- * theme colour that used to propagate from <body> now lives on the root, with
- * the same 500 ms colour transition as the body's `transition-colors` class.
- * Rendered colours stay identical in light and dark themes.
+ * Canvas transisi bersama: bridge ngecat warna halaman di <html>, jadi warna tema
+ * pindah dari <body> ke root, dengan transisi 500 ms yang sama kayak body.
  */
 :root {
   --page-canvas: #eff1f5;
@@ -33,8 +31,8 @@ body {
   background-color: transparent;
 }
 
-/* Placeholder page motion (POC v0.4 Task 1 values). Exit ends hidden; enter starts hidden. */
-/* Timing values are unitless milliseconds: the bridge reads them with parseFloat, and CSS minification would rewrite `520ms` as `.52s`. */
+/* Gerak halaman sementara (nilai POC v0.4 Task 1). Exit berakhir hidden, enter mulai dari hidden. */
+/* Timing sengaja unitless (ms): bridge bacanya pakai parseFloat, dan minify CSS bakal ngubah `520ms` jadi `.52s`. */
 [data-transition-exit] {
   --transition-exit-duration: 520;
   --transition-stagger: 45;
@@ -53,16 +51,15 @@ main > .fixed { --i: 1; }
 #jadwal { --i: 4; }
 #contact { --i: 5; }
 
-/* Transition interaction lock: while the shared transition is leaving or
-   entering, elements that are not already hovered stop receiving the pointer,
-   so no new hover effect starts mid-transition. Ends with the bridge state. */
+/* Kunci interaksi saat transisi: elemen yang belum di-hover berhenti nerima pointer,
+   supaya nggak ada efek hover baru di tengah transisi. Selesai bareng state bridge. */
 :root[data-transition-state] body :not(:hover) {
   pointer-events: none !important;
 }
 
-/* Mobile header: same stagger position as the desktop side nav. It sits outside
-   <main>'s horizontal clipping, so it enters by clip only (no rightward offset)
-   to avoid a temporary horizontal overflow on narrow screens. */
+/* Header mobile: urutan stagger sama kayak side nav desktop. Posisinya di luar clipping
+   horizontal <main>, jadi masuknya cuma lewat clip (tanpa geser ke kanan) biar nggak
+   bikin overflow horizontal sesaat di layar sempit. */
 #mobile-header {
   --i: 0;
   --transition-enter-from-transform: translate3d(0, 0, 0);

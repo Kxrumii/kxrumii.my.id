@@ -2,16 +2,15 @@
  * @kxrumii/transition-bridge — v0.4 (tanpa overlay)
  *
  * Kontrak:
- *  - Halaman ASAL memiliki exit-nya (elemen `[data-transition-exit]`) dan
+ *  - Halaman ASAL punya exit-nya sendiri (elemen `[data-transition-exit]`) dan
  *    memulai perpindahan warna latar (canvas) ke warna TUJUAN.
- *  - Halaman TUJUAN mengecat warna canvas itu sejak first paint (bootstrap
- *    inline), lalu menjalankan enter-nya (`[data-transition-enter]`) setelah
- *    `page-ready`.
- *  - Tidak ada layer penutup, tidak ada opacity. Kesinambungan datang dari
- *    warna latar yang sudah sama + gerak yang tersambung.
- *  - Gerak elemen dibaca dari CSS custom property milik halaman masing-masing
- *    (jarak, clip, durasi, easing, stagger) dan dijalankan lewat WAAPI dengan
- *    keyframe eksplisit, jadi tidak bergantung pada urutan style/paint.
+ *  - Halaman TUJUAN ngecat warna canvas itu dari first paint (bootstrap inline),
+ *    lalu jalanin enter-nya (`[data-transition-enter]`) setelah `page-ready`.
+ *  - Nggak ada layer penutup, nggak ada opacity. Kesinambungan datang dari warna
+ *    latar yang sudah sama + gerak yang nyambung.
+ *  - Gerak elemen dibaca dari CSS custom property tiap halaman (jarak, clip, durasi,
+ *    easing, stagger) dan dijalankan lewat WAAPI dengan keyframe eksplisit, jadi
+ *    nggak tergantung urutan style/paint.
  */
 
 const HANDSHAKE_KEY = 'kxrumii:transition:v4';
@@ -51,7 +50,7 @@ function cssString(el, prop, fallback) {
   return v || fallback;
 }
 
-/* ---- Warna canvas halaman: dipublikasikan agar halaman lain tahu warna aktual (tema/mood) ---- */
+/* ---- Warna canvas halaman: dipublikasikan biar halaman lain tahu warna aktualnya (tema/mood) ---- */
 function readCanvasMap() {
   try {
     return JSON.parse(localStorage.getItem(CANVAS_KEY) || '{}') || {};
@@ -65,7 +64,7 @@ export function publishCanvasColor(pageId, color) {
     map[pageId] = color;
     localStorage.setItem(CANVAS_KEY, JSON.stringify(map));
   } catch {
-    /* storage mati: tujuan memakai warna fallback dari atribut link */
+    /* storage mati: tujuan pakai warna fallback dari atribut link */
   }
 }
 export function readPublishedCanvasColor(pageId) {
@@ -73,7 +72,7 @@ export function readPublishedCanvasColor(pageId) {
 }
 
 /**
- * Jalankan exit/enter bawaan untuk sekumpulan elemen. Mengembalikan daftar Animation.
+ * Jalankan exit/enter bawaan buat sekumpulan elemen. Mengembalikan daftar Animation.
  * Semua parameter dibaca dari CSS custom property elemen (lihat README).
  */
 export function animateElements(elements, kind) {
@@ -114,13 +113,13 @@ export function installTransitionBridge(userOptions = {}) {
   const incoming = root.dataset.transitionState === 'entering';
 
   let disposed = false;
-  let busy = incoming; // klik navigasi ditahan selama hand-off berlangsung
+  let busy = incoming; // klik navigasi ditahan selama hand-off
   let pageReady = false;
   let sceneReady = false;
   let releasing = false;
   let readinessTimer = null;
   let stallTimer = null;
-  let active = []; // Animation milik bridge, agar bisa dibersihkan
+  let active = []; // Animation milik bridge, supaya bisa dibersihkan
   const prefetched = new Set();
 
   const currentColor = () => (typeof o.getCanvasColor === 'function' ? o.getCanvasColor() : null) || o.pageCanvasColor;
@@ -154,7 +153,7 @@ export function installTransitionBridge(userOptions = {}) {
   }
 
   function ctxFor(elements, extra = {}) {
-    // Animasi yang dibuat lewat hook kustom tetap dilacak agar bisa dibatalkan saat recover/finish.
+    // Animasi dari hook kustom tetap dilacak, supaya bisa dibatalkan saat recover/finish.
     const tracked = (els, kind) => {
       const made = animateElements(els, kind);
       active.push(...made);
@@ -176,7 +175,7 @@ export function installTransitionBridge(userOptions = {}) {
 
     const elements = Array.from(root.querySelectorAll('[data-transition-exit]'));
 
-    // 1) Gerak konten dijalankan lebih dulu; kita butuh waktu selesainya untuk menjadwalkan canvas.
+    // 1) Gerak konten jalan dulu; butuh waktu selesainya buat menjadwalkan canvas.
     const startIdx = active.length;
     let custom = null;
     let anims = [];
@@ -188,9 +187,9 @@ export function installTransitionBridge(userOptions = {}) {
       active.push(...anims);
     }
 
-    // 2) Canvas berpindah warna MENGIKUTI exit konten: mulai di sekitar 55% dan selesai tepat saat exit selesai.
-    //    Jika canvas berubah lebih dulu, teks halaman asal kehilangan kontras (mis. teks terang di atas latar yang
-    //    sudah terang) dan transisi tampak "berhenti" padahal animasinya masih berjalan.
+    // 2) Canvas pindah warna MENGIKUTI exit konten: mulai sekitar 55% dan selesai pas exit selesai.
+    //    Kalau canvas berubah duluan, teks halaman asal kehilangan kontras (mis. teks terang di atas
+    //    latar yang sudah terang) dan transisi kelihatan "berhenti" padahal animasinya masih jalan.
     const endOf = (a) => {
       try {
         return a.effect.getComputedTiming().endTime;
@@ -219,7 +218,7 @@ export function installTransitionBridge(userOptions = {}) {
     root.removeAttribute('data-transition-from');
     root.style.removeProperty('--transition-origin-x');
     root.style.removeProperty('--transition-origin-y');
-    cancelActive(); // kondisi akhir = kondisi natural, jadi tidak ada lompatan
+    cancelActive(); // kondisi akhir = kondisi natural, jadi nggak ada lompatan
     document.body?.removeAttribute('aria-busy');
     busy = false;
     releasing = false;
@@ -229,10 +228,10 @@ export function installTransitionBridge(userOptions = {}) {
   async function releaseIncoming() {
     if (releasing || root.dataset.transitionState !== 'entering') return;
     releasing = true;
-    await nextFrame(); // keyframe awal == pre-state CSS dari bootstrap, jadi cukup satu frame untuk flush style
+    await nextFrame(); // keyframe awal == pre-state CSS dari bootstrap, jadi satu frame cukup buat flush style
     if (disposed) return;
     if (root.dataset.transitionState !== 'entering') {
-      // State sudah dihapus pihak lain (fail-open bootstrap): lepaskan kunci agar klik tidak tertelan.
+      // State sudah dihapus pihak lain (fail-open bootstrap): lepas kunci supaya klik nggak tertelan.
       busy = false;
       releasing = false;
       document.body?.removeAttribute('aria-busy');
@@ -326,7 +325,7 @@ export function installTransitionBridge(userOptions = {}) {
         }),
       );
     } catch {
-      /* tanpa storage: tujuan dimuat biasa, exit tetap berjalan */
+      /* tanpa storage: tujuan dimuat biasa, exit tetap jalan */
     }
 
     warm(destination);
@@ -334,7 +333,7 @@ export function installTransitionBridge(userOptions = {}) {
     if (disposed) return;
     dispatch(TRANSITION_EVENT, { phase: 'navigate', fromPage: pageId });
     location.assign(destination.href);
-    // Jika dokumen ini masih hidup lama setelah navigasi dimulai, jangan biarkan layar kosong selamanya.
+    // Kalau dokumen ini masih hidup lama setelah navigasi mulai, layar nggak boleh kosong terus.
     stallTimer = window.setTimeout(() => recover('navigation-stalled'), o.stallRecoveryMs);
   }
 
@@ -412,7 +411,7 @@ export function installTransitionBridge(userOptions = {}) {
       recover('spa-update-failed');
       throw error;
     }
-    cancelActive(); // elemen lama sudah tidak ada; pre-state CSS mengambil alih pada frame yang sama
+    cancelActive(); // elemen lama sudah nggak ada; pre-state CSS ambil alih di frame yang sama
     if (!(await ready) && !pageReady) markPageReady({ fallback: true, reason: 'spa-page-ready-timeout' });
     return true;
   }

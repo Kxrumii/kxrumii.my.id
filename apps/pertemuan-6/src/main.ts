@@ -45,9 +45,9 @@ import type { Task, ViewMode } from './types.ts';
 
 const appName: string = import.meta.env.VITE_APP_NAME || 'Task Manager';
 
-// State dipulihkan dari localStorage (divalidasi) sebelum render pertama; bila gagal, mulai kosong di memori.
+// State dipulihkan dari localStorage (sudah divalidasi) sebelum render pertama; kalau gagal, mulai kosong di memori.
 let tasks: Task[] = [];
-// Filter dan query pencarian bersifat sementara per sesi.
+// Filter dan query pencarian cuma sementara per sesi.
 let filter: TaskFilter = 'all';
 let searchQuery = '';
 let savedPreference: ViewMode = 'list';
@@ -1120,7 +1120,7 @@ try {
   showNotice(notice);
   render();
 } finally {
-  // The shell is in the DOM and initialisation has run: allow the incoming route transition to enter.
-  // Called in `finally` so a failed init can never leave the page stuck in the transition pre-state.
+  // Shell sudah ada di DOM dan init sudah jalan: izinkan transisi rute masuk.
+  // Dipanggil di `finally` supaya init yang gagal nggak bikin halaman nyangkut di pre-state transisi.
   bridge.markPageReady();
 }

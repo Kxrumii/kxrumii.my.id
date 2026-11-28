@@ -796,7 +796,7 @@
       transform: none !important;
     }
 
-    /* Preserve the two-line role switch even when transitions are disabled. */
+    /* Pergantian role dua baris tetap jalan walau transisi dimatikan. */
     .role-line--about {
       visibility: hidden;
       transition: none !important;
@@ -828,7 +828,7 @@
   }
 
 
-/* Cross-page text hand-off: every label travels vertically; no container fades. */
+/* Hand-off teks lintas halaman: tiap label jalan vertikal; nggak ada container yang fade. */
 .route-reveal-mask {
   display: inline-flex;
   max-width: 100%;
@@ -857,7 +857,7 @@
   will-change: transform;
 }
 
-/* The exact same letter strip used by hover is reused for route transitions. */
+/* Strip huruf yang sama persis dengan hover dipakai ulang buat transisi rute. */
 .row-title .letter {
   transform: translateY(0);
   transition: transform .84s var(--row-ease)
@@ -875,14 +875,14 @@ html.portal-transition-leaving .row-title .letter {
   transform: translateY(128%);
 }
 
-/* Keep the secondary role hidden during route entry; only the active archive
-   label participates. If ABOUT is currently revealed, it travels out too. */
+/* Role kedua tetap hidden waktu masuk rute; cuma label arsip yang aktif ikut jalan.
+   Kalau ABOUT lagi kebuka, dia ikut keluar juga. */
 html.portal-transition-entering .role-button .role-line--about .role-letter {
   transform: translateY(145%);
 }
 
-/* Language switch rolls one complete text line through a clipped viewport.
-   No opacity is used; row geometry changes in sync with the moving line. */
+/* Ganti bahasa: satu baris teks lengkap digulung lewat viewport yang di-clip.
+   Nggak pakai opacity; geometri baris berubah sinkron dengan baris yang bergerak. */
 .language-swap-stage {
   display: flex;
   flex-direction: column;
@@ -919,7 +919,7 @@ html.portal-transition-entering .role-button .role-line--about .role-letter {
   }
 }
 
-/* Match the homepage `md:items-center` breakpoint exactly. */
+/* Samain persis dengan breakpoint `md:items-center` homepage. */
 @media (min-width: 768px) {
   .site-footer {
     align-items: center;
@@ -964,28 +964,28 @@ html.portal-transition-entering .role-button .role-line--about .role-letter {
 }
 
 
-/* Mood and language controls use colour/weight feedback, never opacity fade. */
+/* Kontrol mood dan bahasa pakai feedback warna/bobot, bukan fade opacity. */
 .mood-button:hover,
 .language-button:hover {
   color: var(--hover);
 }
 
-/* Make both role labels travel on the same short stagger. */
+/* Kedua label role jalan dengan stagger pendek yang sama. */
 .role-letter {
   transition-delay: calc(var(--k, 0) * 4ms);
 }
 
-/* The page swap owns the canvas; body must never cross-fade over it. */
+/* Swap halaman yang pegang canvas; body nggak boleh cross-fade di atasnya. */
 body[data-page="home"],
 body[data-page="portal"] {
   background: transparent !important;
   view-transition-name: none;
 }
 
-/* Previews never appear during a route transition (leaving, entering, the
-   post-swap entrance, or a bridge arrival). A preview already open from hover
-   or keyboard focus leaves with the existing hover-out motion, so nothing pops
-   when the document changes. Specificity beats the :hover/:focus-visible rules. */
+/* Preview nggak pernah muncul selama transisi rute (leaving, entering, entrance
+   pasca-swap, atau kedatangan bridge). Preview yang sudah kebuka karena hover atau
+   fokus keyboard keluar pakai gerak hover-out yang ada, jadi nggak ada yang tiba-tiba
+   muncul pas dokumen ganti. Specificity-nya ngalahin aturan :hover/:focus-visible. */
 html:is(.portal-transition-leaving, .portal-transition-entering, [data-transition-lock], [data-transition-state='entering']) .project-row .preview-veil {
   transform: translateY(calc(100% + 6px));
 }
