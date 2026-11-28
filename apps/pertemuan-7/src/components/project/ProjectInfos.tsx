@@ -10,8 +10,8 @@ interface ProjectInfosProps {
 }
 
 /**
- * Title on the left (5 columns), description on the right (3 columns). Each block rises out of its own mask
- * the first time it scrolls into view. Missing details read as "—" / "deskripsi menyusul", never invented.
+ * Judul di kiri (5 kolom), deskripsi di kanan (3 kolom). Tiap blok naik dari mask-nya sendiri pas pertama kali
+ * masuk layar. Detail yang kosong tampil "—" / "deskripsi menyusul", nggak pernah dikarang.
  */
 export function ProjectInfos({ work, number }: ProjectInfosProps) {
   const ref = useRef<HTMLElement>(null);

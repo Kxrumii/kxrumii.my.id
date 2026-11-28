@@ -1,4 +1,4 @@
-/* The persistent background canvas sits behind every layer. */
+/* Canvas background persisten, ada di belakang semua layer. */
 .starfield {
   position: fixed;
   inset: 0;

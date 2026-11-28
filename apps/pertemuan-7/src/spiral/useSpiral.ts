@@ -13,15 +13,14 @@ import {
 } from './geometry.ts';
 
 /*
- * Spiral physics (adapted from the earlier Task 7 spiral, commit f2dcdec). Position `p` is measured in slots;
- * every frame writes each card's transform straight to the DOM, so React re-renders only when the active work
- * changes.
+ * Fisika spiral (diadaptasi dari spiral Task 7 yang lama, commit f2dcdec). Posisi `p` diukur dalam slot;
+ * tiap frame menulis transform tiap kartu langsung ke DOM, jadi React cuma re-render pas karya aktif berubah.
  *
- * - wheel/trackpad (deltaMode-normalised) and pointer drag (vertical or horizontal) push the coil with inertia
- * - friction, then a spring snap onto the nearest slot
- * - a slow idle drift; it stops while a card is hovered or keyboard-focused, while dragging, when the tab is
- *   hidden, while `paused` (loader/menu) and under reduced motion
- * - reduced motion: no animation frame loop at all, steps jump instantly
+ * - wheel/trackpad (deltaMode dinormalisasi) dan drag pointer (vertikal atau horizontal) mendorong coil dengan inertia
+ * - friction, lalu spring snap ke slot terdekat
+ * - drift idle pelan; berhenti pas kartu di-hover atau keyboard-focus, pas drag, pas tab hidden, pas `paused`
+ *   (loader/menu), dan pas reduced motion
+ * - reduced motion: nggak ada loop animation frame sama sekali, langkahnya langsung loncat
  */
 
 const FRICTION = 0.93;
@@ -50,7 +49,7 @@ export interface SpiralApi {
   step: (direction: 1 | -1) => void;
   goTo: (workIndex: number) => void;
   setHover: (hovering: boolean) => void;
-  /** True when the last pointer interaction was a drag (its click must not navigate). */
+  /** true kalau interaksi pointer terakhir itu drag (klik-nya nggak boleh navigasi). */
   consumeDrag: () => boolean;
 }
 
@@ -64,7 +63,7 @@ export function useSpiral({ workCount, initialIndex, reducedMotion, paused, onAc
     p: 0,
     v: 0,
     snapBias: 0,
-    /** Destination of discrete steps (keys, goTo); repeated presses add up. null = free motion. */
+    /** Tujuan langkah diskret (tombol, goTo); tekan berulang menumpuk. null = gerak bebas. */
     stepTarget: null as number | null,
     dragging: false,
     dragged: false,
@@ -102,8 +101,8 @@ export function useSpiral({ workCount, initialIndex, reducedMotion, paused, onAc
       if (!el) continue;
       const pose = cardPose(i, s.p, total, looping, s.geometry);
       el.style.transform = pose.transform;
-      // Opacity goes to the faces via a variable: opacity < 1 on the preserve-3d card would flatten it and
-      // show the mirrored front instead of the back plate.
+      // Opacity dikirim ke face lewat variabel: opacity < 1 di kartu preserve-3d bakal meratakannya dan
+      // yang kelihatan malah front yang ter-mirror, bukan back plate.
       el.style.setProperty('--o', String(pose.opacity));
       el.style.visibility = pose.opacity < 0.02 ? 'hidden' : 'visible';
       el.style.pointerEvents = pose.interactive ? 'auto' : 'none';
@@ -138,7 +137,7 @@ export function useSpiral({ workCount, initialIndex, reducedMotion, paused, onAc
       s.lastFrame = now;
       const drifting = driftAllowed();
       if (!s.dragging && s.stepTarget !== null) {
-        // Discrete step: spring straight to the requested slot.
+        // Langkah diskret: spring langsung ke slot yang diminta.
         const a = SNAP_STIFFNESS * (s.stepTarget - s.p) - SNAP_DAMPING * s.v;
         s.v += a * dt;
         s.p += s.v * dt;
@@ -236,7 +235,7 @@ export function useSpiral({ workCount, initialIndex, reducedMotion, paused, onAc
     [kick],
   );
 
-  // Re-seat when the list size or the motion preference changes.
+  // Pasang ulang kalau ukuran list atau preferensi motion berubah.
   useLayoutEffect(() => {
     const s = state.current;
     stop();
@@ -249,10 +248,10 @@ export function useSpiral({ workCount, initialIndex, reducedMotion, paused, onAc
     render();
     kick();
     return stop;
-    // initialIndex is read only when the list itself changes.
+    // initialIndex cuma dibaca pas list-nya sendiri berubah.
   }, [workCount, reducedMotion, render, kick]);
 
-  // Geometry follows the card size, which CSS derives from the viewport.
+  // Geometri ngikutin ukuran kartu, yang diturunin CSS dari viewport.
   useLayoutEffect(() => {
     const node = viewport.current;
     if (!node || workCount <= 0) return;
@@ -263,7 +262,7 @@ export function useSpiral({ workCount, initialIndex, reducedMotion, paused, onAc
       const geometry = geometryFor(width, height);
       state.current.geometry = geometry;
       state.current.pxPerSlot = Math.max(geometry.rise * 0.9, 90);
-      // Camera values come from geometry.ts, the same numbers the overlap test projects with.
+      // Nilai kamera dari geometry.ts, angka yang sama dipakai tes overlap buat memproyeksikan (sumber tunggal).
       node.style.perspective = `${PERSPECTIVE_PX}px`;
       node.style.perspectiveOrigin = `50% ${ORIGIN_Y * 100}%`;
       const scene = node.querySelector<HTMLElement>('.spiral-scene');
@@ -279,7 +278,7 @@ export function useSpiral({ workCount, initialIndex, reducedMotion, paused, onAc
     return () => observer.disconnect();
   }, [workCount, render]);
 
-  // Input: wheel (non-passive so the page never scrolls), pointer drag, keyboard focus, tab visibility.
+  // Input: wheel (non-passive biar halaman nggak ikut scroll), drag pointer, keyboard focus, visibilitas tab.
   useEffect(() => {
     const node = viewport.current;
     if (!node || workCount <= 0) return;
@@ -348,7 +347,7 @@ export function useSpiral({ workCount, initialIndex, reducedMotion, paused, onAc
         render();
       } else kick();
     };
-    // Only keyboard focus holds the spiral still.
+    // Cuma keyboard focus yang nahan spiral diam.
     const onFocusIn = (event: FocusEvent) => {
       s.focus = (event.target as Element | null)?.matches?.(':focus-visible') === true;
       kick();
@@ -384,7 +383,7 @@ export function useSpiral({ workCount, initialIndex, reducedMotion, paused, onAc
     };
   }, [workCount, kick, render, step]);
 
-  // Drift resumes when the pause (loader, menu) ends.
+  // Drift lanjut lagi pas pause (loader, menu) selesai.
   useEffect(() => {
     kick();
   }, [paused, kick]);

@@ -219,7 +219,7 @@ img {
   font-weight: 500;
 }
 
-/* Sizes follow the cover's own width (container query units), so one cover works at every size. */
+/* Ukuran ngikut lebar cover sendiri (container query units), jadi satu cover cocok di semua ukuran. */
 .cover-number {
   font-size: 34cqi;
   line-height: 0.8;

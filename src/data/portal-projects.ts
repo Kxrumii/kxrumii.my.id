@@ -9,9 +9,9 @@ export interface PortalPreview {
 export interface PortalProject {
   number: string;
   href: string;
-  /** Shared Transition Bridge page id of the destination app. */
+  /** Page id Shared Transition Bridge dari app tujuan. */
   transitionPage: string;
-  /** Destination canvas colour used until that app has published its own. */
+  /** Warna canvas tujuan sampai app itu publikasikan warnanya sendiri. */
   canvasFallback: string;
   title: Record<PortalLanguage, string>;
   category: Record<PortalLanguage, string>;
@@ -48,11 +48,11 @@ export const portalProjects: PortalProject[] = [
     href: '/tugas/pertemuan-7/',
     transitionPage: 'task-7',
     canvasFallback: '#0a0a0a',
-    title: { id: 'Portofolio', en: 'Portfolio' },
-    category: { id: '[Karya Kreatif · React]', en: '[Creative Work · React]' },
+    title: { id: 'Showreel', en: 'Showreel' },
+    category: { id: '[Karya Edit · React]', en: '[Edit Works · React]' },
     previews: [
-      { key: 'portfolio-spiral', altId: 'Galeri spiral karya', altEn: 'Spiral works gallery preview' },
-      { key: 'portfolio-list', altId: 'Daftar karya', altEn: 'Works list preview' },
+      { key: 'portfolio-spiral', altId: 'Showreel dalam bentuk spiral', altEn: 'Showreel spiral view' },
+      { key: 'portfolio-list', altId: 'Showreel dalam bentuk daftar', altEn: 'Showreel list view' },
     ],
   },
   {

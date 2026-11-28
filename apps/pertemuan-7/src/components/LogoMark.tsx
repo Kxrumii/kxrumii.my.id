@@ -9,8 +9,8 @@ interface LogoMarkProps {
 const NIB = nibOffsets(1.8, 7);
 
 /*
- * The owner's signature "F" (paths in logo/signature.ts). Each path has pathLength 1, so the gate can "write" the
- * letter stroke by stroke with stroke-dashoffset (loader.css).
+ * "F" tanda tanganku (path-nya di logo/signature.ts). Tiap path punya pathLength 1, jadi gate bisa "nulis"
+ * hurufnya goresan demi goresan lewat stroke-dashoffset (loader.css).
  */
 export function LogoMark({ className, ref }: LogoMarkProps) {
   return (

@@ -2,7 +2,7 @@ import { NavLink, Outlet } from 'react-router';
 import { transitionIndex, usePageReady } from '../transition';
 
 export function RootLayout() {
-  // RootLayout is the persistent application shell; it commits on the first render.
+  // RootLayout itu shell aplikasi yang tetap ada; di-commit pas render pertama.
   usePageReady();
 
   return (

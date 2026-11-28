@@ -27,13 +27,13 @@ const make = (slug: string, extra: Partial<Work> = {}): Work => ({
   ...extra,
 });
 
-test('the eight works: unique URL-safe slugs, five on YouTube, three still waiting for a link', () => {
-  assert.equal(works.length, 8);
+test('the nine works: unique URL-safe slugs, six on YouTube, three still waiting for a link', () => {
+  assert.equal(works.length, 9);
   const slugs = works.map((work) => work.slug);
   assert.equal(new Set(slugs).size, slugs.length);
   for (const work of works) assert.match(work.slug, /^[a-z0-9-]+$/);
   const onYouTube = works.filter((work) => work.youtubeVideoId !== null);
-  assert.equal(onYouTube.length, 5);
+  assert.equal(onYouTube.length, 6);
   for (const work of onYouTube) assert.match(work.youtubeVideoId!, /^[\w-]{11}$/);
   assert.deepEqual(
     works.filter((work) => work.youtubeVideoId === null).map((work) => work.title),
@@ -52,6 +52,7 @@ test('every work has a category and a description; unknown years and roles stay 
   assert.equal(categoryLabel(make('x')), '—');
   assert.equal(categoryLabel(make('x', { category: 'mograph' })), 'mograph');
   assert.equal(categoryLabel(make('x', { category: 'film' })), 'film');
+  assert.equal(categoryLabel(make('x', { category: 'video' })), 'video');
 });
 
 test('every cover and styleframe file exists in public/', () => {

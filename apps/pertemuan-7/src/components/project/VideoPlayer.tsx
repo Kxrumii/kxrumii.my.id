@@ -8,9 +8,9 @@ interface VideoPlayerProps {
   videoId: string;
   title: string;
   poster: string | null;
-  /** Video width / height: the frame is sized to it, so no letterbox hides the blurred poster. */
+  /** Lebar / tinggi video: frame disesuaikan, jadi nggak ada letterbox yang nutupin poster blur. */
   aspect: number;
-  /** Four stills shown as the scrubber, in time order. */
+  /** Empat still buat scrubber, urut waktu. */
   thumbs: string[];
   onClose: () => void;
 }
@@ -20,10 +20,10 @@ const IDLE_MS = 2600;
 const SEEK_STEP_S = 5;
 
 /**
- * Full-screen player after the reference: the poster blurred behind, the video contained in the middle, and a
- * white pill of controls at the bottom (play/pause, mute, a scrubber made of four stills, close). The video is
- * the YouTube embed without its own controls, driven through postMessage (see video/youtubeBridge.ts).
- * Keys: Space/K play-pause, M mute, ←/→ ±5 s, Esc close. Music is silenced while it is open.
+ * Player layar penuh mengikuti referensi: poster blur di belakang, video contain di tengah, dan pill putih
+ * kontrol di bawah (play/pause, mute, scrubber dari empat still, close). Videonya embed YouTube tanpa kontrol
+ * sendiri, dikendalikan lewat postMessage (lihat video/youtubeBridge.ts).
+ * Tombol: Space/K play-pause, M mute, ←/→ ±5 s, Esc close. Musik dibisukan selama player kebuka.
  */
 export function VideoPlayer({ videoId, title, poster, aspect, thumbs, onClose }: VideoPlayerProps) {
   const reducedMotion = useReducedMotion();
@@ -50,7 +50,7 @@ export function VideoPlayer({ videoId, title, poster, aspect, thumbs, onClose }:
     window.setTimeout(onClose, reducedMotion ? 0 : EXIT_MS);
   }, [closing, onClose, reducedMotion, send]);
 
-  // Open: lock page scroll, silence the music, mark the document (edge navigation pauses), focus the controls.
+  // Buka: kunci scroll halaman, bisukan musik, tandai dokumen (edge navigation berhenti), fokus ke kontrol.
   useEffect(() => {
     const root = document.documentElement;
     const opener = document.activeElement as HTMLElement | null;
@@ -67,7 +67,7 @@ export function VideoPlayer({ videoId, title, poster, aspect, thumbs, onClose }:
     };
   }, []);
 
-  // Messages from the embed, plus the "listening" handshake until it answers.
+  // Pesan dari embed, plus handshake "listening" sampai dia menjawab.
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (event.source !== iframeRef.current?.contentWindow) return;
@@ -75,8 +75,8 @@ export function VideoPlayer({ videoId, title, poster, aspect, thumbs, onClose }:
       if (!message) return;
       setSnapshot((current) => {
         const next = reduce(current, message);
-        // No auto captions over the picture: switched off when ready and again once playback starts
-        // (YouTube loads the captions module lazily).
+        // Caption otomatis jangan nutupin gambar: dimatiin pas ready dan sekali lagi pas playback mulai
+        // (YouTube memuat modul caption belakangan).
         if ((next.ready && !current.ready) || (next.playing && !current.playing)) {
           send('unloadModule', ['captions']);
         }
@@ -94,7 +94,7 @@ export function VideoPlayer({ videoId, title, poster, aspect, thumbs, onClose }:
     };
   }, [send]);
 
-  // Smooth progress between the embed's (coarse) time reports, written straight to the scrubber overlay.
+  // Progress halus di antara laporan waktu embed yang kasar, ditulis langsung ke overlay scrubber.
   useEffect(() => {
     let raf = 0;
     const tick = () => {
@@ -108,7 +108,7 @@ export function VideoPlayer({ videoId, title, poster, aspect, thumbs, onClose }:
     return () => cancelAnimationFrame(raf);
   }, [snapshot.playing, snapshot.duration]);
 
-  // Controls fade out while the video plays and the pointer rests.
+  // Kontrol memudar selagi video main dan pointer diam.
   const wake = useCallback(() => {
     setIdle(false);
     window.clearTimeout(idleTimer.current);
@@ -172,7 +172,7 @@ export function VideoPlayer({ videoId, title, poster, aspect, thumbs, onClose }:
       aria-label={`${title} — video`}
       style={{ '--aspect': String(aspect), ...(poster ? { '--poster': `url("${poster}")` } : {}) } as CSSProperties}
       onPointerMove={wake}
-      // React events bubble through portals: keep clicks in the player from reaching the preview that opened it.
+      // Event React bubble lewat portal: klik di player jangan sampai ke preview yang membukanya.
       onClick={(event) => event.stopPropagation()}
     >
       <div className="player-video">
@@ -184,7 +184,7 @@ export function VideoPlayer({ videoId, title, poster, aspect, thumbs, onClose }:
           allow="autoplay; encrypted-media; picture-in-picture"
           referrerPolicy="strict-origin-when-cross-origin"
         />
-        {/* Catches pointer input so YouTube's own hover overlays stay hidden; a click toggles playback. */}
+        {/* Nangkep input pointer biar overlay hover bawaan YouTube tetap tersembunyi; klik toggle playback. */}
         <button type="button" className="player-shield" tabIndex={-1} aria-hidden="true" onClick={togglePlay} />
         </div>
       </div>

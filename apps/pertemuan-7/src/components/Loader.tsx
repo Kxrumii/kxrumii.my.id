@@ -11,20 +11,20 @@ const MARK_MS = 900;
 const FLIGHT_MS = 950;
 
 export interface GateLeave {
-  /** Centre of the gate logo in viewport px: the stars come out from here. */
+  /** Pusat logo gate dalam px viewport: bintang keluar dari sini. */
   origin: { x: number; y: number };
 }
 
 interface LoaderProps {
-  /** The choice was made: the background may light up and the chrome may start entering. */
+  /** Pilihan sudah dibuat: background boleh menyala dan chrome boleh mulai masuk. */
   onLeave: (leave: GateLeave) => void;
-  /** The logo has landed in the corner: the gate can be removed. */
+  /** Logo sudah mendarat di pojok: gate boleh dibuang. */
   onEntered: () => void;
 }
 
 type Phase = 'loading' | 'mark' | 'ready' | 'leaving';
 
-/** Waits for fonts and a minimum time so the count always reads as a deliberate intro. */
+/** Nunggu font dan waktu minimum biar hitungannya selalu kebaca sebagai intro yang disengaja. */
 function useLoadProgress(reducedMotion: boolean): number {
   const [progress, setProgress] = useState(0);
   useEffect(() => {
@@ -53,10 +53,10 @@ function cssVar(name: string, fallback: string): string {
 }
 
 /**
- * The gate. Its background is transparent: the page's ASCII wake already runs behind it (without stars).
- * The count reaches 100, turns into the F mark, then "enter with sound / without sound". On a choice the
- * text and buttons dissolve and the F flies (FLIP) into the top-left logo while the stars come out around
- * it, so the gate and the works page share one continuous background.
+ * Gate-nya. Background-nya transparan: ASCII wake halaman udah jalan di belakangnya (tanpa bintang).
+ * Hitungan sampai 100, berubah jadi logo F, lalu "enter with sound / without sound". Begitu milih, teks dan
+ * tombol larut dan F terbang (FLIP) ke logo kiri atas sementara bintang keluar di sekitarnya, jadi gate dan
+ * halaman karya berbagi satu background yang nyambung.
  */
 export function Loader({ onLeave, onEntered }: LoaderProps) {
   const reducedMotion = useReducedMotion();
@@ -66,7 +66,7 @@ export function Loader({ onLeave, onEntered }: LoaderProps) {
   const enterRef = useRef<HTMLButtonElement>(null);
   const markRef = useRef<SVGSVGElement>(null);
 
-  // 100 → the count gives way to the mark → the choice appears.
+  // 100 → hitungan memberi jalan ke logo → pilihan muncul.
   useEffect(() => {
     if (progress >= 100 && phase === 'loading') setPhase('mark');
   }, [progress, phase]);
@@ -85,7 +85,7 @@ export function Loader({ onLeave, onEntered }: LoaderProps) {
     if (phase !== 'ready') return;
     setSoundEnabled(withSound);
     if (withSound) {
-      // The click answers the press at once; the chime follows as the gate opens.
+      // Klik langsung menjawab tekanan; chime menyusul pas gate terbuka.
       playSound('click');
       window.setTimeout(() => playSound('enter'), 80);
     }
@@ -100,7 +100,7 @@ export function Loader({ onLeave, onEntered }: LoaderProps) {
       onEntered();
       return;
     }
-    // FLIP: from the gate mark's box to the corner logo's box.
+    // FLIP: dari box logo gate ke box logo pojok.
     const to = target.getBoundingClientRect();
     const dx = to.left - from.left;
     const dy = to.top - from.top;
@@ -127,7 +127,7 @@ export function Loader({ onLeave, onEntered }: LoaderProps) {
       </div>
       <p className="loader-text">
         <span className="line">
-          <span>{profile.handle} ✳ portfolio</span>
+          <span>{profile.handle} ✳ showreel</span>
         </span>
         <span className="line">
           <span>{profile.tagline}</span>

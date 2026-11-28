@@ -1,14 +1,14 @@
-/** The owner's own terms from the work titles ("[Mograph]", "Edit/AMV"), plus "film" for live-action pieces. */
-export type WorkCategory = 'edit' | 'mograph' | 'film';
+/** Istilahku sendiri dari judul karya ("[Mograph]", "Edit/AMV"), plus "film" buat karya live-action. */
+export type WorkCategory = 'edit' | 'mograph' | 'film' | 'video';
 
 export interface Work {
   slug: string;
   title: string;
-  /** null = belum diisi; jangan menebak tahun karya. */
+  /** null = belum diisi; jangan nebak tahun karya. */
   year: number | null;
-  /** null = jenis karya belum disebut owner. */
+  /** null = jenis karya belum kusebut. */
   category: WorkCategory | null;
-  /** null = peran belum dikonfirmasi; hanya isi sesuai kontribusi nyata. */
+  /** null = peran belum dikonfirmasi; isi cuma sesuai kontribusi nyata. */
   role: string | null;
   /** Deskripsi singkat; null = belum ditulis (tampil "deskripsi menyusul"). */
   summary: string | null;
@@ -32,11 +32,11 @@ export interface Work {
 export type SocialIconName = 'github' | 'instagram' | 'tiktok' | 'youtube';
 
 export interface SocialLink {
-  /** Network name, e.g. "GitHub". */
+  /** Nama jaringan, mis. "GitHub". */
   label: string;
   url: string;
   icon: SocialIconName;
-  /** Handle shown under the icon on hover. */
+  /** Handle yang muncul di bawah ikon pas hover. */
   handle: string;
 }
 
@@ -44,7 +44,7 @@ export interface Profile {
   /** Nama tampilan / handle publik. */
   handle: string;
   name: string;
-  /** null = kontak tidak ditampilkan. */
+  /** null = kontak nggak ditampilkan. */
   email: string | null;
   /** Satu baris di loader dan footer, mis. "video & motion maker". */
   tagline: string;

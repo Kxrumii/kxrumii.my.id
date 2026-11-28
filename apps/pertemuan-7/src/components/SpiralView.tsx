@@ -13,16 +13,16 @@ import { WorkCover } from './WorkCover';
 
 interface SpiralViewProps {
   works: Work[];
-  /** Loader or menu up: no drift, no input. */
+  /** Loader atau menu lagi tampil: nggak drift, nggak ada input. */
   paused: boolean;
 }
 
 /**
- * The works as a vertical CSS 3D helix. Scroll, drag or use the arrow keys to turn it; the work facing the
- * camera is named in the caption below, and clicking any front card opens that work.
+ * Karya sebagai heliks 3D CSS vertikal. Scroll, drag, atau tombol panah buat memutarnya; karya yang menghadap
+ * kamera disebut di caption bawah, dan klik kartu depan mana pun membuka karyanya.
  *
- * Cards are decorative for assistive technology (they repeat around the coil); the region itself is the
- * keyboard target and the caption holds the one real link to the active work.
+ * Kartu cuma dekoratif buat assistive technology (berulang mengelilingi coil); region-nya sendiri target
+ * keyboard dan caption yang memegang satu-satunya link asli ke karya aktif.
  */
 export function SpiralView({ works, paused }: SpiralViewProps) {
   const reducedMotion = useReducedMotion();

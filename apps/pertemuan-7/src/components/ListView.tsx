@@ -14,8 +14,8 @@ interface ListViewProps {
 const FOLLOW = 0.18;
 
 /**
- * The works as large centred titles. Hovering one dims the others and shows its cover, which trails the
- * cursor (pointer devices only; the cover simply sits still under reduced motion).
+ * Karya sebagai judul besar di tengah. Hover satu judul meredupkan yang lain dan menampilkan cover-nya, yang
+ * mengikuti kursor (cuma di perangkat pointer; pas reduced motion cover diam di tempat).
  */
 export function ListView({ works }: ListViewProps) {
   const reducedMotion = useReducedMotion();

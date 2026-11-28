@@ -2,9 +2,9 @@
 
 Ini website pribadiku. Isinya profil, eksperimen-eksperimen kecil, dan tugas kuliah yang aku kerjain sambil belajar. Dibikin pakai Astro dan terus kutambah-tambah seiring aku nemu hal baru.
 
-Di repo yang sama ada juga aplikasi untuk mata kuliah **Pengembangan Aplikasi Web (PAW)**. Tiap tugas kupisah supaya bisa pakai teknologi dan konfigurasi yang cocok buat masing-masing.
+Di repo yang sama ada juga aplikasi untuk mata kuliah Pengembangan Aplikasi Web (PAW). Tiap tugas kupisah supaya bisa pakai teknologi dan konfigurasi yang cocok buat masing-masing.
 
-**Website:** [kxrumii.my.id](https://kxrumii.my.id/)
+Website: [kxrumii.my.id](https://kxrumii.my.id/)
 
 ## Isi repository
 
@@ -18,21 +18,21 @@ Website personal yang dibangun dengan Astro, Tailwind CSS, dan GSAP. Di sini ada
 |---|---|---|
 | 01 | HTML5, Tailwind CSS | Halaman profil diri dengan HTML5 semantik |
 | 06 | TypeScript, Vite | Aplikasi pengelola daftar tugas kuliah |
-| 07 | React, TypeScript, Vite | Portofolio galeri spiral |
+| 07 | React, TypeScript, Vite | Showreel karya editku (spiral dan list) |
 | 08 | React Router, TypeScript, Vite | Aplikasi multi-halaman dengan routing |
 
 Source code tiap tugas ada di folder `apps/` masing-masing.
 
 ## Teknologi
 
-- **Astro** untuk website utama.
-- **Tailwind CSS** buat styling.
-- **GSAP** buat animasi dan interaksi visual.
-- **React** buat antarmuka berbasis komponen.
-- **TypeScript** buat semua aplikasi berbasis JavaScript.
-- **Vite** sebagai dev server dan build tool aplikasi tugas.
-- **React Router** buat navigasi antarhalaman.
-- **npm Workspaces** supaya banyak aplikasi bisa hidup dalam satu repo.
+- Astro untuk website utama.
+- Tailwind CSS buat styling.
+- GSAP buat animasi dan interaksi visual.
+- React buat antarmuka berbasis komponen.
+- TypeScript buat semua aplikasi berbasis JavaScript.
+- Vite sebagai dev server dan build tool aplikasi tugas.
+- React Router buat navigasi antarhalaman.
+- npm Workspaces supaya banyak aplikasi bisa hidup dalam satu repo.
 
 ## Menjalankan project
 
@@ -88,13 +88,13 @@ npm run preview
 
 ### Favicon
 
-Favicon situs dibuat dari satu skrip, jadi bentuknya selalu sama di semua tempat:
+Favicon dibuat dari satu skrip supaya konsisten:
 
 ```bash
 npm run favicons
 ```
 
-Skrip ini (`scripts/build-favicons.mjs`, butuh ImageMagick `magick` di PATH untuk file `.ico`) menghasilkan `public/favicon.svg`, `public/favicon.ico`, dan ikon data-URI untuk Task 6 (aplikasi dan halaman dokumentasi) serta Task 7, semuanya dari path logo "F" tanda tangan yang sama. Halaman daftar tugas (`/tugas/`) juga pakai favicon ini. Halaman utama tetap punya F monospace hijaunya sendiri.
+Semua halaman pakai ikon yang sama dengan halaman utama, yaitu huruf "F" monospace hijau. Cuma Task 7 yang punya ikon sendiri, logo "F" tanda tangan yang sama dengan logo di halamannya. Skrip ini (`scripts/build-favicons.mjs`, butuh ImageMagick `magick` di PATH buat file `.ico`) menulis `public/favicon.svg`, `public/favicon.ico`, dan ikon data-URI di `index.html` Task 1, Task 6 (aplikasi dan halaman dokumentasi), Task 7, dan Task 8.
 
 ## Struktur repository
 
@@ -128,7 +128,7 @@ Website utama ada di `src/`, sedangkan source code aplikasi tugas ada di `apps/`
 | `/tugas/` | Arsip tugas PAW |
 | `/tugas/pertemuan-1/` | Tugas HTML5 |
 | `/tugas/pertemuan-6/` | Aplikasi TypeScript |
-| `/tugas/pertemuan-7/` | Portofolio React (galeri spiral) |
+| `/tugas/pertemuan-7/` | Showreel karya edit (spiral dan list) |
 | `/tugas/pertemuan-8/` | Aplikasi React Router |
 
 ## Deployment

@@ -16,9 +16,9 @@ import { playSound } from '../audio/sound';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 
 interface StarFieldProps {
-  /** false: only the ASCII wake and its resting scatter (the gate); true: the pixel stars come out too. */
+  /** false: cuma ASCII wake dan sebaran diamnya (gate); true: pixel stars ikut muncul. */
   starsOn: boolean;
-  /** Where the stars start appearing from (viewport px); defaults to the centre. */
+  /** Dari mana bintang mulai muncul (px viewport); default tengah. */
   origin?: { x: number; y: number } | null;
 }
 
@@ -26,13 +26,13 @@ const MAX_DPR = 2;
 const REVEAL_S = 1.5;
 const POP_S = 0.25;
 const TRAIL_SOUND_MIN = 0.35;
-/** Clicks on these never ripple (they already do something). */
+/** Klik di elemen ini nggak pernah bikin ripple (mereka sudah punya fungsi sendiri). */
 const INTERACTIVE = 'a, button, input, textarea, select, iframe, [role="button"], .project-card';
 
 /**
- * The persistent background canvas (Canvas 2D, not WebGL), mounted once in the layout behind everything:
- * the ASCII wake follows the pointer everywhere; the pixel stars appear outward from `origin` once `starsOn`
- * turns true, with periodic shooting stars; clicking empty space sends out a ripple.
+ * Canvas background persisten (Canvas 2D, bukan WebGL), di-mount sekali di layout di belakang semuanya:
+ * ASCII wake ngikutin pointer di mana-mana; pixel stars muncul menyebar dari `origin` begitu `starsOn`
+ * jadi true, dengan shooting star berkala; klik ruang kosong ngirim ripple.
  */
 export const StarField = memo(function StarField({ starsOn, origin }: StarFieldProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -41,7 +41,7 @@ export const StarField = memo(function StarField({ starsOn, origin }: StarFieldP
   props.current = { starsOn, origin, reducedMotion };
   const revealStart = useRef<number | null>(null);
 
-  // Mark the moment the stars are switched on (the reveal runs from there).
+  // Tandai saat bintang dinyalakan (reveal berjalan dari situ).
   useEffect(() => {
     if (starsOn && revealStart.current === null) {
       revealStart.current = performance.now() / 1000;
@@ -67,7 +67,7 @@ export const StarField = memo(function StarField({ starsOn, origin }: StarFieldP
     let tickAccumulator = 0;
     let lastRegenerate = performance.now();
     let nextShootingAt = performance.now() + nextShootingDelayMs(Math.random);
-    /** The reveal delays are measured from the origin known when the stars are switched on. */
+    /** Delay reveal diukur dari origin yang diketahui pas bintang dinyalakan. */
     let revealMeasured = false;
 
     const computeReveal = () => {
@@ -96,7 +96,7 @@ export const StarField = memo(function StarField({ starsOn, origin }: StarFieldP
       lastFrame = nowMs;
       const { starsOn: on, reducedMotion: still } = props.current;
 
-      // 16 fps retro tick for the star layer (twinkle and shooting stars), as in the original component.
+      // Tick retro 16 fps buat layer bintang (twinkle dan shooting star), kayak komponen aslinya.
       tickAccumulator += dt;
       const tickS = 1 / STAR_CONFIG.fps;
       let ticks = 0;
@@ -124,7 +124,6 @@ export const StarField = memo(function StarField({ starsOn, origin }: StarFieldP
 
       ctx.clearRect(0, 0, width, height);
 
-      // Resting scatter.
       ctx.font = `500 ${WAKE_CELL - 3}px ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace`;
       ctx.textBaseline = 'top';
       ctx.fillStyle = '#fafafa';
@@ -133,7 +132,6 @@ export const StarField = memo(function StarField({ starsOn, origin }: StarFieldP
         ctx.fillText(glyph.char, glyph.x + 3, glyph.y + 2);
       }
 
-      // Stars, revealed outward from the origin.
       const started = revealStart.current;
       if (started !== null && !revealMeasured) computeReveal();
       if (started !== null) {
@@ -148,7 +146,7 @@ export const StarField = memo(function StarField({ starsOn, origin }: StarFieldP
           ctx.fillRect(star.x, star.y, size, size);
         });
 
-        // Shooting stars: rotated pixel trail and a 4×2 pixel head with two pixels missing.
+        // Shooting star: trail pixel yang diputar dan kepala pixel 4×2 dengan dua pixel hilang.
         const px = STAR_CONFIG.shootingPixelSize;
         for (const star of shooting) {
           const rad = (star.angle * Math.PI) / 180;
@@ -176,7 +174,7 @@ export const StarField = memo(function StarField({ starsOn, origin }: StarFieldP
         }
       }
 
-      // Ripple rings drawn as pixels on the star grid.
+      // Ring ripple digambar sebagai pixel di grid bintang.
       for (const ripple of ripples) {
         const radius = rippleRadius(ripple, nowS);
         const alpha = rippleAlpha(ripple, nowS);
@@ -191,7 +189,7 @@ export const StarField = memo(function StarField({ starsOn, origin }: StarFieldP
         }
       }
 
-      // ASCII wake: the brightest cells glow mint.
+      // ASCII wake: sel paling terang menyala mint.
       for (const cell of wake.cells.values()) {
         ctx.globalAlpha = Math.min(1, cell.energy * 0.9);
         ctx.fillStyle = cell.energy > 0.8 ? '#21ffc0' : '#fafafa';

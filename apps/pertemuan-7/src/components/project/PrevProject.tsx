@@ -8,8 +8,8 @@ interface PrevProjectProps {
 }
 
 /**
- * Appears at the top while the visitor keeps scrolling up past the top of a project: "previous · title" with a
- * bar that fills; full → the previous work (useEdgeNavigation).
+ * Muncul di atas pas pengunjung terus scroll ke atas melewati puncak project: "previous · judul" dengan bar
+ * yang terisi; penuh → karya sebelumnya (useEdgeNavigation).
  */
 export function PrevProject({ prev, hintRef, fillRef }: PrevProjectProps) {
   return (

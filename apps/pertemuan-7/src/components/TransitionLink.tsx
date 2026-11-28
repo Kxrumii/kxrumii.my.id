@@ -9,8 +9,8 @@ interface TransitionLinkProps extends LinkProps {
 }
 
 /**
- * Router link that plays the shared exit/enter transition before navigating.
- * Modified clicks, new-tab targets and downloads keep native behaviour.
+ * Router link yang memainkan transisi exit/enter bersama sebelum navigasi.
+ * Klik dengan modifier, target tab baru, dan download tetap perilaku native.
  */
 export function TransitionLink({ to, onClick, target, download, reloadDocument, ref, ...rest }: TransitionLinkProps) {
   const navigateWithTransition = useTransitionNavigate();

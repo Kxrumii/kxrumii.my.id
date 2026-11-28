@@ -1,8 +1,8 @@
-/** Click ripples: a pixel ring that expands and fades, brightening the stars it passes. Pure helpers. */
+/** Ripple klik: ring pixel yang melebar dan memudar, bintang yang dilewatinya jadi lebih terang. */
 
-export const RIPPLE_SPEED = 520; // px per second
+export const RIPPLE_SPEED = 520; // px per detik
 export const RIPPLE_LIFE_S = 1.3;
-export const RIPPLE_BAND = 28; // px either side of the ring that light up
+export const RIPPLE_BAND = 28; // px di kiri-kanan ring yang ikut menyala
 
 export interface Ripple {
   x: number;
@@ -19,7 +19,7 @@ export function rippleAlpha(ripple: Ripple, nowS: number): number {
   return t < 0 || t >= 1 ? 0 : (1 - t) * (1 - t);
 }
 
-/** Extra brightness (0–1) a point receives from the live ripples. */
+/** Tambahan kecerahan (0–1) buat satu titik dari ripple yang lagi jalan. */
 export function rippleBoost(ripples: readonly Ripple[], x: number, y: number, nowS: number): number {
   let boost = 0;
   for (const ripple of ripples) {

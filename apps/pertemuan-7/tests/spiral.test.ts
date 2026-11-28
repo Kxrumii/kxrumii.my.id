@@ -69,19 +69,19 @@ test('poses are always finite, whatever the input', () => {
 });
 
 test('nearest position takes the shortest way round to a work', () => {
-  const n = 6; // 12 slots, every work appears twice
+  const n = 6; // 12 slot, tiap karya muncul dua kali
   assert.equal(nearestPositionFor(1, 0, n), 1);
   assert.equal(nearestPositionFor(5, 0, n), -1);
   assert.equal(nearestPositionFor(0, 10.6, n), 12);
   assert.equal(workIndexForSlot(nearestPositionFor(4, 37.2, n), n), 4);
-  // No loop: clamp into the list.
+  // Tanpa loop: di-clamp ke dalam list.
   assert.equal(nearestPositionFor(5, 0, 2), 1);
 });
 
-/* ---- No overlap: projected card polygons of visible cards never intersect ---- */
+/* ---- Tanpa overlap: poligon kartu terproyeksi yang kelihatan nggak pernah berpotongan ---- */
 import { geometryFor, polygonsOverlap, projectCard } from '../src/spiral/geometry.ts';
 
-/** Card size from the CSS rule `width: clamp(170px, 21vw, 340px); aspect-ratio: 16 / 10`. */
+/** Ukuran kartu dari aturan CSS `width: clamp(170px, 21vw, 340px); aspect-ratio: 16 / 10`. */
 function cardFor(viewportWidth: number) {
   const width = Math.min(Math.max(170, viewportWidth * 0.21), 340);
   return { width, height: (width * 10) / 16 };

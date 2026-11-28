@@ -1,4 +1,4 @@
-/* Reduced motion: no loops, no springs, no travelling text. The spiral itself is static (see useSpiral). */
+/* Reduced motion: tanpa loop, spring, dan teks yang berjalan. Spiral-nya sendiri statis (lihat useSpiral). */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -16,8 +16,8 @@
 }
 
 /* ---- Gate → works hand-off (Layout data-phase) ----
-   gate: chrome and page hidden; entering: they come in one after another while the logo flies;
-   the corner logo itself only appears once the flying mark has landed on it (entered). */
+   gate: chrome dan halaman tersembunyi; entering: masuk satu per satu sementara logo terbang;
+   logo pojok baru muncul setelah logo yang terbang mendarat di situ (entered). */
 .chrome[data-phase='gate'] > *,
 .chrome[data-phase='entering'] > .logo,
 .page[data-phase='gate'] {
@@ -36,7 +36,7 @@
   animation-delay: 0.4s;
 }
 
-/* Only opacity on .page: a transform there would re-anchor its fixed children. The stage scales itself. */
+/* Cuma opacity di .page: transform di situ bakal memindahkan anchor anak-anaknya yang fixed. Stage menskalakan dirinya sendiri. */
 .page[data-phase='entering'] {
   animation: page-in 1.1s var(--ease-expo-out) 0.15s both;
 }
@@ -68,7 +68,7 @@
   }
 }
 
-/* ---- Route transitions: the incoming page is invisible until its own enter animation runs (no blink) ---- */
+/* ---- Transisi route: halaman yang masuk nggak kelihatan sampai animasi enter-nya jalan (biar nggak kedip) ---- */
 :root {
   --transition-enter-from-clip: inset(0 0 0 0);
   --transition-enter-from-transform: translate3d(0, 80px, 0) scale(0.96);

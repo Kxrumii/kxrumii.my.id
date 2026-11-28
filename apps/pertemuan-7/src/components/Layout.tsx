@@ -8,18 +8,18 @@ import { SoundButton } from './SoundButton';
 import { StarField } from './StarField';
 
 export interface LayoutContext {
-  /** False while the gate is up: pages stay still. */
+  /** false selama gate masih tampil: halaman diam dulu. */
   entered: boolean;
-  /** The menu panel covers part of the page: the spiral pauses. */
+  /** Panel menu nutupin sebagian halaman, jadi spiral di-pause. */
   menuOpen: boolean;
 }
 
-/** gate: the intro is up · entering: the logo is flying and the page comes in · entered: normal. */
+/** gate: intro tampil · entering: logo terbang dan halaman masuk · entered: normal. */
 type Phase = 'gate' | 'entering' | 'entered';
 
 /**
- * App frame: the persistent background canvas, the gate, the fixed chrome (logo, menu, sound) and the routed
- * page. The chrome carries `data-shell`, so same-document transitions move only the page.
+ * Frame app: canvas background yang persisten, gate, chrome tetap (logo, menu, sound), dan halaman dari router.
+ * Chrome punya `data-shell`, jadi transisi same-document cuma menggerakkan halamannya.
  */
 export function Layout() {
   const location = useLocation();
@@ -38,8 +38,8 @@ export function Layout() {
   }, [location.pathname]);
   usePageReady(location.pathname);
 
-  // A route change closes the menu and starts the new page at the top (also on browser back/forward). Arriving
-  // at the previous work by scrolling up lands at its bottom, so scrolling backwards stays continuous.
+  // Ganti route: menu nutup dan halaman baru mulai dari atas (termasuk pas back/forward). Kalau ke karya
+  // sebelumnya lewat scroll ke atas, mendarat di bawahnya biar scroll mundur tetap nyambung.
   useLayoutEffect(() => {
     setMenuOpen(false);
     const backwards = document.documentElement.dataset.routeDir === 'prev';
@@ -47,7 +47,7 @@ export function Layout() {
   }, [location.pathname]);
 
   const entered = phase !== 'gate';
-  // On a project the white card has its own close button (as on the reference), so the menu steps aside.
+  // Di halaman project, kartu putihnya punya tombol close sendiri (kayak referensi), jadi menu minggir.
   const onProject = location.pathname.startsWith('/work/');
   const context: LayoutContext = { entered, menuOpen };
 

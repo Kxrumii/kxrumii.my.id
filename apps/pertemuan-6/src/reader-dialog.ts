@@ -41,9 +41,8 @@ export interface ReaderDialog {
 }
 
 /**
- * Dialog detail tugas ala editorial reader (`af-reader`):
- * menampilkan informasi penuh, kontrol status, Edit, Hapus, dan navigasi sebelumnya/berikutnya.
- * Semua teks pengguna ditulis lewat `textContent`.
+ * Dialog detail tugas ala editorial reader (`af-reader`): info lengkap, kontrol status,
+ * Edit, Hapus, dan navigasi sebelumnya/berikutnya. Semua teks pengguna lewat `textContent`.
  */
 export function initReaderDialog(root: ParentNode, handlers: ReaderDialogHandlers): ReaderDialog {
   const dialog = requireElement(root, '#reader-dialog', HTMLDialogElement);
@@ -83,7 +82,7 @@ export function initReaderDialog(root: ParentNode, handlers: ReaderDialogHandler
     try {
       anim.cancel();
     } catch {
-      /* animasi mungkin sudah selesai atau dibatalkan */
+      /* animasinya mungkin sudah selesai/dibatalkan */
     }
   }
 

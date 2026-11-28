@@ -159,7 +159,7 @@ describe('stepOrbitalCoord (CP1-D orbit layout reflow)', () => {
     let coord: OrbitalCoord = { x: -120, y: 40, scale: 0.78, captionX: 20, captionY: 220 };
     const target: OrbitalCoord = { x: 80, y: -15, scale: 1.02, captionX: 410, captionY: 310 };
 
-    // dtMs <= 0 aman dan tidak melompat
+    // dtMs <= 0 aman dan nggak melompat
     const zeroStep = stepOrbitalCoord(coord, target, 0);
     assert.equal(zeroStep.settled, false);
     assert.deepEqual(zeroStep.coord, coord);

@@ -9,11 +9,11 @@ import { WorkCover } from '../WorkCover';
 interface NextProjectProps {
   next: Work;
   number: string;
-  /** The bar on the right; filled by useEdgeNavigation. */
+  /** Bar di kanan; diisi useEdgeNavigation. */
   fillRef: Ref<HTMLSpanElement>;
 }
 
-/** The last screen of a project: the next work with two tilted tags and the "keep scrolling" bar. */
+/** Layar terakhir sebuah project: karya berikutnya dengan dua tag miring dan bar "keep scrolling". */
 export function NextProject({ next, number, fillRef }: NextProjectProps) {
   const navigate = useTransitionNavigate();
   const href = `/work/${next.slug}`;

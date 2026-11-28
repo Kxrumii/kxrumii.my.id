@@ -6,13 +6,13 @@ export const STORAGE_VERSION = 1;
 export const VIEW_MODE_KEY = 'kxrumii-task6-view-mode';
 export const DEFAULT_VIEW_MODE: ViewMode = 'list';
 
-/** Subset `Storage` yang dipakai aplikasi; memudahkan injeksi pada test. */
+/** Subset `Storage` yang dipakai app; gampang di-inject di test. */
 export interface StorageLike {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;
 }
 
-/** Bentuk data yang disimpan: envelope bernomor versi, bukan array polos. */
+/** Bentuk data tersimpan: envelope ber-versi, bukan array polos. */
 export interface StoredTasks {
   version: typeof STORAGE_VERSION;
   tasks: readonly Task[];
@@ -23,9 +23,9 @@ export type SaveFailure = 'unavailable' | 'save-failed';
 
 export interface LoadResult {
   tasks: Task[];
-  /** Jumlah record tugas yang dilewati karena tidak valid atau id ganda. */
+  /** Jumlah record tugas yang dilewati karena invalid atau id ganda. */
   skipped: number;
-  /** `null` bila penyimpanan terbaca dengan baik (termasuk bila belum ada data). */
+  /** `null` kalau storage kebaca dengan baik (termasuk kalau belum ada data). */
   issue: LoadIssue | null;
 }
 
@@ -41,7 +41,7 @@ function isNonEmptyText(value: unknown): value is string {
   return typeof value === 'string' && value.trim() !== '';
 }
 
-/** Validasi runtime satu record tugas dari data yang tidak dipercaya. */
+/** Validasi runtime satu record tugas dari data yang nggak dipercaya. */
 export function isTask(value: unknown): value is Task {
   if (!isRecord(value)) return false;
   const { id, title, course, category, description, deadline, status } = value;
@@ -63,7 +63,7 @@ export function isViewMode(value: unknown): value is ViewMode {
   return value === 'list' || value === 'orbit';
 }
 
-/** Membaca preferensi mode tampilan dari storage; selalu jatuh aman ke `list`. */
+/** Baca preferensi mode tampilan; selalu fallback aman ke `list`. */
 export function loadViewMode(storage: StorageLike | null): ViewMode {
   if (storage === null) return DEFAULT_VIEW_MODE;
   try {
@@ -74,7 +74,7 @@ export function loadViewMode(storage: StorageLike | null): ViewMode {
   }
 }
 
-/** Menyimpan preferensi mode tampilan ke storage. Tidak pernah melempar error. */
+/** Simpan preferensi mode tampilan. Nggak pernah throw. */
 export function saveViewMode(storage: StorageLike | null, mode: ViewMode): SaveResult {
   if (storage === null) return { ok: false, reason: 'unavailable' };
   try {
@@ -85,7 +85,7 @@ export function saveViewMode(storage: StorageLike | null, mode: ViewMode): SaveR
   }
 }
 
-/** Mengambil `localStorage` bila dapat diakses; accessor-nya sendiri bisa melempar error. */
+/** Ambil `localStorage` kalau bisa diakses; accessor-nya sendiri bisa throw. */
 export function getBrowserStorage(): StorageLike | null {
   try {
     return window.localStorage;
@@ -95,8 +95,8 @@ export function getBrowserStorage(): StorageLike | null {
 }
 
 /**
- * Membaca dan memvalidasi daftar tugas. Tidak pernah melempar error dan tidak menulis ke storage.
- * Record yang valid dipertahankan; record tidak valid dan id ganda dilewati dan dihitung.
+ * Baca dan validasi daftar tugas. Nggak pernah throw dan nggak nulis ke storage.
+ * Record valid dipertahankan; record invalid dan id ganda dilewati lalu dihitung.
  */
 export function loadTasks(storage: StorageLike | null): LoadResult {
   const empty = (issue: LoadIssue | null, skipped = 0): LoadResult => ({ tasks: [], skipped, issue });
@@ -130,7 +130,7 @@ export function loadTasks(storage: StorageLike | null): LoadResult {
       continue;
     }
     seen.add(record.id);
-    // Salin hanya field yang dikenal; properti tambahan tidak ikut dipulihkan.
+    // Salin cuma field yang dikenal; properti ekstra nggak ikut dipulihkan.
     const item: Task = {
       id: record.id,
       title: record.title,
@@ -147,7 +147,7 @@ export function loadTasks(storage: StorageLike | null): LoadResult {
   return { tasks, skipped, issue: null };
 }
 
-/** Menyimpan daftar tugas dalam envelope bernomor versi. Tidak pernah melempar error. */
+/** Simpan daftar tugas dalam envelope ber-versi. Nggak pernah throw. */
 export function saveTasks(storage: StorageLike | null, tasks: readonly Task[]): SaveResult {
   if (storage === null) return { ok: false, reason: 'unavailable' };
   const payload: StoredTasks = { version: STORAGE_VERSION, tasks };
@@ -159,7 +159,7 @@ export function saveTasks(storage: StorageLike | null, tasks: readonly Task[]): 
   }
 }
 
-/** Pesan untuk pengguna terkait hasil pembacaan; `null` bila tidak ada masalah. */
+/** Pesan buat pengguna soal hasil pembacaan; `null` kalau nggak ada masalah. */
 export function describeLoad(result: LoadResult): string | null {
   switch (result.issue) {
     case 'unavailable':
@@ -175,7 +175,7 @@ export function describeLoad(result: LoadResult): string | null {
   }
 }
 
-/** Pesan untuk pengguna saat penyimpanan gagal. */
+/** Pesan buat pengguna kalau penyimpanan gagal. */
 export function describeSaveFailure(reason: SaveFailure): string {
   return reason === 'unavailable'
     ? 'Perubahan tidak dapat disimpan karena penyimpanan peramban tidak dapat diakses. Tugas tetap dapat dipakai, tetapi akan hilang saat halaman dimuat ulang.'

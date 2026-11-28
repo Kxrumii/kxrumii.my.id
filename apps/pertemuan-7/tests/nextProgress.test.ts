@@ -38,5 +38,5 @@ test('socials: the Pertemuan 1 links, with YouTube moved to @p_ftttt (owner, rou
   );
   assert.equal(profile.email, null, 'no e-mail is published');
   assert.equal(profile.handle, 'Fahrii');
-  assert.equal(profile.tagline, 'developer & editor');
+  assert.equal(profile.tagline, 'editor');
 });

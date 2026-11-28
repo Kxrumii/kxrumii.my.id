@@ -71,9 +71,8 @@ export interface OrbitalDriftState {
 }
 
 /**
- * Menentukan apakah gerak idle orbital boleh berjalan.
- * Hover pointer tidak termasuk kondisi jeda; jeda hanya untuk pause manual,
- * drag aktif, reduced motion, tab tidak aktif, dialog terbuka, fokus keyboard, dan transisi rute.
+ * Boleh nggaknya gerak idle orbital jalan. Hover pointer nggak ikut menjeda; yang menjeda:
+ * pause manual, drag, reduced motion, tab nggak aktif, dialog kebuka, fokus keyboard, dan transisi rute.
  */
 export function shouldIdleDrift(state: OrbitalDriftState): boolean {
   if (!state.active || state.count <= 1) return false;
@@ -88,13 +87,13 @@ export function shouldIdleDrift(state: OrbitalDriftState): boolean {
   );
 }
 
-/** Menentukan tampilan efektif: otomatis pindah ke daftar jika tugas tampak melebihi `ORBIT_LIMIT`. */
+/** Tampilan efektif: otomatis pindah ke daftar kalau tugas kelihatan melebihi `ORBIT_LIMIT`. */
 export function resolveEffectiveView(visibleCount: number, preference: ViewPreference): ViewMode {
   if (preference === 'orbit' || preference === 'list') return preference;
   return visibleCount > ORBIT_LIMIT ? 'list' : 'orbit';
 }
 
-/** Memotong daftar ke halaman orbital berukuran `pageSize` (indeks 1-based). */
+/** Potong daftar ke satu halaman orbital (indeks mulai dari 1). */
 export function paginateOrbit<T>(
   items: readonly T[],
   page: number,
@@ -131,7 +130,7 @@ function isCoordConverged(a: OrbitalCoord, b: OrbitalCoord): boolean {
   );
 }
 
-/** Menginterpolasi koordinat visual orbital satu langkah (`dtMs`) menuju target slot baru. */
+/** Satu langkah (`dtMs`) interpolasi koordinat orbital menuju slot target. */
 export function stepOrbitalCoord(
   current: OrbitalCoord,
   target: OrbitalCoord,
@@ -159,11 +158,9 @@ export function stepOrbitalCoord(
 }
 
 /**
- * Memproyeksikan 0..N kotak tugas pada panggung orbital 2D/3D deterministik:
- * - 0 → kosong
- * - 1 → terpusat
- * - 2–3 → busur ekuatorial seimbang
- * - 4+ → proyeksi bola Fibonacci seperti referensi Edison Fang Workshop
+ * Proyeksi 0..N kotak tugas ke panggung orbital 2D/3D, deterministik:
+ * - 0 kosong, 1 di tengah, 2–3 busur ekuatorial seimbang
+ * - 4+ bola Fibonacci, mengacu ke Edison Fang Workshop
  */
 export function computeOrbitalPositions(
   count: number,

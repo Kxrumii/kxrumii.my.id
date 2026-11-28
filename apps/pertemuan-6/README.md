@@ -1,22 +1,22 @@
 # Task Manager: PAW Pertemuan 6
 
-Ini aplikasi pengelola tugas yang kubuat pakai Vanilla TypeScript dan Vite untuk **Tugas PAW Pertemuan 6**, di monorepo `kxrumii.my.id` (`@kxrumii/pertemuan-6`, base path `/tugas/pertemuan-6/`).
+Ini aplikasi pengelola tugas yang kubuat pakai Vanilla TypeScript dan Vite untuk Tugas PAW Pertemuan 6, di monorepo `kxrumii.my.id` (`@kxrumii/pertemuan-6`, base path `/tugas/pertemuan-6/`).
 
-Task Manager punya dua mode tampilan yang selalu sinkron karena berbagi satu store data yang tervalidasi. Yang pertama dan jadi bawaan adalah **Accessible List View** dua kolom dengan gulir vertikal sendiri. Yang kedua **Orbital Stage**, tampilan spasial dengan enam arketipe kartu tipografis yang deterministik. Buat membaca detail tugas ada **Reader Dialog** full-sheet dari `<dialog>` native.
+Task Manager punya dua mode tampilan yang selalu sinkron karena pakai satu store data yang tervalidasi. Yang pertama, dan jadi bawaan, adalah Accessible List View: dua kolom dengan gulir vertikal sendiri. Yang kedua Orbital Stage, tampilan spasial dengan enam arketipe kartu tipografis yang deterministik. Buat baca detail tugas ada Reader Dialog layar penuh yang dibuat dari `<dialog>` native.
 
 ---
 
 ## Fitur utama
 
-- **Brand `Task Manager`:** header utama menampilkan brand `Task Manager` yang nyambung ke Portal Tugas (`/tugas/`). Halaman dokumentasi tetap memakai label akademik `DOKUMENTASI · PERTEMUAN 06`.
-- **CRUD lengkap:** tambah dan edit tugas lewat form `<dialog>` native dengan validasi per field. `title` dan `course` wajib diisi setelah di-trim, sedangkan `category`, `description`, dan `deadline` (format `YYYY-MM-DD`) opsional. Dialog konfirmasi hapus juga aman dari double-submit.
-- **Ubah status dan aksesibilitas:** status bisa dibalik dua arah (`belum-selesai` ↔ `selesai`) lewat checkbox di mode Daftar atau tombol aksi di Reader Dialog. Perubahannya diumumkan lewat `aria-live="polite"` dan fokus dikembalikan secara eksplisit.
-- **Pencarian real-time dan filter status:** pencarian per sesi di `title`, `course`, `category`, dan `description`, digabung dengan filter `Semua`, `Belum`, dan `Selesai`. Jumlah di bilah filter dan footer selalu dihitung dari seluruh koleksi.
-- **Persistensi `localStorage` (skema v1):** data disimpan dalam amplop `{ version: 1, tasks }` (`STORAGE_VERSION = 1`) dengan runtime type guard yang ketat. Record rusak atau duplikat disaring, data korup memunculkan peringatan yang nggak merusak apa-apa, dan kalau storage diblokir aplikasi jatuh ke penyimpanan in-memory.
-- **Perpindahan tampilan yang mulus (M2.1 CP1):** peralihan `List ↔ Orbit` berbasis `task.id` yang stabil. List di-reconcile per key (`reconcileAccessibleList`) supaya nggak ada flicker saat mengetik di pencarian, baris yang bergeser dianimasikan dengan FLIP, koordinat Orbital diinterpolasi terpisah dari status jeda manual (`manualPaused`), dan mikrointeraksi CSS dijaga tetap terkendali.
-- **Kartu ↔ Reader Dialog (M2.1 CP2 dan CP4-A):** waktu Reader dibuka, ada transisi spasial `clip-path` dari kartu Daftar atau `.box-print` Orbital ke sheet penuh. Waktu ditutup, dialog, `.reader-bar`, `.reader-article`, dan fade `::backdrop` balik ke kartu tugas yang sedang aktif (termasuk setelah `Sebelumnya` / `Berikutnya`). Semua animasi dibersihkan tuntas, dan ada fallback M2.
-- **Tambah tugas yang rapi (M2.1 CP4-B):** form tambah menutup `#task-dialog` sebelum render supaya reflow Orbital nggak ketahan. Baris baru otomatis digulir ke area pandang Daftar kalau ada di luar viewport, dan kartu baru beserta caption-nya dianimasikan di Orbital tanpa reflow lintas halaman saat melewati batas 12 kartu (`12 → 13`).
-- **Halaman dokumentasi dan accordion (M2.1 CP3 dan CP4-C):** halaman terpisah di `/tugas/pertemuan-6/dokumentasi/` terhubung dua arah lewat `@kxrumii/transition-bridge`. Isinya 9 topik `<details class="note">` native dengan animasi tinggi WAAPI yang aman saat diinterupsi, di-resize, dipakai lewat keyboard, tanpa JS, dan saat reduced motion.
+- Brand `Task Manager`: header utama menampilkan brand `Task Manager` yang nyambung ke Portal Tugas (`/tugas/`). Halaman dokumentasi tetap pakai label akademik `DOKUMENTASI · PERTEMUAN 06`.
+- CRUD lengkap: tambah dan edit tugas lewat form `<dialog>` native dengan validasi per field. `title` dan `course` wajib diisi setelah di-trim, sedangkan `category`, `description`, dan `deadline` (format `YYYY-MM-DD`) opsional. Dialog konfirmasi hapus juga aman dari double-submit.
+- Ubah status dan aksesibilitas: status bisa dibalik dua arah (`belum-selesai` ↔ `selesai`) lewat checkbox di mode Daftar atau tombol aksi di Reader Dialog. Perubahannya diumumkan lewat `aria-live="polite"`, dan fokus dikembalikan secara eksplisit.
+- Pencarian real-time dan filter status: pencarian per sesi di `title`, `course`, `category`, dan `description`, digabung dengan filter `Semua`, `Belum`, dan `Selesai`. Jumlah di bilah filter dan footer selalu dihitung dari seluruh koleksi.
+- Persistensi `localStorage` (skema v1): data disimpan dalam amplop `{ version: 1, tasks }` (`STORAGE_VERSION = 1`) dengan runtime type guard yang ketat. Record rusak atau duplikat disaring, data korup memunculkan peringatan tanpa merusak apa-apa, dan kalau storage diblokir, aplikasi pindah ke penyimpanan in-memory.
+- Perpindahan tampilan (M2.1 CP1): peralihan `List ↔ Orbit` berbasis `task.id` yang stabil. List di-reconcile per key (`reconcileAccessibleList`) supaya nggak ada flicker waktu mengetik di pencarian, baris yang bergeser dianimasikan dengan FLIP, dan koordinat Orbital diinterpolasi terpisah dari status jeda manual (`manualPaused`).
+- Kartu ↔ Reader Dialog (M2.1 CP2 dan CP4-A): waktu Reader dibuka, ada transisi spasial `clip-path` dari kartu Daftar atau `.box-print` Orbital ke sheet penuh. Waktu ditutup, dialog, `.reader-bar`, `.reader-article`, dan fade `::backdrop` balik ke kartu tugas yang sedang aktif (termasuk setelah `Sebelumnya` / `Berikutnya`). Semua animasi dibersihkan tuntas, dan ada fallback M2.
+- Tambah tugas (M2.1 CP4-B): form tambah menutup `#task-dialog` sebelum render supaya reflow Orbital nggak ketahan. Baris baru otomatis digulir ke area pandang Daftar kalau ada di luar viewport, dan kartu baru beserta caption-nya dianimasikan di Orbital tanpa reflow lintas halaman saat melewati batas 12 kartu (`12 → 13`).
+- Halaman dokumentasi dan accordion (M2.1 CP3 dan CP4-C): halaman terpisah di `/tugas/pertemuan-6/dokumentasi/` yang terhubung dua arah lewat `@kxrumii/transition-bridge`. Isinya 9 topik `<details class="note">` native dengan animasi tinggi WAAPI yang aman waktu diinterupsi, di-resize, dipakai lewat keyboard, tanpa JS, dan saat reduced motion.
 
 ---
 
@@ -28,7 +28,7 @@ Task Manager punya dua mode tampilan yang selalu sinkron karena berbagi satu sto
 - **Font self-hosted (SIL OFL 1.1):** 5 keluarga font lokal (`Newsreader`, `Archivo Black`, `DM Sans`, `Barlow Condensed`, `Source Code Pro`) di `src/fonts/`, jadi nggak ada request ke Google Fonts saat runtime.
 - **Test runner:** test runner bawaan Node.js (`node:test`) dan `node:assert/strict`
 - **Toolchain dan workspaces:** Node.js `26.13.1` (`.nvmrc`, root `engines.node >= 26.13.1`), `npm@12.2.3`
-- **Favicon:** ikon data-URI di `index.html` dan `dokumentasi/index.html`, dibuat dari logo F tanda tangan yang sama dengan Task 7 lewat `npm run favicons` di root repo.
+- **Favicon:** ikon data-URI di `index.html` dan `dokumentasi/index.html`, sama dengan halaman utama (huruf F monospace hijau). Dibuat lewat `npm run favicons` di root repo.
 
 ---
 
@@ -190,5 +190,5 @@ Dua catatan soal pipeline:
   - **PR #5** (`4ff59f3`, `b6ff182`): bukti penyelesaian merge conflict historis antara `feature/pertemuan-6-task-manager` dan `docs/pertemuan-6-notes`.
   - **PR #7** (`ca21ef6`): menggabungkan milestone **M1** (Orbital Stage Core) dan **M2** (Accessible List View, skema S2, Search, Motion System, perbaikan Reader Dialog, dan vertical Shared Transition Bridge) ke `main`.
   - **PR #8** (`fd8e6f7`, commit fitur `971402b`): menggabungkan **M2.1** ke `main`.
-- **Status M2.1 dan M3 saat ini:** implementasi **M2.1** lengkap (`CP3` transisi rute Dokumentasi, `CP1` kontinuitas List ↔ Orbit dan reflow, `CP2` morph Kartu ↔ Reader, `CP4` branding `Task Manager`, koordinasi tambah tugas, refinement close Reader, dan accordion Dokumentasi WAAPI), plus sinkronisasi dokumentasi **M3**. Semuanya sudah ada di `main` lewat PR #8. Favicon-nya ikut diganti ke logo F tanda tangan di branch `feature/pertemuan-7-react-vite`.
+- **Status M2.1 dan M3 saat ini:** implementasi **M2.1** lengkap (`CP3` transisi rute Dokumentasi, `CP1` kontinuitas List ↔ Orbit dan reflow, `CP2` morph Kartu ↔ Reader, `CP4` branding `Task Manager`, koordinasi tambah tugas, refinement close Reader, dan accordion Dokumentasi WAAPI), plus sinkronisasi dokumentasi **M3**. Semuanya sudah ada di `main` lewat PR #8.
 - **Keterbatasan penyimpanan:** semua data tugas, tema, dan mode tampilan disimpan lokal di `localStorage` browser. Aplikasi ini nggak punya backend API, akun pengguna, atau sinkronisasi antar perangkat.

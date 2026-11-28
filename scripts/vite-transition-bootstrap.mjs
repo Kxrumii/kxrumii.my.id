@@ -1,10 +1,9 @@
 /**
- * Injects the shared transition bootstrap (single source:
- * @kxrumii/transition-bridge/bootstrap.inline.js) into a Vite app's index.html.
+ * Menyisipkan bootstrap transisi bersama (sumber tunggal:
+ * @kxrumii/transition-bridge/bootstrap.inline.js) ke index.html app Vite.
  *
- * The script is placed immediately after <meta charset> so that it still runs
- * before every stylesheet and module script, while the charset declaration
- * stays within the first 1024 bytes of the document.
+ * Script ditaruh tepat setelah <meta charset> supaya tetap jalan sebelum semua stylesheet dan module script,
+ * sementara deklarasi charset tetap ada di 1024 byte pertama dokumen.
  */
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';

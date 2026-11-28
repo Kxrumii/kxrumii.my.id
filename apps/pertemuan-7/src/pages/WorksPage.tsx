@@ -12,7 +12,7 @@ import { transitionIndex } from '../transition';
 
 const EXIT_EASE = 'cubic-bezier(0.55, 0, 0.75, 0.2)';
 
-/** Exit motion of the view on screen; resolves when it has finished. */
+/** Gerak keluar view yang lagi tampil; resolve kalau sudah selesai. */
 function playExit(stage: HTMLElement, view: WorksView): Promise<unknown> {
   const animations: Animation[] = [];
   if (view === 'spiral') {
@@ -44,9 +44,9 @@ function playExit(stage: HTMLElement, view: WorksView): Promise<unknown> {
 }
 
 /**
- * Home: every work as a spiral (default) or as a list, switched at the top centre (`?view=list`). Switching
- * plays the old view's exit (cards shrink away from the front, titles slide up out of their masks) and then
- * the new view's enter (see works.css).
+ * Home: semua karya sebagai spiral (default) atau list, ganti di tengah atas (`?view=list`). Ganti view
+ * memainkan exit view lama (kartu mengecil dari depan, judul slide ke atas keluar dari mask) lalu enter view
+ * baru (lihat works.css).
  */
 export function WorksPage() {
   const { entered, menuOpen } = useOutletContext<LayoutContext>();
@@ -58,7 +58,7 @@ export function WorksPage() {
   const stageRef = useRef<HTMLDivElement>(null);
   usePageTitle(shown === 'list' ? 'works list' : null);
 
-  // The URL is the source of truth (switch, back/forward); the stage follows it through an exit.
+  // URL jadi sumber kebenaran (switch, back/forward); stage mengikutinya lewat exit.
   useEffect(() => {
     if (view === shown) return;
     const stage = stageRef.current;

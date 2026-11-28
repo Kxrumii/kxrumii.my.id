@@ -12,9 +12,9 @@ interface ProjectStyleframesProps {
 const SAMPLE_FRAMES = 3;
 
 /**
- * Stills of the work, alternating left and right. Each frame grows from half size while its image settles from
- * 1.5× zoom, driven by its position in the viewport (one scroll listener, one rAF). Sample entries show
- * generative frames; real works show `styleframes` and nothing when there are none.
+ * Still karya, selang-seling kiri dan kanan. Tiap frame membesar dari setengah ukuran sementara gambarnya turun
+ * dari zoom 1.5×, dikendalikan posisinya di viewport (satu scroll listener, satu rAF). Entri sample nampilin
+ * frame generatif; karya asli nampilin `styleframes`, dan kosong kalau nggak ada.
  */
 export function ProjectStyleframes({ work, number }: ProjectStyleframesProps) {
   const reducedMotion = useReducedMotion();

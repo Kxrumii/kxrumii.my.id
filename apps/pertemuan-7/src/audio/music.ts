@@ -1,16 +1,16 @@
 import { equalPowerCurve, planSongSegments, type SongLoopInput } from './loopPlan';
 
 /*
- * Background music: "Shelter (Official Piano Version)", looped whole with a 2 s crossfade.
+ * Musik background: "Shelter (Official Piano Version)", di-loop utuh dengan crossfade 2 s.
  *
- * Rights: the file is the owner's and is NEVER committed. Development reads it from apps/pertemuan-7/local-media/
- * (excluded from Git); production plays `<base>/media/shelter.webm` only if the owner has put that file on the
- * server by hand. A missing file (404, or the SPA's index.html served instead) means "unavailable": the app stays
- * silent apart from the interface sounds.
+ * Soal hak: file-nya punyaku dan TIDAK PERNAH di-commit. Pas development dibaca dari apps/pertemuan-7/local-media/
+ * (di-exclude dari Git); di production baru memutar `<base>/media/shelter.webm` kalau aku sendiri yang upload
+ * file itu ke server. File nggak ada (404, atau index.html SPA yang malah tersaji) dianggap "tidak tersedia":
+ * app diam, cuma ada bunyi interface.
  *
- * Fetch/decode and the node-per-segment crossfade are adapted from the earlier Task 7 showroom (branch archive/pertemuan-9-showroom).
- * All times come from the AudioContext clock; the interval only decides how far ahead nodes are created. Pausing
- * is free: when sound is off the context is suspended, which freezes its clock and with it the whole schedule.
+ * Fetch/decode dan crossfade satu-node-per-segment diadaptasi dari showroom Task 7 yang lama (branch archive/pertemuan-9-showroom).
+ * Semua waktu dari clock AudioContext; interval cuma nentuin seberapa jauh node dibuat duluan. Pause gratis: pas sound
+ * mati context di-suspend, clock-nya berhenti, jadi seluruh jadwal ikut berhenti.
  */
 
 export type MusicStatus = 'idle' | 'loading' | 'playing' | 'unavailable';
@@ -37,8 +37,8 @@ async function loadBuffer(ctx: AudioContext): Promise<AudioBuffer> {
 let started = false;
 
 /**
- * Loads the track once and starts the endless crossfaded loop into `bus`. Calls `onStatus` with the outcome.
- * Safe to call repeatedly; only the first call does anything.
+ * Muat lagunya sekali lalu mulai loop crossfade tanpa putus ke `bus`. Hasilnya dikabarkan lewat `onStatus`.
+ * Aman dipanggil berkali-kali, cuma panggilan pertama yang jalan.
  */
 export function startMusic(ctx: AudioContext, bus: AudioNode, onStatus: (status: MusicStatus) => void): void {
   if (started) return;

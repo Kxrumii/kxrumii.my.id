@@ -1,7 +1,7 @@
 import { parseCalendarDate } from './tasks.ts';
 import type { TaskDraft } from './types.ts';
 
-/** Nilai mentah dari form (semua string, belum divalidasi). */
+/** Nilai mentah form (semua string, belum divalidasi). */
 export interface RawTaskDraft {
   title: string;
   course: string;
@@ -13,10 +13,10 @@ export interface RawTaskDraft {
 export type DraftField = 'title' | 'course' | 'deadline';
 export type DraftErrors = Partial<Record<DraftField, string>>;
 
-/** Hasil yang membawa nilai valid atau daftar kesalahan; dipakai bersama oleh mode tambah dan edit. */
+/** Hasil validasi: nilai valid atau daftar error; dipakai bareng mode tambah dan edit. */
 export type Result<T, E> = { ok: true; value: T } | { ok: false; errors: E };
 
-/** Urutan field seperti pada form; dipakai untuk menentukan field invalid pertama. */
+/** Urutan field sama kayak form; dipakai buat nentuin field invalid pertama. */
 export const DRAFT_FIELD_ORDER: readonly DraftField[] = ['title', 'course', 'deadline'];
 
 export const ERROR_MESSAGES: Record<DraftField, string> = {
@@ -26,9 +26,9 @@ export const ERROR_MESSAGES: Record<DraftField, string> = {
 };
 
 /**
- * Memvalidasi dan menormalkan input form.
- * - `title` dan `course`: wajib setelah di-trim.
- * - `deadline`: opsional; kosong menjadi `null`, selain itu harus tanggal kalender `YYYY-MM-DD` yang ada.
+ * Validasi dan normalisasi input form.
+ * - `title` dan `course`: wajib, setelah di-trim.
+ * - `deadline`: opsional; kosong jadi `null`, selain itu harus tanggal kalender `YYYY-MM-DD` yang valid.
  */
 export function validateDraft(raw: RawTaskDraft): Result<TaskDraft, DraftErrors> {
   const title = raw.title.trim();
@@ -55,7 +55,7 @@ export function validateDraft(raw: RawTaskDraft): Result<TaskDraft, DraftErrors>
   return { ok: true, value };
 }
 
-/** Field invalid pertama menurut urutan form, atau `null` bila tidak ada kesalahan. */
+/** Field invalid pertama menurut urutan form, atau `null` kalau nggak ada error. */
 export function firstInvalidField(errors: DraftErrors): DraftField | null {
   return DRAFT_FIELD_ORDER.find((field) => errors[field] !== undefined) ?? null;
 }

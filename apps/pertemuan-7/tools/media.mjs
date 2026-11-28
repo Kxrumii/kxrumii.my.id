@@ -1,26 +1,27 @@
 #!/usr/bin/env node
 /*
- * Builds the media for the works. Requires ffmpeg/ffprobe on PATH; no npm dependency.
+ * Bikin media buat karya-karya. Butuh ffmpeg/ffprobe di PATH; tanpa dependency npm.
  *
- *   node apps/pertemuan-7/tools/media.mjs                  # covers + styleframes + preview loops
- *   node apps/pertemuan-7/tools/media.mjs --stills         # covers + styleframes only (what gets committed)
- *   node apps/pertemuan-7/tools/media.mjs --covers         # only the YouTube thumbnails (no local video needed)
- *   node apps/pertemuan-7/tools/media.mjs --only sundays   # one work (combine with the flags above)
+ *   node apps/pertemuan-7/tools/media.mjs                  # cover + styleframe + loop preview
+ *   node apps/pertemuan-7/tools/media.mjs --stills         # cover + styleframe aja (yang di-commit)
+ *   node apps/pertemuan-7/tools/media.mjs --covers         # cuma thumbnail YouTube (nggak butuh video lokal)
+ *   node apps/pertemuan-7/tools/media.mjs --only sundays   # satu karya (bisa digabung dengan flag di atas)
  *
- * Cover (public/works/<slug>/cover.webp, committed)
- *   Works on YouTube use their YouTube thumbnail (maxres → sd → hq). The others use the frame at `cover`, or the
- *   most detailed of 11 sampled moments when `cover` is empty.
+ * Cover (public/works/<slug>/cover.webp, di-commit)
+ *   Karya di YouTube pakai thumbnail YouTube-nya (maxres → sd → hq). Sisanya pakai frame di `cover`, atau
+ *   dari 11 titik sampel yang paling detail kalau `cover` kosong.
  *
- * Styleframes (public/works/<slug>/f1.webp … fN.webp, committed; shown on the work page and in the player scrubber)
- *   1. Own images in local-media/frames/<slug>/ (png, jpg or webp, sorted by name) win when present.
- *   2. Otherwise `frames: ['0:12.5', '1:05', '2:40']` grabs exactly those moments (any count).
- *   3. Otherwise the three most detailed sampled moments, in time order (never a black frame).
- *   When the count is not 3, set the same count in src/data/works.ts (`{ frames: n }`).
+ * Styleframes (public/works/<slug>/f1.webp … fN.webp, di-commit; tampil di halaman karya dan scrubber player)
+ *   1. Gambar sendiri di local-media/frames/<slug>/ (png, jpg, atau webp, urut nama) menang kalau ada.
+ *   2. Kalau nggak ada, `frames: ['0:12.5', '1:05', '2:40']` ngambil persis momen itu (jumlah bebas).
+ *   3. Kalau nggak, tiga momen sampel paling detail, urut waktu (nggak pernah frame hitam).
+ *   4. Nggak ada video lokal tapi ada di YouTube: frame otomatis YouTube (hq1–hq3, sekitar 25/50/75 %), dicrop ke 16:9.
+ *   Kalau jumlahnya bukan 3, set jumlah yang sama di src/data/works.ts (`{ frames: n }`).
  *
- * Preview loop (local-media/previews/<slug>.mp4, NOT committed; upload by hand to
- *   <webroot>/tugas/pertemuan-7/media/previews/<slug>.mp4): 6 s, muted, 720p, starting at the first styleframe.
+ * Loop preview (local-media/previews/<slug>.mp4, TIDAK di-commit; upload manual ke
+ *   <webroot>/tugas/pertemuan-7/media/previews/<slug>.mp4): 6 detik, muted, 720p, mulai dari styleframe pertama.
  *
- * Source videos live in apps/pertemuan-7/local-media/ (excluded from git). YouTube ids mirror src/data/works.ts.
+ * Video sumber ada di apps/pertemuan-7/local-media/ (di-exclude dari git). ID YouTube sama dengan src/data/works.ts.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -33,7 +34,7 @@ const app = join(dirname(fileURLToPath(import.meta.url)), '..');
 const media = join(app, 'local-media');
 
 /**
- * slug → local source file, YouTube id, and optional hand-picked moments.
+ * slug → file sumber lokal, id YouTube, dan momen pilihan (opsional).
  * @type {Array<{ slug: string, file: string, youtube?: string, cover?: string, frames?: string[] }>}
  */
 const WORKS = [
@@ -42,12 +43,13 @@ const WORKS = [
   { slug: 'love-letter-from-violet-evergarden', file: 'Love Letter From Violet Evergarden ¦ 君に世界 (1080p_30fps_H264-128kbit_AAC).mp4', youtube: 'SVuNZH-vqMg' },
   { slug: 'oregairu-cinta-terbaik', file: 'Oregairu [Edit⁄AMV] ¦ Cinta Terbaik (1080p_30fps_H264-128kbit_AAC).mp4', youtube: 'qYnPTRtK7Xk' },
   { slug: 'sousou-no-frieren-new-tank', file: 'Sousou No Frieren Edit ｜ New Tank (free project file) [6ZdKTaC54z8].mkv', youtube: '6ZdKTaC54z8' },
+  { slug: 'uin-one-for-all', file: '', youtube: 'KbnBCMy2QwM' },
   { slug: 'ilusi-garis-kemiskinan', file: 'ILUSI GARIS KEMISKINAN.mp4' },
   { slug: 'rahmatan-lil-alamin', file: 'RLAA.mp4' },
   { slug: 'sundays', file: 'Sundays2.mp4' },
 ];
 
-/** Candidate moments (fractions of the duration) scored for detail. */
+/** Momen kandidat (pecahan durasi) yang diskor detailnya. */
 const CANDIDATES = Array.from({ length: 11 }, (_, i) => 0.08 + (i * 0.84) / 10);
 const AUTO_FRAMES = 3;
 const PREVIEW_S = 6;
@@ -70,13 +72,13 @@ function duration(file) {
   return Number.parseFloat(String(out));
 }
 
-/** One frame of a video (`atS` seconds in), or a still image, as a 1280-wide webp. */
+/** Satu frame video (di detik `atS`), atau gambar diam, sebagai webp lebar 1280. */
 function still(file, atS, out, filter = STILL_FILTER) {
   const seek = atS === null ? [] : ['-ss', atS.toFixed(2)];
   execFileSync('ffmpeg', ['-v', 'error', '-y', ...seek, '-i', file, '-frames:v', '1', '-vf', filter, '-c:v', 'libwebp', '-quality', '78', out]);
 }
 
-/** Luma standard deviation of a tiny grey thumbnail: 0 for a flat (black) frame, high for a detailed one. */
+/** Standar deviasi luma thumbnail abu-abu kecil: 0 buat frame polos (hitam), tinggi buat yang detail. */
 function detail(file, atS) {
   const raw = execFileSync('ffmpeg', ['-v', 'error', '-ss', atS.toFixed(2), '-i', file, '-frames:v', '1', '-vf', 'scale=48:27,format=gray', '-f', 'rawvideo', '-']);
   if (raw.length === 0) return 0;
@@ -95,7 +97,7 @@ function preview(file, atS, out) {
   ]);
 }
 
-/** Downloads the best YouTube thumbnail that exists and writes it as the cover. */
+/** Unduh thumbnail YouTube terbaik yang ada dan tulis jadi cover. */
 async function youtubeCover(id, out) {
   for (const name of THUMBNAILS) {
     const response = await fetch(`https://i.ytimg.com/vi/${encodeURIComponent(id)}/${name}.jpg`);
@@ -103,7 +105,7 @@ async function youtubeCover(id, out) {
     const tmp = join(tmpdir(), `yt-${id}-${name}.jpg`);
     writeFileSync(tmp, Buffer.from(await response.arrayBuffer()));
     try {
-      // sd/hq thumbnails are 4:3 canvases with the 16:9 picture letterboxed inside: crop the bars away.
+      // Thumbnail sd/hq itu kanvas 4:3 dengan gambar 16:9 yang letterbox di dalamnya: bar-nya di-crop.
       still(tmp, null, out, name === 'maxresdefault' ? STILL_FILTER : `crop=iw:trunc(iw*9/32)*2,${STILL_FILTER}`);
     } finally {
       rmSync(tmp, { force: true });
@@ -113,7 +115,26 @@ async function youtubeCover(id, out) {
   throw new Error(`no YouTube thumbnail for ${id}`);
 }
 
-/** Removes f<n>.webp files beyond `count`, so a shorter frame list leaves no stale frames behind. */
+/** Frame otomatis YouTube (hq1–hq3), letterbox di-crop ke 16:9, jadi styleframe. Balikannya jumlah yang ditulis. */
+async function youtubeFrames(id, dir) {
+  let count = 0;
+  for (const name of ['hq1', 'hq2', 'hq3']) {
+    const response = await fetch(`https://i.ytimg.com/vi/${encodeURIComponent(id)}/${name}.jpg`);
+    if (!response.ok) continue;
+    const tmp = join(tmpdir(), `yt-${id}-${name}.jpg`);
+    writeFileSync(tmp, Buffer.from(await response.arrayBuffer()));
+    try {
+      count += 1;
+      still(tmp, null, join(dir, `f${count}.webp`), `crop=iw:trunc(iw*9/32)*2,${STILL_FILTER}`);
+    } finally {
+      rmSync(tmp, { force: true });
+    }
+  }
+  if (count === 0) throw new Error(`no YouTube frames for ${id}`);
+  return count;
+}
+
+/** Hapus f<n>.webp di atas `count`, biar daftar frame yang lebih pendek nggak ninggalin frame basi. */
 function pruneFrames(dir, count) {
   for (const name of readdirSync(dir)) {
     const match = /^f(\d+)\.webp$/.exec(name);
@@ -136,11 +157,10 @@ for (const work of WORKS) {
   const ownDir = join(media, 'frames', work.slug);
   const own = existsSync(ownDir) ? readdirSync(ownDir).filter((name) => OWN_FRAME.test(name)).sort() : [];
   const source = join(media, work.file);
-  const hasSource = existsSync(source);
+  const hasSource = Boolean(work.file) && existsSync(source);
   const length = hasSource ? duration(source) : 0;
   const scored = hasSource ? CANDIDATES.map((at) => ({ at: length * at, score: detail(source, length * at) })).sort((a, b) => b.score - a.score) : [];
 
-  // Cover for works not on YouTube.
   if (!work.youtube) {
     if (!hasSource) {
       console.warn(`skip ${work.slug}: missing ${work.file}`);
@@ -151,16 +171,19 @@ for (const work of WORKS) {
     done.push(`cover @ ${at.toFixed(1)} s`);
   }
 
-  // Styleframes.
   let firstFrameAt = scored[0]?.at ?? 0;
   if (own.length) {
     own.forEach((name, i) => still(join(ownDir, name), null, join(dir, `f${i + 1}.webp`)));
     pruneFrames(dir, own.length);
     done.push(`${own.length} own frames`);
+  } else if (!hasSource && work.youtube) {
+    const count = await youtubeFrames(work.youtube, dir);
+    pruneFrames(dir, count);
+    done.push(`${count} frames ← youtube hq1–hq${count}`);
   } else if (!hasSource) {
     console.warn(`skip ${work.slug} styleframes: missing ${work.file} (and no local-media/frames/${work.slug}/)`);
   } else {
-    // Auto mode skips the most detailed moment when it already became the cover.
+    // Mode auto melewati momen paling detail kalau itu sudah jadi cover.
     const skip = work.youtube || work.cover ? 0 : 1;
     const moments = work.frames?.length
       ? work.frames.map(parseTimestamp)

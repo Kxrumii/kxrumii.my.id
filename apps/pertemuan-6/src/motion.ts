@@ -98,7 +98,7 @@ export function readMotionEnv(): MotionEnv {
   return { reducedMotion, transitionActive, supportsAnimate };
 }
 
-/** Kebijakan murni apakah animasi aplikasi boleh berjalan. */
+/** Kebijakan murni: boleh nggaknya animasi app jalan. */
 export function shouldAnimate(env: MotionEnv): boolean {
   return !env.reducedMotion && !env.transitionActive && env.supportsAnimate;
 }
@@ -109,8 +109,8 @@ export function canAnimate(overrides?: Partial<MotionEnv>): boolean {
 }
 
 /**
- * Menghitung jeda stagger (ms) untuk `count` elemen.
- * Elemen setelah indeks `maxItems - 1` mengembalikan `null` (tampil langsung tanpa animasi).
+ * Hitung jeda stagger (ms) untuk `count` elemen.
+ * Elemen setelah indeks `maxItems - 1` dapat `null` (langsung tampil tanpa animasi).
  */
 export function computeStaggerDelays(
   count: number,
@@ -136,7 +136,7 @@ export function taskDialogOpenKeyframes(isMobileSheet: boolean): Keyframe[] {
 }
 
 /**
- * Menentukan target fokus aman ketika tombol prev/next Reader Dialog menjadi disabled
+ * Target fokus aman waktu tombol prev/next Reader Dialog jadi disabled
  * di ujung daftar tugas.
  */
 export function resolveReaderBoundaryFocus(
@@ -157,7 +157,6 @@ function clampScale(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-/** Menentukan apakah `rect` beririsan dengan batas viewport/kontainer `bounds`. */
 export function intersectsViewport(rect: RectLike, bounds: RectLike): boolean {
   if (rect.width <= 0 || rect.height <= 0 || bounds.width <= 0 || bounds.height <= 0) {
     return false;
@@ -175,8 +174,8 @@ export function intersectsViewport(rect: RectLike, bounds: RectLike): boolean {
 }
 
 /**
- * Menghitung delta FLIP (First → Last) berbasis pusat elemen, dengan kompensasi skala parent
- * agar animasi `.box-print` di dalam `.task-box` berskala tetap akurat.
+ * Delta FLIP (First → Last) berbasis pusat elemen, dengan kompensasi skala parent
+ * supaya animasi `.box-print` di dalam `.task-box` tetap akurat.
  */
 export function computeFlipDelta(
   first: RectLike,
@@ -228,9 +227,9 @@ function isFinitePositiveRect(rect: RectLike | null | undefined): rect is RectLi
 }
 
 /**
- * Menghitung `clip-path: inset(...)` relatif terhadap `dialogRect` dari `sourceRect`
- * yang beririsan dengan area pakai dialog & viewport. Mengembalikan `null` bila sumber
- * di luar jangkauan atau tidak layak untuk transisi bersama.
+ * Hitung `clip-path: inset(...)` relatif ke `dialogRect` dari `sourceRect` yang beririsan
+ * dengan area pakai dialog & viewport. Hasilnya `null` kalau sumber di luar jangkauan
+ * atau nggak layak buat transisi bersama.
  */
 export function computeViewportClipInset(
   sourceRect: RectLike,
@@ -311,11 +310,11 @@ function safeCancel(animation: AnimationLike): void {
   try {
     animation.cancel();
   } catch {
-    /* animasi mungkin sudah selesai atau dibatalkan */
+    /* animasinya mungkin sudah selesai/dibatalkan */
   }
 }
 
-/** Registry animasi per grup dengan pembersihan otomatis dan tanpa unhandled rejection. */
+/** Registry animasi per grup; dibersihkan otomatis dan nggak bikin unhandled rejection. */
 export function createMotionRegistry(): MotionRegistry {
   const groups = new Map<MotionGroup, Set<AnimationLike>>();
   const targetAnims = new Map<MotionGroup, WeakMap<object, AnimationLike>>();
@@ -438,7 +437,7 @@ export function animateTaskDialogOpen(dialog: HTMLDialogElement): AnimationLike 
   });
 }
 
-/** Mendaftarkan callback flush agar dipanggil ketika transisi rute keluar dimulai. */
+/** Daftarkan callback flush yang dipanggil saat transisi rute keluar dimulai. */
 export function registerTransitionFlush(callback: () => void): () => void {
   transitionFlushCallbacks.add(callback);
   return () => {
@@ -447,8 +446,8 @@ export function registerTransitionFlush(callback: () => void): () => void {
 }
 
 /**
- * Mengikat pembatalan seluruh motion CP2 saat Shared Transition Bridge
- * memancarkan `kxrumii:transition` dengan fase `exit-start`.
+ * Ikat pembatalan semua motion CP2 ke event `kxrumii:transition` dari Shared
+ * Transition Bridge dengan fase `exit-start`.
  */
 export function bindBridgeCancellation(
   target: EventTarget = document,
@@ -463,7 +462,7 @@ export function bindBridgeCancellation(
       try {
         flush();
       } catch {
-        /* jangan biarkan flush gagal menghentikan pembersihan rute */
+        /* flush yang gagal nggak boleh menghentikan pembersihan rute */
       }
     }
   };
@@ -492,9 +491,8 @@ export interface DeleteCoordinator {
 }
 
 /**
- * Koordinator penghapusan persist-first:
- * data selalu disimpan sinkron lebih dulu; animasi keluar bersifat opsional dan
- * dijamin selesai melalui callback animasi, timeout fallback 300ms, atau flush.
+ * Koordinator hapus persist-first: data selalu disimpan sinkron dulu; animasi keluar
+ * opsional dan dijamin selesai lewat callback animasi, timeout fallback 300ms, atau flush.
  */
 export function createDeleteCoordinator(): DeleteCoordinator {
   let activeFlush: ((restoreFocus: boolean) => void) | null = null;

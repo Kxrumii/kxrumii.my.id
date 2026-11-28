@@ -6,7 +6,7 @@ export interface Task {
   course: string;
   category?: string;
   description?: string;
-  /** Tanggal kalender `YYYY-MM-DD`, atau `null` bila tidak ada tenggat. */
+  /** Tanggal kalender `YYYY-MM-DD`, atau `null` kalau nggak ada tenggat. */
   deadline: string | null;
   status: TaskStatus;
 }
@@ -21,10 +21,10 @@ export interface TaskDraft {
 
 export type TaskList = readonly Task[];
 
-/** Urgensi tenggat yang diturunkan dari tanggal hari ini; bukan bagian dari data tersimpan. */
+/** Urgensi tenggat dari tanggal hari ini; bukan bagian data yang disimpan. */
 export type DeadlineState = 'overdue' | 'today' | 'tomorrow' | 'upcoming' | 'none';
 
-/** Dua gaya latar bawaan tanpa gambar yang disetujui; tidak ada gaya transparan/outline. */
+/** Dua gaya latar bawaan tanpa gambar yang disetujui; nggak ada gaya transparan/outline. */
 export type FallbackSurface = 'solid' | 'texture';
 
 export type SolidTone = 'paper' | 'charcoal' | 'cobalt' | 'sand' | 'sage' | 'terracotta';

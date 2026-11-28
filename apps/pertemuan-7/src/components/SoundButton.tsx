@@ -1,7 +1,7 @@
 import { playSound, toggleSound } from '../audio/sound';
 import { useSound } from '../audio/useSound';
 
-/** Bottom-right round sound switch; the bars move while sound is on. */
+/** Tombol sound bulat di kanan bawah; bar-nya gerak selama sound on. */
 export function SoundButton() {
   const { supported, enabled } = useSound();
   if (!supported) return null;

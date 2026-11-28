@@ -1,11 +1,11 @@
 /*
- * Pixel stars: pure state logic for the background star layer.
+ * Pixel stars: logika state murni buat layer bintang di background.
  *
- * Adapted from "Background Pixel Stars" by @uicapsule on 21st.dev (copy provided by the owner). The visual
- * parameters are kept: the 16-bit palette, 5 px pixels, the density, stepped twinkling, partial regeneration and
- * pixelated shooting stars on a 16 fps retro tick. Changes: the randomness is injectable (tests), stars carry a
- * reveal delay so they can appear outward from a point, shooting stars are scheduled from elapsed time instead of
- * an uncleared setTimeout chain, and everything works in CSS pixels (the canvas scales for devicePixelRatio).
+ * Diadaptasi dari "Background Pixel Stars" karya @uicapsule di 21st.dev (copy-nya aku sendiri yang sediakan).
+ * Parameter visualnya dipertahankan: palet 16-bit, pixel 5 px, densitas, twinkle bertahap, regenerasi sebagian,
+ * dan shooting star berpixel di tick retro 16 fps. Yang beda: randomness bisa di-inject (buat test), bintang
+ * punya delay reveal biar bisa muncul menyebar dari satu titik, shooting star dijadwal dari waktu yang berlalu
+ * bukan rantai setTimeout yang nggak dibersihin, dan semuanya pakai CSS pixel (canvas diskalakan buat devicePixelRatio).
  */
 
 export type Rng = () => number;
@@ -34,7 +34,7 @@ export interface BackgroundStar {
   currentOpacity: number;
   twinkle: boolean;
   twinkleSpeed: number;
-  /** -1 fading out, 1 fading in. */
+  /** -1 fade out, 1 fade in. */
   twinkleDirection: number;
   twinkleTimer: number;
 }
@@ -48,7 +48,7 @@ export interface TrailPoint {
 export interface ShootingStar {
   x: number;
   y: number;
-  /** Degrees; 90 = straight down. */
+  /** Derajat; 90 = lurus ke bawah. */
   angle: number;
   speed: number;
   distance: number;
@@ -79,7 +79,7 @@ export function createStars(width: number, height: number, rng: Rng): Background
   return Array.from({ length: starCount(width, height) }, () => createStar(width, height, rng));
 }
 
-/** Replaces a fraction of the stars in place (at least one); returns the replaced indices. */
+/** Ganti sebagian bintang di tempat (minimal satu); balikannya index yang diganti. */
 export function regenerateStars(stars: BackgroundStar[], width: number, height: number, rng: Rng): number[] {
   if (stars.length === 0) return [];
   const count = Math.max(1, Math.floor(stars.length * STAR_CONFIG.regenerateFraction));
@@ -92,7 +92,7 @@ export function regenerateStars(stars: BackgroundStar[], width: number, height: 
   return replaced;
 }
 
-/** One 16 fps tick of a star's stepped twinkle (two brightness levels, no smooth fade). */
+/** Satu tick 16 fps twinkle bertahap sebuah bintang (dua level terang, tanpa fade halus). */
 export function stepTwinkle(star: BackgroundStar): void {
   if (!star.twinkle) return;
   star.twinkleTimer += 1 / STAR_CONFIG.fps;
@@ -109,12 +109,11 @@ export function createShootingStar(width: number, rng: Rng): ShootingStar {
   return { x: rng() * width, y: 0, angle: 45 + rng() * 90, speed: rng() * 5 + 8, distance: 0, trail: [] };
 }
 
-/** Delay before the next shooting star. */
 export function nextShootingDelayMs(rng: Rng): number {
   return STAR_CONFIG.shootingMinDelayMs + rng() * (STAR_CONFIG.shootingMaxDelayMs - STAR_CONFIG.shootingMinDelayMs);
 }
 
-/** One 16 fps tick: move, drop a trail pixel every ~8 px, fade the trail, remove stars that left the screen. */
+/** Satu tick 16 fps: gerak, jatuhin pixel trail tiap ~8 px, pudarin trail, buang bintang yang keluar layar. */
 export function stepShootingStars(stars: ShootingStar[], width: number, height: number): ShootingStar[] {
   return stars
     .map((star) => {
@@ -133,7 +132,7 @@ export function stepShootingStars(stars: ShootingStar[], width: number, height: 
     .filter((star) => star.x >= -30 && star.x <= width + 30 && star.y >= -30 && star.y <= height + 30);
 }
 
-/** Seeded PRNG (mulberry32) for deterministic tests. */
+/** PRNG berseed (mulberry32) buat test yang deterministik. */
 export function seededRng(seed: number): Rng {
   let a = seed >>> 0;
   return () => {

@@ -11,7 +11,7 @@ interface ViewSwitchProps extends Omit<HTMLAttributes<HTMLDivElement>, 'onChange
   onChange: (view: WorksView) => void;
 }
 
-/** "spiral • list" switch at the top centre of the works page. */
+/** Switch "spiral • list" di tengah atas halaman karya. */
 export function ViewSwitch({ view, onChange, ...rest }: ViewSwitchProps) {
   return (
     <div {...rest} className="switch" role="group" aria-label="Works view">

@@ -1,7 +1,7 @@
 /*
- * Inline di <head>, SEBELUM stylesheet dan bundle aplikasi.
- * Membaca handshake dari halaman asal lalu mengecat warna canvas tujuan dan
- * pre-state elemen sebelum first paint. Tidak ada overlay.
+ * Di-inline di <head>, SEBELUM stylesheet dan bundle app.
+ * Baca handshake dari halaman asal, lalu cat warna canvas tujuan dan pre-state
+ * elemen sebelum first paint. Nggak ada overlay.
  */
 (() => {
   const key = 'kxrumii:transition:v4';
@@ -22,13 +22,13 @@
       root.style.setProperty('--transition-origin-x', `${p.origin.x}px`);
       root.style.setProperty('--transition-origin-y', `${p.origin.y}px`);
     }
-    // Fail-open: jangan pernah menahan halaman dalam pre-state jika bundle gagal.
+    // Fail-open: jangan sampai halaman nyangkut di pre-state kalau bundle gagal.
     window.__kxrumiiTransitionBootstrapTimer = window.setTimeout(() => {
       if (root.dataset.transitionState !== 'entering') return;
       delete root.dataset.transitionState;
       root.removeAttribute('data-transition-from');
     }, 1800);
   } catch {
-    /* storage/DOM tidak tersedia: navigasi native tetap berjalan */
+    /* storage/DOM nggak tersedia: navigasi native tetap jalan */
   }
 })();

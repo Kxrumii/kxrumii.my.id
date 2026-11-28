@@ -192,7 +192,6 @@ describe('CP4-C initDocAccordions (smooth <details> progressive enhancement)', (
     const note = notes[0]!;
     const ctrl = initDocAccordions(root);
 
-    // Expand
     const openEv = note.summary.click();
     assert.equal(openEv.defaultPrevented, true);
     assert.equal(note.details.open, true);
@@ -205,7 +204,6 @@ describe('CP4-C initDocAccordions (smooth <details> progressive enhancement)', (
     assert.equal(note.details.style.height, '');
     assert.equal(note.details.open, true);
 
-    // Collapse
     const closeEv = note.summary.click();
     assert.equal(closeEv.defaultPrevented, true);
     assert.equal(note.details.dataset.accordionState, 'closing');
@@ -232,7 +230,7 @@ describe('CP4-C initDocAccordions (smooth <details> progressive enhancement)', (
     const expandAnimA = recorded[0]!;
     const expandBodyA = recorded[1]!;
 
-    // Buka B bersamaan -> tidak membatalkan A
+    // Buka B bersamaan -> nggak membatalkan A
     b.summary.click();
     assert.equal(expandAnimA.cancelled, false);
     assert.equal(recorded.length, 4);
@@ -286,7 +284,7 @@ describe('CP4-C initDocAccordions (smooth <details> progressive enhancement)', (
     assert.equal(b.details.dataset.accordionState, undefined);
     assert.equal(b.details.style.overflow, '');
 
-    // Reduced motion -> tidak preventDefault dan tidak menjalankan WAAPI baru
+    // Reduced motion -> nggak preventDefault dan nggak menjalankan WAAPI baru
     reducedMotion = true;
     const beforeRmCount = recorded.length;
     const evRm = b.summary.click();

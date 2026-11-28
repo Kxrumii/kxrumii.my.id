@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode, Ref } from 'react';
 import { playSound } from '../audio/sound';
 
-/** Splits a label into letters so hover can ripple them one after another. */
+/** Pecah label jadi huruf-huruf biar pas hover bisa berombak satu-satu. */
 export function Letters({ text }: { text: string }) {
   return (
     <span className="letters">
@@ -24,7 +24,6 @@ interface PillButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   ref?: Ref<HTMLButtonElement>;
 }
 
-/** Rounded pill with a trailing dot; letters ripple on hover. */
 export function PillButton({ label, tone = 'light', className, onPointerEnter, children, ref, ...rest }: PillButtonProps) {
   return (
     <button
@@ -43,7 +42,7 @@ export function PillButton({ label, tone = 'light', className, onPointerEnter, c
   );
 }
 
-/** Same look for links (rendered by the caller as <a>/<Link> with className="pill …"). */
+/** Tampilan sama buat link (caller yang render <a>/<Link> dengan className="pill …"). */
 export function pillClass(tone: Tone = 'light'): string {
   return `pill pill-${tone}`;
 }

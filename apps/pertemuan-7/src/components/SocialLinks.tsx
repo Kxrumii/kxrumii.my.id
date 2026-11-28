@@ -5,12 +5,12 @@ import { SocialIcon } from './SocialIcon';
 
 interface SocialLinksProps {
   links: SocialLink[];
-  /** round: icon buttons with the handle appearing underneath on hover (menu); labelled: icon + handle (about). */
+  /** round: tombol ikon dengan handle muncul di bawahnya pas hover (menu); labelled: ikon + handle (about). */
   variant: 'round' | 'labelled';
   className?: string;
 }
 
-/** The same four links and icons as the Pertemuan 1 footer. */
+/** Empat link dan ikon yang sama dengan footer Pertemuan 1. */
 export function SocialLinks({ links, variant, className }: SocialLinksProps) {
   return (
     <ul className={[`socials socials-${variant}`, className].filter(Boolean).join(' ')}>

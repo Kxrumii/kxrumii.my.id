@@ -1,4 +1,4 @@
-/* ---- Works stage (full viewport) ---- */
+/* ---- Stage works (layar penuh) ---- */
 .works-stage {
   position: fixed;
   inset: 0;
@@ -14,7 +14,7 @@
 
 .spiral-viewport {
   overflow: hidden;
-  /* perspective and the scene transform are written by useSpiral from spiral/geometry.ts */
+  /* perspective dan transform scene ditulis useSpiral dari spiral/geometry.ts */
   touch-action: none;
   cursor: grab;
   user-select: none;
@@ -159,7 +159,7 @@
   justify-content: center;
 }
 
-/* Meta sits above the title, so the title itself is exactly centred. */
+/* Meta di atas judul, jadi judulnya persis di tengah. */
 .list-link {
   display: inline-flex;
   flex-direction: column;
@@ -231,7 +231,7 @@
   }
 }
 
-/* ---- Spiral ↔ list: enter motion (the exit runs in WorksPage via WAAPI) ---- */
+/* ---- Spiral ↔ list: gerak enter (exit jalan di WorksPage lewat WAAPI) ---- */
 .works-stage[data-view='spiral'] .spiral-face {
   animation: face-in 0.7s var(--ease-spring) both;
   animation-delay: calc(min(var(--ad, 0), 3) * 70ms);

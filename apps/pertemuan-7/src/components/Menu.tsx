@@ -17,9 +17,9 @@ const LINKS = [
 ] as const;
 
 /**
- * Top-right menu: a white "menu" pill that grows (spring) into a tall white panel with large links,
- * round social buttons and credits; a dark round button closes it. Escape and outside clicks close it,
- * focus moves into the panel on open and back to the toggle on close.
+ * Menu kanan atas: pill putih "menu" yang membesar (spring) jadi panel putih tinggi berisi link besar, tombol
+ * sosial bulat, dan credit; tombol bulat gelap buat nutup. Escape dan klik di luar menutup, fokus pindah ke
+ * panel pas buka dan balik ke toggle pas tutup.
  */
 export function Menu({ open, onOpenChange }: MenuProps) {
   const location = useLocation();

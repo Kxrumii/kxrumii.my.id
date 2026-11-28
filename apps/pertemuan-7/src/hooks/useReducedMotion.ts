@@ -12,7 +12,6 @@ function subscribe(onChange: () => void): () => void {
   return () => query.removeEventListener('change', onChange);
 }
 
-/** Live `prefers-reduced-motion` value. */
 export function useReducedMotion(): boolean {
   return useSyncExternalStore(subscribe, prefersReducedMotion, () => false);
 }

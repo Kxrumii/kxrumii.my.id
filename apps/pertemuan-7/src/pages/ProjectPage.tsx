@@ -14,11 +14,7 @@ import { transitionIndex } from '../transition';
 import { coverImage, findWork, nextWork, prevWork, workNumber } from '../utils/works';
 import { NotFoundPage } from './NotFoundPage';
 
-/**
- * One work, laid out like the reference: a white card (preview, infos, styleframes) with a dark close button,
- * then the next work below it. Scrolling on past the bottom opens the next work; scrolling up past the top opens
- * the previous one.
- */
+
 export function ProjectPage() {
   const { slug } = useParams();
   const work = findWork(works, slug);
@@ -27,7 +23,6 @@ export function ProjectPage() {
   const edges = useEdgeNavigation({ next: next ? `/work/${next.slug}` : null, prev: prev ? `/work/${prev.slug}` : null });
   usePageTitle(work?.title ?? 'not found');
 
-  // Warm the neighbours' covers so the next page never paints an empty frame.
   useEffect(() => {
     for (const neighbour of [next, prev]) {
       const src = neighbour ? coverImage(neighbour) : null;

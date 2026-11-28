@@ -1,6 +1,6 @@
 import type { DeadlineState, Task, TaskDraft, TaskList, TaskStatus } from './types.ts';
 
-/** Mengganti item dengan `id` yang sama lewat `update`; item lain dan array asli tidak berubah. */
+/** Ganti item ber-`id` sama lewat `update`; item lain dan array asli nggak berubah. */
 export function updateById<T extends { id: number }>(
   items: readonly T[],
   id: number,
@@ -66,7 +66,7 @@ export function countByStatus(tasks: TaskList): Record<TaskStatus, number> {
 
 const DEADLINE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
-/** Mem-parse `YYYY-MM-DD` sebagai tanggal kalender lokal; `null` bila format salah atau tanggal tidak ada (mis. 2026-02-30). */
+/** Parse `YYYY-MM-DD` jadi tanggal kalender lokal; `null` kalau format salah atau tanggalnya nggak ada (mis. 2026-02-30). */
 export function parseCalendarDate(value: string): Date | null {
   const match = DEADLINE_PATTERN.exec(value);
   if (!match) return null;
@@ -84,7 +84,7 @@ const DEADLINE_FORMATTER = new Intl.DateTimeFormat('id-ID', {
   year: 'numeric',
 });
 
-/** Memformat `YYYY-MM-DD` sebagai tanggal lokal (tanpa pergeseran UTC); `null`/tidak valid menjadi "—". */
+/** Format `YYYY-MM-DD` ke tanggal lokal (tanpa geseran UTC); `null`/invalid jadi "—". */
 export function formatDeadline(deadline: string | null): string {
   if (deadline === null) return '—';
   const date = parseCalendarDate(deadline);
@@ -92,7 +92,7 @@ export function formatDeadline(deadline: string | null): string {
   return DEADLINE_FORMATTER.format(date);
 }
 
-/** Id tugas yang tersisa dan paling dekat dengan posisi `removedId` (berikutnya, atau sebelumnya bila terakhir); `null` bila tidak ada. */
+/** Id tugas tersisa yang paling dekat ke `removedId` (berikutnya, atau sebelumnya kalau yang terakhir); `null` kalau kosong. */
 export function survivorId(tasks: TaskList, removedId: number): number | null {
   const index = tasks.findIndex((task) => task.id === removedId);
   if (index === -1) return null;
@@ -100,14 +100,14 @@ export function survivorId(tasks: TaskList, removedId: number): number | null {
   return neighbour?.id ?? null;
 }
 
-/** Nomor hari kalender lokal (tanpa pengaruh jam, zona waktu, atau DST) untuk membandingkan tanggal. */
+/** Nomor hari kalender lokal (tanpa jam, zona waktu, atau DST) buat bandingin tanggal. */
 function dayNumber(date: Date): number {
   return Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000);
 }
 
 /**
- * Urgensi tenggat berdasarkan kalender lokal `today` yang diinjeksi.
- * Tugas selesai, tenggat kosong, atau tenggat tidak valid menghasilkan `'none'`.
+ * Urgensi tenggat dari kalender lokal `today` yang di-inject.
+ * Tugas selesai, tenggat kosong, atau tenggat invalid hasilnya `'none'`.
  */
 export function deadlineState(deadline: string | null, status: TaskStatus, today: Date): DeadlineState {
   if (status === 'selesai' || deadline === null) return 'none';
@@ -120,7 +120,7 @@ export function deadlineState(deadline: string | null, status: TaskStatus, today
   return 'upcoming';
 }
 
-/** Label tampilan; kosong untuk keadaan yang tidak perlu ditandai. */
+/** Label tampilan; kosong kalau nggak perlu ditandai. */
 export function deadlineLabel(state: DeadlineState): string {
   switch (state) {
     case 'overdue':

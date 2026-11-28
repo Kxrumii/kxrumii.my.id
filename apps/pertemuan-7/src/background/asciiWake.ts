@@ -1,19 +1,19 @@
 /*
- * ASCII wake: pure state for the cursor trail (own implementation, written from the description of
- * "Background ASCII Wake" by @nikolas-sapa on 21st.dev; its code was not available).
+ * ASCII wake: state murni buat trail kursor (implementasi sendiri, aku tulis dari deskripsi
+ * "Background ASCII Wake" karya @nikolas-sapa di 21st.dev; kodenya nggak tersedia).
  *
- * The screen is a grid of monospace cells. Moving the pointer pours "energy" into the cells along its path; the
- * faster it moves, the more energy (brighter, longer trail). Energy decays over time and each cell's character
- * thins out with it (dense → light). A sparse, dim scatter of characters sits at rest underneath.
+ * Layar itu grid sel monospace. Pointer yang gerak menuangkan "energi" ke sel-sel di jalurnya; makin cepat
+ * gerakannya makin banyak energinya (lebih terang, trail lebih panjang). Energi meluruh seiring waktu dan karakter
+ * tiap sel ikut menipis (rapat → ringan). Di bawahnya ada sebaran karakter jarang yang redup saat diam.
  */
 import type { Rng } from './pixelStars';
 
 export const WAKE_CELL = 16;
-/** Dense → light: the character shown for a cell's remaining energy. */
+/** Rapat → ringan: karakter yang tampil buat sisa energi sebuah sel. */
 export const WAKE_RAMP = ['·', '.', ':', '-', '+', '*', '%', '#'] as const;
 export const WAKE_MAX_CELLS = 140;
 const SAMPLE_SPACING = 7;
-/** Pointer speed (px/ms) that counts as "fast": full energy, full brightness. */
+/** Kecepatan pointer (px/ms) yang dianggap "cepat": energi dan kecerahan penuh. */
 const FAST_SPEED = 2.4;
 
 export interface WakeCell {
@@ -31,15 +31,15 @@ export function createWake(): WakeState {
   return { cells: new Map(), last: null };
 }
 
-/** 0–1 speed factor for a pointer speed in px/ms. */
+/** Faktor kecepatan 0–1 dari kecepatan pointer dalam px/ms. */
 export function speedFactor(speedPxPerMs: number): number {
   if (!Number.isFinite(speedPxPerMs) || speedPxPerMs <= 0) return 0;
   return Math.min(speedPxPerMs / FAST_SPEED, 1);
 }
 
 /**
- * Feeds one pointer sample. Returns the speed factor of the movement since the previous sample
- * (0 for the first sample or after a long pause).
+ * Masukin satu sampel pointer. Balikannya faktor kecepatan gerakan sejak sampel sebelumnya
+ * (0 buat sampel pertama atau setelah jeda lama).
  */
 export function addPointer(state: WakeState, x: number, y: number, tMs: number): number {
   const last = state.last;
@@ -61,7 +61,7 @@ export function addPointer(state: WakeState, x: number, y: number, tMs: number):
     const cell = state.cells.get(key);
     if (cell) {
       cell.energy = Math.min(1, cell.energy + gain * 0.5);
-      // Re-insert so the Map order stays "least recently fed first" for the cap below.
+      // Dimasukin ulang biar urutan Map tetap "paling lama nggak diisi duluan" buat batas di bawah.
       state.cells.delete(key);
       state.cells.set(key, cell);
     } else {
@@ -76,7 +76,7 @@ export function addPointer(state: WakeState, x: number, y: number, tMs: number):
   return factor;
 }
 
-/** Decays every cell by dt seconds (full energy lasts `lifeS`); removes empty cells. */
+/** Luruhkan semua sel sebesar dt detik (energi penuh bertahan `lifeS`); sel kosong dihapus. */
 export function stepWake(state: WakeState, dtS: number, lifeS = 0.9): void {
   const loss = Math.max(dtS, 0) / lifeS;
   for (const [key, cell] of state.cells) {
@@ -97,7 +97,7 @@ export interface ScatterGlyph {
   alpha: number;
 }
 
-/** The resting scatter: a few dim characters on the cell grid (about 3 % of cells). */
+/** Sebaran diam: beberapa karakter redup di grid sel (sekitar 3 % sel). */
 export function ambientScatter(width: number, height: number, rng: Rng, fraction = 0.03): ScatterGlyph[] {
   const cols = Math.ceil(width / WAKE_CELL);
   const rows = Math.ceil(height / WAKE_CELL);

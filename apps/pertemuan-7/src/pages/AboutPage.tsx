@@ -9,7 +9,6 @@ import { workNumber } from '../utils/works';
 
 const INLINE_IMAGES = 4;
 
-/** The owner's statement with work covers set inline between the words, a small quote, links and credits. */
 export function AboutPage() {
   usePageTitle('about');
   const statement = profile.intro;
@@ -54,11 +53,11 @@ export function AboutPage() {
         ) : null}
         <div className="about-credits">
           <p className="about-label">credits</p>
-          <p>design, development, video &amp; edit {profile.handle}</p>
-          <p>layout and interaction modelled on the portfolio of Pacôme Pertant</p>
-          <p>pixel stars adapted from @uicapsule, ASCII wake after @nikolas-sapa (21st.dev)</p>
-          <p>music: Shelter (Official Piano Version), Porter Robinson &amp; Madeon</p>
-          <p>type: Inter Tight (SIL OFL)</p>
+          <p>edit &amp; video by {profile.handle}</p>
+          <p>layout inspired by Pacôme Pertant's portfolio</p>
+          <p>pixel stars adapted from @uicapsule, ASCII wake inspired by @nikolas-sapa (21st.dev)</p>
+          <p>music: Shelter (Official Piano Version) by Porter Robinson &amp; Madeon</p>
+          <p>font: Inter Tight (SIL OFL)</p>
         </div>
       </footer>
     </article>

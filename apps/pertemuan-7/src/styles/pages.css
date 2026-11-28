@@ -1,11 +1,11 @@
-/* ---- Project (layout after the reference: white card, then the next work) ---- */
+/* ---- Project (layout mengikuti referensi: kartu putih, lalu karya berikutnya) ---- */
 .project {
   position: relative;
   z-index: 1;
 }
 
 .project-card {
-  /* Route enter: rise and grow into place instead of the default wipe. */
+  /* Route enter: naik dan membesar ke tempatnya, bukan wipe default. */
   --transition-enter-from-transform: translate3d(0, 80px, 0) scale(0.96);
   --transition-enter-from-clip: inset(0 0 0 0);
   position: relative;
@@ -69,7 +69,7 @@
   object-fit: cover;
 }
 
-/* "video segera hadir": a dark, inert pill (the work is not on YouTube yet). */
+/* "video segera hadir": pill gelap yang inert (karyanya belum ada di YouTube). */
 .project-play.project-play-soon {
   background: var(--color-bg-dark);
   color: var(--color-white);
@@ -158,15 +158,18 @@
   color: #0b8f6a;
 }
 
-/* Each block rises out of its own mask the first time it is seen. */
+/* Tiap blok naik dari mask-nya sendiri pas pertama kali kelihatan. */
 .reveal {
   display: block;
   overflow: hidden;
+  /* Ruang buat ekor huruf (g, y, p, j) biar nggak kepotong mask-nya. */
+  padding-bottom: 0.18em;
+  margin-bottom: -0.18em;
 }
 
 .reveal > span {
   display: block;
-  transform: translateY(105%);
+  transform: translateY(110%);
   transition: transform 0.9s var(--ease-expo-out);
   transition-delay: inherit;
 }
@@ -205,7 +208,7 @@
   transform: scale(calc(1.5 - 0.5 * var(--sf)));
 }
 
-/* Next project: a full screen below the card; keep scrolling to fill the bar on the right. */
+/* Project berikutnya: satu layar penuh di bawah kartu; terus scroll buat ngisi bar di kanan. */
 .next-project {
   position: relative;
   display: flex;
@@ -492,7 +495,7 @@
   letter-spacing: -0.06em;
 }
 
-/* ---- Previous project hint (scrolling up past the top) ---- */
+/* ---- Hint project sebelumnya (scroll ke atas melewati puncak) ---- */
 .prev-hint {
   position: fixed;
   top: var(--grid-margin);
@@ -547,7 +550,7 @@
   transform-origin: left center;
 }
 
-/* ---- Video player (after the reference): blurred poster, contained video, white control pill ---- */
+/* ---- Video player (mengikuti referensi): poster blur, video contain, pill kontrol putih ---- */
 .player {
   position: fixed;
   inset: 0;
@@ -599,11 +602,11 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  /* Room for the control pill below the frame. */
+  /* Ruang buat pill kontrol di bawah frame. */
   padding: var(--grid-margin) var(--grid-margin) 110px;
 }
 
-/* Sized to the video's own ratio, as large as fits: the blurred poster shows around it. */
+/* Ukurannya ikut rasio videonya sendiri, sebesar yang muat: poster blur kelihatan di sekelilingnya. */
 .player-frame {
   position: relative;
   width: min(100%, calc((100vh - 110px - var(--grid-margin)) * var(--aspect, 1.7778)));
@@ -615,9 +618,9 @@
 }
 
 /*
- * The embed is taller than the frame and cropped: YouTube fits the video to the iframe width, so the picture
- * fills the frame exactly, while the strips above and below (where YouTube puts its title, "More videos" and
- * logo) fall outside the visible area.
+ * Embed-nya lebih tinggi dari frame lalu di-crop: YouTube menyesuaikan video ke lebar iframe, jadi gambar pas
+ * memenuhi frame, sementara strip di atas dan bawah (tempat YouTube naruh judul, "More videos", dan logo)
+ * jatuh di luar area yang kelihatan.
  */
 .player-frame iframe {
   position: absolute;
@@ -745,7 +748,7 @@
   object-fit: cover;
 }
 
-/* The unplayed part is dimmed; its left edge (a white line) is the playhead. */
+/* Bagian yang belum diputar diredupkan; tepi kirinya (garis putih) adalah playhead. */
 .player-progress {
   --remaining: 1;
   position: absolute;

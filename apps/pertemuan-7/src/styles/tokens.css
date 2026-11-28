@@ -1,7 +1,7 @@
 /*
- * Design tokens. Palette, grid and easing follow the reference portfolio's system (near-black canvas,
- * off-white ink, one mint accent, 12/6-column grid); the font is Inter Tight (SIL OFL), a free stand-in for
- * the reference's licensed typeface. The spring curve is computed here (damping 0.74), not copied.
+ * Design token. Palet, grid, dan easing mengikuti sistem portfolio referensi (canvas hampir hitam, tinta
+ * off-white, satu aksen mint, grid 12/6 kolom); font-nya Inter Tight (SIL OFL), pengganti gratis buat font
+ * berlisensi milik referensi. Kurva spring dihitung di sini (damping 0.74), bukan disalin.
  */
 @font-face {
   font-family: 'Inter Tight';
@@ -53,7 +53,7 @@
   --ease-expo-out: cubic-bezier(0.19, 1, 0.22, 1);
   --ease-quad-in-out: cubic-bezier(0.455, 0.03, 0.515, 0.955);
 
-  /* Shared transition bridge: same canvas as the page. */
+  /* Shared transition bridge: canvas sama dengan halaman. */
   --page-canvas: #0a0a0a;
   color-scheme: dark;
 }

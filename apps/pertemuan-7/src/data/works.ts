@@ -1,14 +1,11 @@
 /*
- * Karya Fahrii. Judul diambil dari judul YouTube / nama file owner (dengan koreksi owner).
+ * Karya-karyaku. Judul diambil dari judul YouTube / nama file asli (sebagian kukoreksi), deskripsinya tulisanku
+ * sendiri. Yang nggak ada buktinya dibiarkan null (tampil "—"), mis. tahun. Urutan array = urutan di spiral dan list.
  *
- * Detail (kategori, tahun, peran, deskripsi, catatan) masih DRAFT: disusun dari judul YouTube, frame videonya, dan
- * thumbnail, lalu dikoreksi owner. Yang tidak ada buktinya dibiarkan null (tampil "—"), misalnya tahun upload yang
- * tidak tercantum di mana pun. Urutan array = urutan di spiral dan list.
- *
- * Gambar (`public/works/<slug>/`) dibuat oleh `tools/media.mjs`: sampul karya YouTube = thumbnail YouTube-nya,
+ * Gambar (`public/works/<slug>/`) dibuat `tools/media.mjs`: sampul karya YouTube = thumbnail YouTube-nya,
  * styleframes = gambar sendiri / timestamp pilihan / frame otomatis (lihat komentar di skrip itu). Kalau jumlah
  * styleframe bukan 3, isi `frames` di sini dengan jumlah yang sama. Video penuh diputar dari YouTube; karya tanpa
- * `youtubeVideoId` menunggu link unlisted dari owner.
+ * `youtubeVideoId` nunggu link unlisted dariku.
  */
 import type { Work, WorkCategory } from '../types';
 
@@ -16,9 +13,10 @@ export const CATEGORY_LABELS: Record<WorkCategory, string> = {
   edit: 'edit',
   mograph: 'mograph',
   film: 'film',
+  video: 'video',
 };
 
-/** Label kategori, atau "—" bila belum disebut. */
+/** Label kategori, atau "—" kalau belum disebut. */
 export function categoryLabel(work: Work): string {
   return work.category ? CATEGORY_LABELS[work.category] : '—';
 }
@@ -34,10 +32,12 @@ interface WorkDetails {
   aspect?: number;
   /** Jumlah styleframe di public/works/<slug>/ (f1…fN); default 3. */
   frames?: number;
+  /** Ada loop preview lokal (local-media/previews/<slug>.mp4); default true. */
+  preview?: boolean;
 }
 
 const work = (slug: string, title: string, details: WorkDetails): Work => {
-  const { youtubeVideoId, category, year = null, role = null, summary = null, notes = null, aspect = 16 / 9, frames = 3 } = details;
+  const { youtubeVideoId, category, year = null, role = null, summary = null, notes = null, aspect = 16 / 9, frames = 3, preview = true } = details;
   return {
     slug,
     title,
@@ -49,7 +49,7 @@ const work = (slug: string, title: string, details: WorkDetails): Work => {
     cover: `works/${slug}/cover.webp`,
     styleframes: Array.from({ length: frames }, (_, i) => `works/${slug}/f${i + 1}.webp`),
     aspect,
-    preview: true,
+    preview,
     youtubeVideoId,
     externalUrl: youtubeVideoId ? `https://www.youtube.com/watch?v=${youtubeVideoId}` : null,
     isSample: false,
@@ -57,15 +57,13 @@ const work = (slug: string, title: string, details: WorkDetails): Work => {
 };
 
 export const works: Work[] = [
-  // Aspect ratios measured with ffprobe on the owner's files (2480×2160, 1440×1080); the rest are 16:9.
+  // Aspect ratio diukur pakai ffprobe dari file aslinya (2480×2160, 1440×1080); sisanya 16:9.
   work('last-friday-night', 'Last Friday Night', {
     youtubeVideoId: 'X7lZLkjGXXk',
     category: 'mograph',
     role: 'motion graphic',
     aspect: 2480 / 2160,
-    summary:
-      'Kinetic typography buat lagu Last Friday Night. Liriknya aku pecah jadi blok-blok huruf tebal yang loncat, miring, dan numpuk di atas warna-warna nabrak, biar rasanya kayak pesta yang makin lama makin kacau.',
-    notes: 'Dikerjain di Alight Motion, dan presetnya aku bagiin gratis.',
+    summary: 'Motion graphic buat lagu Last Friday Night. Ini remake dari karyanya y6richo.',
   }),
   work('a-signal-from-outer-space', 'A Signal From Outer Space', {
     youtubeVideoId: 'talzLiLx1fc',
@@ -73,22 +71,20 @@ export const works: Work[] = [
     year: 2024,
     role: 'motion graphic',
     summary:
-      'Motion graphic bertema luar angkasa: planet ungu yang muter di orbit, bintang, dan sinyal kecil yang bergerak ngikutin musik. Semua bentuknya flat dan sederhana, yang aku mainin lebih ke ritme geraknya.',
-    notes: 'Dibuat di Alight Motion, presetnya juga aku bagiin gratis. Tanggal di thumbnail-nya 7 Desember 2024.',
+      'Motion graphic dari lagu A Signal From Outer Space-nya Park Bird, terinspirasi dari karya 안재민, 표한빈, dan 박정우. Sebenernya ini kupakai buat UAS Pengenalan Informatika, hehe.',
   }),
   work('love-letter-from-violet-evergarden', 'Love Letter From Violet Evergarden', {
     youtubeVideoId: 'SVuNZH-vqMg',
     category: 'edit',
     role: 'editing',
     summary:
-      'Edit Violet Evergarden yang pelan dan hangat. Mulai dari mesin tik, lanjut ke wajah-wajah yang lagi nunggu surat, terus ditutup sama Violet sendiri. Aku pengin rasanya kayak baca surat, bukan nonton trailer.',
+      'Ini AMV yang kuikutin di Casper AMV Challenge. Aku pengin nge-highlight momen waktu Violet baca surat, dengan visual yang sedikit ngejelasin apa yang terjadi, sampai akhirnya Violet belajar apa itu cinta.',
   }),
   work('oregairu-cinta-terbaik', 'Oregairu — Cinta Terbaik', {
     youtubeVideoId: 'qYnPTRtK7Xk',
     category: 'edit',
     role: 'editing',
-    summary:
-      'AMV Oregairu pakai lagu Cinta Terbaik. Isinya potongan adegan yang dibingkai kayak foto polaroid dan rol film, ditambah teks lirik yang muncul di sela-sela langit dan awan.',
+    summary: 'Simpelnya, AMV ini soal penolakan. Kenapa aku edit? Ya... aku nonton, dan... aku dukung Yui. :)',
   }),
   work('sousou-no-frieren-new-tank', 'Sousou no Frieren — New Tank', {
     youtubeVideoId: '6ZdKTaC54z8',
@@ -96,27 +92,33 @@ export const works: Work[] = [
     role: 'editing',
     aspect: 4 / 3,
     summary:
-      'Edit Frieren yang cepat dan agresif, ngikutin lagu New Tank. Banyak kilatan cahaya biru dan pink, efek energi, dan potongan aksi yang dipotong pas di ketukan.',
-    notes: 'Project file-nya aku bagiin gratis, siapa tahu ada yang mau belajar dari situ.',
+      'Ini percobaanku bikin AMV flow, remake dari Suchiefx. AMV flow itu apa? AMV yang alur tiap scene-nya ngalir, jadi gerakan kamera atau aksi di satu scene nyambung mulus ke scene berikutnya.',
+  }),
+  work('uin-one-for-all', 'UIN ONE FOR ALL', {
+    youtubeVideoId: 'KbnBCMy2QwM',
+    category: 'video',
+    // Nggak ada file lokalnya, jadi nggak ada loop preview; styleframe-nya dari frame otomatis YouTube.
+    preview: false,
+    summary:
+      'Video dokumentasi proyek sosial buat mata kuliah SPI. Di sini aku dan kelompokku bantu nyebarin info soal akun mahasiswa. Selengkapnya cek aja langsung di video YouTube-nya.',
   }),
   work('ilusi-garis-kemiskinan', 'ILUSI GARIS KEMISKINAN', {
     youtubeVideoId: null,
-    category: 'film',
+    category: 'video',
     summary:
-      'Video penjelasan soal garis kemiskinan, yang dari judulnya aja udah ngajak nanya: angka itu beneran nunjukin kondisi orang, atau cuma ilusi? Datanya dibawain lewat motion graphic flat (gunung, diagram batang), diselingi obrolan dua narasumber dengan gaya rekaman kamera VHS.',
+      'Entryku buat lomba videografis PTKIN II. Isinya video penjelasan soal garis kemiskinan, dan dari judulnya aja aku mau ngajak kamu nanya: angka itu beneran nunjukin kondisi orang, atau cuma ilusi? Datanya kubawain lewat motion graphic, ditambah voice over obrolan dua orang dengan gaya rekaman kamera VHS. Oh iya, menang juara 2 btw :3',
   }),
   work('rahmatan-lil-alamin', 'Rahmatan Lil Alamin', {
     youtubeVideoId: null,
     category: 'film',
     summary:
-      'Film pendek live action yang diambil di ruang-ruang sehari-hari: kamar, layar laptop, langkah kaki, pintu yang kebuka, dengan tekstur halftone di beberapa adegan. Judulnya diambil dari "rahmatan lil alamin", rahmat bagi semesta alam.',
+      'Entryku buat lomba video pendek di PBAK UIN, temanya Rahmatan Lil Alamin. Di sini aku cuma ngikutin konsepnya sendiri: rahmat bagi alam semesta. Menang juara 1, dan emang beneran rahmat, hehe, dapet laptop.',
   }),
   work('sundays', 'Sundays', {
     youtubeVideoId: null,
-    category: 'mograph',
-    role: 'editing & motion graphic',
+    category: 'edit',
+    role: 'editing',
     summary:
-      'Edit vertikal dari foto-foto naik gunung dan kemah bareng teman. Fotonya aku susun jadi kolase, ditimpa kinetic typography warna pink, dan ditutup tulisan "thx 4 everything".',
-    notes: 'Semacam ucapan terima kasih buat orang-orang di foto itu.',
+      'Editan ini kubikin sebagai rasa terima kasihku buat teman-temanku atas waktunya selama SMA. Thx for everything. Aeta nara tomo ni warao. 会えたなら共に笑おう.',
   }),
 ];

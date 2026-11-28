@@ -3,7 +3,7 @@ import { profile } from '../data/profile';
 import { LogoMark } from './LogoMark';
 import { TransitionLink } from './TransitionLink';
 
-/** Top-left mark. Hovering tilts a name tag out of it with a spring. */
+/** Logo kiri atas. Pas di-hover, name tag miring keluar dengan spring. */
 export function Logo() {
   return (
     <TransitionLink

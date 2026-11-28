@@ -3,14 +3,14 @@ export interface ExitEnterContext {
   elements: HTMLElement[];
   reducedMotion: boolean;
   toColor?: string;
-  /** Jalankan exit/enter bawaan untuk elemen tertentu (komposisi dengan gerak khusus). */
+  /** Jalankan exit/enter bawaan buat elemen tertentu (bisa dikomposisi dengan gerak khusus). */
   animateElements(elements: Iterable<HTMLElement>, kind: 'exit' | 'enter'): Animation[];
 }
 
 export interface TransitionBridgeOptions {
   pageId: string;
   pageCanvasColor?: string;
-  /** Warna canvas AKTUAL halaman ini (tema/mood). Dipanggil saat install. */
+  /** Warna canvas AKTUAL halaman ini (tema/mood), dipanggil pas install. */
   getCanvasColor?: () => string;
   fallbackCanvasColor?: string;
   linkSelector?: string;
@@ -32,7 +32,7 @@ export interface TransitionBridge {
     update: () => void | Promise<void>,
     options?: { canvasColor?: string; toPage?: string; pageReadyTimeoutMs?: number },
   ): Promise<boolean>;
-  /** Panggil saat warna canvas halaman berubah (toggle tema, ganti mood). */
+  /** Panggil tiap warna canvas halaman berubah (toggle tema, ganti mood). */
   setPageCanvasColor(color: string): void;
   destroy(): void;
 }

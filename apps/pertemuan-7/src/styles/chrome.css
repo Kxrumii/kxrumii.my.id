@@ -1,5 +1,5 @@
-/* Fixed chrome: logo (top left), view switch (top centre), menu (top right), sound (bottom right). The works
-   caption (bottom left) lives in works.css. */
+/* Chrome fixed: logo (kiri atas), view switch (tengah atas), menu (kanan atas), sound (kanan bawah). Caption
+   works (kiri bawah) ada di works.css. */
 
 /* ---- Logo ---- */
 .logo {
@@ -229,7 +229,7 @@
   transition-delay: 0s;
 }
 
-/* Closed, the close button shrinks into the dot of the "menu" pill; opening grows it into the dark disc. */
+/* Pas tertutup, tombol close mengecil ke titik pill "menu"; pas dibuka dia membesar jadi disc gelap. */
 .menu-close {
   position: absolute;
   top: 20px;
@@ -398,7 +398,7 @@
   }
 }
 
-/* ---- Socials (same links and icons as the Pertemuan 1 footer) ---- */
+/* ---- Socials (link dan ikon sama dengan footer Pertemuan 1) ---- */
 .socials-round {
   display: flex;
   gap: 8px;
@@ -568,7 +568,7 @@
   }
 }
 
-/* ---- Project route: the card brings its own close button; logo and sound invert over the white card ---- */
+/* ---- Route project: kartu bawa tombol close sendiri; logo dan sound di-invert di atas kartu putih ---- */
 .chrome[data-route='project'] :is(.menu, .menu-backdrop) {
   display: none;
 }

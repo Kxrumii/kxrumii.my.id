@@ -1,13 +1,13 @@
 /*
- * Shared Transition Bridge installation for Task 7 (portfolio).
- * Installed once at module initialisation (before React renders); page readiness is signalled by
- * usePageReady() after each route commits.
+ * Instalasi Shared Transition Bridge buat Task 7 (portfolio).
+ * Dipasang sekali pas module di-init (sebelum React render); kesiapan halaman dikasih sinyal lewat
+ * usePageReady() tiap route commit.
  *
- * Canvas: the app is a single near-black canvas (#0a0a0a), equal to the Portal's `canvasFallback` for task-7,
- * so there is no hand-off colour.
+ * Canvas: app-nya satu kanvas hampir hitam (#0a0a0a), sama dengan `canvasFallback` Portal buat task-7,
+ * jadi nggak ada warna serah-terima.
  *
- * Scopes: same-document route changes run with `data-route-scope="stage"`, so only the page content moves
- * while the fixed chrome (`[data-shell]`) stays put. Document navigations (to/from the Portal) animate all.
+ * Scope: pergantian route di dokumen yang sama jalan dengan `data-route-scope="stage"`, jadi cuma isi halaman
+ * yang bergerak sementara chrome tetap (`[data-shell]`) diam. Navigasi dokumen (ke/dari Portal) menganimasikan semuanya.
  */
 import '@kxrumii/transition-bridge/transition-bridge.css';
 import { installTransitionBridge, publishCanvasColor, transitionEvents, type ExitEnterContext, type TransitionBridge } from '@kxrumii/transition-bridge';
@@ -15,7 +15,7 @@ import { useCallback, useEffect, type CSSProperties } from 'react';
 import { useNavigate, type To } from 'react-router';
 
 export const PAGE_ID = 'task-7';
-/** Must stay equal to the Portal's `canvasFallback` for task-7 and to `--color-bg-dark`. */
+/** Harus tetap sama dengan `canvasFallback` Portal buat task-7 dan `--color-bg-dark`. */
 export const CANVAS = '#0a0a0a';
 
 const root = document.documentElement;
@@ -34,12 +34,12 @@ function participants(elements: HTMLElement[]): HTMLElement[] {
 export type RouteDirection = 'next' | 'prev';
 
 /*
- * Page motion after the reference (its `project` / `project-fade` transitions), done with WAAPI instead of the
- * bridge's clip-path wipe, which read as a blink:
- *   default  exit: fade + settle to scale(.985)          enter: rise 80 px from scale(.96)
- *   next     exit: drift up and shrink                   enter: rise from below
- *   prev     exit: drift down and shrink                 enter: descend from above
- * The enter starts almost at once, so there is no empty frame between the two pages (the star field stays).
+ * Gerak halaman mengikuti referensi (transisi `project` / `project-fade`-nya), pakai WAAPI, bukan wipe clip-path
+ * bridge yang kelihatan kayak kedip:
+ *   default  exit: fade + settle ke scale(.985)          enter: naik 80 px dari scale(.96)
+ *   next     exit: melayang ke atas dan mengecil         enter: naik dari bawah
+ *   prev     exit: melayang ke bawah dan mengecil        enter: turun dari atas
+ * Enter mulai hampir langsung, jadi nggak ada frame kosong di antara dua halaman (star field tetap).
  */
 const EXIT_FRAMES: Record<RouteDirection | 'default', Keyframe[]> = {
   default: [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'scale(0.985)' }],
@@ -83,12 +83,12 @@ async function run(ctx: ExitEnterContext, kind: 'exit' | 'enter'): Promise<void>
 }
 
 /*
- * Enter animations hold their end state (fill: both) until the bridge has left the `entering` state; only then
- * are they dropped, so the opacity pre-state rule never gets a frame to hide the new page.
+ * Animasi enter menahan state akhirnya (fill: both) sampai bridge keluar dari state `entering`; baru setelah itu
+ * dibuang, jadi aturan pre-state opacity nggak pernah kebagian frame buat menyembunyikan halaman baru.
  */
 const finishedEnters: Animation[] = [];
 
-// Guarded so a re-evaluated module (dev HMR) never installs a second bridge.
+// Dijaga biar module yang dievaluasi ulang (HMR dev) nggak memasang bridge kedua.
 export const bridge: TransitionBridge = (window.__kxrumiiTransitionBridge ??= installTransitionBridge({
   pageId: PAGE_ID,
   pageCanvasColor: CANVAS,
@@ -106,22 +106,22 @@ document.addEventListener(transitionEvents.transition, (event) => {
   }
 });
 
-/** Marks page-ready after a route has committed. Idempotent, so StrictMode's double effect is safe. */
+/** Tandai page-ready setelah route commit. Idempoten, jadi double effect StrictMode aman. */
 export function usePageReady(routeKey?: string): void {
   useEffect(() => {
     bridge.markPageReady();
   }, [routeKey]);
 }
 
-/** Stagger index for an element taking part in the route transition. */
+/** Index stagger buat elemen yang ikut transisi route. */
 export function transitionIndex(index: number): CSSProperties {
   return { '--i': index } as CSSProperties;
 }
 
 /*
- * BrowserRouter wraps navigation in startTransition, so navigate() returns before the new route commits.
- * The bridge's transitionTo() expects update() to resolve once the destination DOM exists, so the layout
- * reports each commit through notifyRouteCommit().
+ * BrowserRouter membungkus navigasi di startTransition, jadi navigate() balik sebelum route baru commit.
+ * transitionTo() milik bridge mengharapkan update() resolve begitu DOM tujuan ada, jadi layout melaporkan
+ * tiap commit lewat notifyRouteCommit().
  */
 let resolveRouteCommit: (() => void) | null = null;
 
@@ -139,14 +139,14 @@ function nextRouteCommit(timeoutMs: number): Promise<boolean> {
   });
 }
 
-/** Called by the layout from a layout effect, right after a route has committed. */
+/** Dipanggil layout dari layout effect, tepat setelah route commit. */
 export function notifyRouteCommit(): void {
   resolveRouteCommit?.();
 }
 
 /**
- * Navigate with the stage-scoped exit → swap → enter transition. `dir` gives the motion a direction (next/previous
- * work). Resolves to false when one is already running.
+ * Navigasi dengan transisi exit → swap → enter yang di-scope ke stage. `dir` ngasih arah gerak (karya
+ * berikut/sebelumnya). Resolve ke false kalau sudah ada yang jalan.
  */
 export function useTransitionNavigate(): (to: To, options?: { dir?: RouteDirection }) => Promise<boolean> {
   const navigate = useNavigate();

@@ -34,7 +34,7 @@ test('info deliveries update time, duration, mute and play state', () => {
   s = reduce(s, { event: 'onStateChange', info: 0 });
   assert.equal(s.ended, true);
   assert.equal(reduce(s, { event: 'somethingElse', info: 1 }), s);
-  // Bad numbers are ignored.
+  // Angka aneh diabaikan.
   assert.equal(reduce(s, { event: 'infoDelivery', info: { currentTime: Number.NaN } }).currentTime, s.currentTime);
 });
 

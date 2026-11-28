@@ -1,12 +1,11 @@
 /*
- * Talking to a YouTube embed without loading YouTube's iframe_api script: the embed (with enablejsapi=1) accepts
- * JSON commands through postMessage and, once told we are "listening", reports its state back. Pure helpers only
- * (no DOM), so the protocol is unit-tested; VideoPlayer.tsx does the posting and listening.
+ * Ngobrol dengan embed YouTube tanpa memuat script iframe_api-nya: embed (dengan enablejsapi=1) menerima perintah
+ * JSON lewat postMessage dan, begitu dikasih tahu kita "listening", melaporkan state-nya balik. Isinya helper
+ * murni (tanpa DOM), jadi protokolnya bisa di-unit-test; VideoPlayer.tsx yang posting dan listening.
  */
 
 export const YOUTUBE_ORIGINS = ['https://www.youtube-nocookie.com', 'https://www.youtube.com'] as const;
 
-/** YouTube player states. */
 export const PlayerState = {
   unstarted: -1,
   ended: 0,
@@ -18,7 +17,7 @@ export const PlayerState = {
 
 export interface PlayerSnapshot {
   ready: boolean;
-  /** playing or buffering. */
+  /** playing atau buffering. */
   playing: boolean;
   ended: boolean;
   muted: boolean;
@@ -30,7 +29,7 @@ export const INITIAL_SNAPSHOT: PlayerSnapshot = { ready: false, playing: false, 
 
 export type Command = 'playVideo' | 'pauseVideo' | 'mute' | 'unMute' | 'seekTo' | 'unloadModule';
 
-/** Embed URL: no YouTube chrome (our controls replace it), JS API on, autoplay after the user's click. */
+/** URL embed: tanpa chrome YouTube (kontrol kita yang gantiin), JS API on, autoplay setelah klik user. */
 export function embedUrl(videoId: string, origin: string): string {
   const params = new URLSearchParams({
     enablejsapi: '1',
@@ -52,7 +51,7 @@ export function command(func: Command, args: unknown[] = [], id = 'p7-player'): 
   return JSON.stringify({ event: 'command', func, args, id, channel: 'widget' });
 }
 
-/** Asks the embed to start sending onReady / infoDelivery messages. */
+/** Minta embed mulai ngirim pesan onReady / infoDelivery. */
 export function listening(id = 'p7-player'): string {
   return JSON.stringify({ event: 'listening', id, channel: 'widget' });
 }
@@ -62,7 +61,7 @@ export interface YouTubeMessage {
   info: unknown;
 }
 
-/** Parses a message event's data, accepting only YouTube's origins and well-formed JSON objects. */
+/** Parse data message event, cuma terima origin YouTube dan objek JSON yang valid. */
 export function parseMessage(origin: string, data: unknown): YouTubeMessage | null {
   if (!(YOUTUBE_ORIGINS as readonly string[]).includes(origin)) return null;
   let value: unknown = data;
@@ -80,7 +79,7 @@ export function parseMessage(origin: string, data: unknown): YouTubeMessage | nu
 
 const num = (value: unknown): number | undefined => (typeof value === 'number' && Number.isFinite(value) ? value : undefined);
 
-/** Folds a YouTube message into the player snapshot (unknown events leave it unchanged). */
+/** Lipat pesan YouTube ke snapshot player (event yang nggak dikenal nggak mengubah apa-apa). */
 export function reduce(snapshot: PlayerSnapshot, message: YouTubeMessage): PlayerSnapshot {
   if (message.event === 'onReady') return { ...snapshot, ready: true };
   const fromState = (state: number | undefined): Partial<PlayerSnapshot> =>
@@ -101,14 +100,14 @@ export function reduce(snapshot: PlayerSnapshot, message: YouTubeMessage): Playe
   return snapshot;
 }
 
-/** Seek target (seconds) for a pointer at `x` over a scrubber spanning [left, left + width]. */
+/** Target seek (detik) buat pointer di `x` pada scrubber yang membentang [left, left + width]. */
 export function seekTarget(x: number, left: number, width: number, duration: number): number {
   if (!(width > 0) || !(duration > 0)) return 0;
   const fraction = Math.min(Math.max((x - left) / width, 0), 1);
   return fraction * duration;
 }
 
-/** Fraction of the video already played (0–1). */
+/** Pecahan video yang sudah diputar (0–1). */
 export function playedFraction(snapshot: Pick<PlayerSnapshot, 'currentTime' | 'duration'>): number {
   if (!(snapshot.duration > 0)) return 0;
   return Math.min(Math.max(snapshot.currentTime / snapshot.duration, 0), 1);

@@ -7,17 +7,17 @@ const KEY_STEP_PX = 140;
 const TOUCH_GAIN = 1.6;
 
 interface EdgeNavigationOptions {
-  /** Route of the next / previous work (null = none). */
+  /** Route karya berikut / sebelumnya (null = nggak ada). */
   next: string | null;
   prev: string | null;
 }
 
 /**
- * "Keep scrolling" between works: past the bottom, wheel / touch / ↓ PageDown Space fill the next bar; past the
- * top, ↑ PageUp (or scrolling up) fill the previous one. Full → the neighbour opens with a directional
- * transition. Bars drain when input stops. Input is ignored right after arriving and until the viewport has
- * rested at the edge, so trackpad momentum never chains pages; and while the video player is open.
- * The bars are written straight to the DOM (refs) — no re-render per wheel event.
+ * "Keep scrolling" antar karya: lewat bawah, wheel / touch / ↓ PageDown Space ngisi bar next; lewat atas,
+ * ↑ PageUp (atau scroll ke atas) ngisi bar previous. Penuh → tetangganya kebuka dengan transisi berarah.
+ * Bar surut kalau input berhenti. Input diabaikan sesaat setelah tiba dan sampai viewport diam di tepi, biar
+ * momentum trackpad nggak merantai halaman; dan juga selama video player kebuka.
+ * Bar ditulis langsung ke DOM (refs), jadi nggak re-render tiap wheel event.
  */
 export function useEdgeNavigation({ next, prev }: EdgeNavigationOptions) {
   const navigate = useTransitionNavigate();
@@ -74,7 +74,7 @@ export function useEdgeNavigation({ next, prev }: EdgeNavigationOptions) {
       const now = performance.now();
       const intent = edgeIntent(edge, deltaPx);
       if (intent === null) {
-        // Scrolling back away from an edge empties that edge's bar.
+        // Scroll balik menjauh dari tepi ngosongin bar tepi itu.
         if (deltaPx < 0 && progress.next > 0) progress.next = accumulate(progress.next, deltaPx);
         if (deltaPx > 0 && progress.prev > 0) progress.prev = accumulate(progress.prev, -deltaPx);
       } else {

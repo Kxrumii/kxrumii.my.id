@@ -1,6 +1,6 @@
 /**
- * Parses a video timestamp into seconds: "75", "75.5", "1:15", "1:15.5" or "1:02:03". Throws on anything else, so a
- * typo in tools/media.mjs fails loudly instead of grabbing the wrong frame.
+ * Parse timestamp video jadi detik: "75", "75.5", "1:15", "1:15.5", atau "1:02:03". Selain itu throw, jadi salah ketik
+ * di tools/media.mjs gagal dengan jelas dan nggak ngambil frame yang salah.
  *
  * @param {string | number} value
  * @returns {number}

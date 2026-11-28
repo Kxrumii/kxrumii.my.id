@@ -22,7 +22,7 @@ function safeCancel(anim: AnimationLike | null | undefined): void {
   try {
     anim.cancel();
   } catch {
-    /* animasi mungkin sudah selesai atau dibatalkan */
+    /* animasinya mungkin sudah selesai/dibatalkan */
   }
 }
 
@@ -32,9 +32,9 @@ function measureHeight(el: HTMLElement): number {
 }
 
 /**
- * Progressive-enhancement WAAPI untuk `<details class="note">` native pada halaman Dokumentasi:
- * mempertahankan semantik & aktivasi keyboard `<summary>`, bekerja konsisten di Zen (Firefox)
- * dan Brave (Chromium), serta langsung fallback ke toggle native bila gerak dinonaktifkan.
+ * Progressive enhancement WAAPI buat `<details class="note">` di halaman Dokumentasi.
+ * Semantik dan keyboard `<summary>` tetap native, dan kalau gerak dimatikan langsung
+ * fallback ke toggle native.
  */
 export function initDocAccordions(root: ParentNode = document): AccordionController {
   const active = new Map<HTMLDetailsElement, ActiveAccordionState>();

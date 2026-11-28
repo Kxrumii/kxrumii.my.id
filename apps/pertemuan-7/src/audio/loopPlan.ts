@@ -1,22 +1,21 @@
 /*
- * Pure schedule for looping a WHOLE song with a crossfade (no Web Audio here, so it is unit-tested).
+ * Jadwal murni buat nge-loop SELURUH lagu dengan crossfade (nggak ada Web Audio di sini, jadi bisa di-unit-test).
  *
- * Segment 0 starts at context time `whenS` from song offset `offsetS` and runs to the end of the file. Every next
- * segment starts from the beginning of the file `crossfadeS` before the previous one ends: the outgoing tail fades
- * out over its last `crossfadeS` while the incoming head fades in. No loop points are guessed: the seam is simply
- * end → start. (Adapted from the crossfade scheduler of the earlier Task 7 showroom, kept on branch archive/pertemuan-9-showroom.)
+ * Segment 0 mulai di waktu context `whenS` dari offset lagu `offsetS` sampai ujung file. Tiap segment berikutnya
+ * mulai dari awal file `crossfadeS` sebelum yang sebelumnya habis: ekor yang keluar fade out selama `crossfadeS`
+ * terakhir, kepala yang masuk fade in. Titik loop nggak ditebak, sambungannya ya langsung ujung → awal.
+ * (Diadaptasi dari crossfade scheduler showroom Task 7 yang lama, ada di branch archive/pertemuan-9-showroom.)
  */
 
 export interface SongSegment {
   index: number;
-  /** Context time at which the node starts. */
+  /** Waktu context saat node mulai. */
   startAt: number;
-  /** Song offset (s) at startAt. */
   offset: number;
-  /** Fade-in window; null for the first segment (it only gets a short anti-click ramp). */
+  /** Jendela fade in; null buat segment pertama (cuma dapat ramp pendek biar nggak ngeklik). */
   fadeIn: { from: number; to: number } | null;
   fadeOut: { from: number; to: number };
-  /** Context time at which the file runs out (end of the fade-out). */
+  /** Waktu context saat file habis (ujung fade out). */
   endAt: number;
 }
 
@@ -27,7 +26,6 @@ export interface SongLoopInput {
   crossfadeS: number;
 }
 
-/** Period between consecutive segment starts once the loop is running. */
 export function loopPeriod({ durationS, crossfadeS }: Pick<SongLoopInput, 'durationS' | 'crossfadeS'>): number {
   return durationS - crossfadeS;
 }
@@ -48,7 +46,7 @@ export function segmentAt(input: SongLoopInput, index: number): SongSegment {
   };
 }
 
-/** Segments with index >= fromIndex that start before `untilS`. */
+/** Segment dengan index >= fromIndex yang mulai sebelum `untilS`. */
 export function planSongSegments(input: SongLoopInput, untilS: number, fromIndex = 0): SongSegment[] {
   if (!(input.durationS > input.crossfadeS * 2) || input.crossfadeS < 0) return [];
   const out: SongSegment[] = [];
@@ -60,7 +58,7 @@ export function planSongSegments(input: SongLoopInput, untilS: number, fromIndex
   return out;
 }
 
-/** Equal-power fade curve with `n` points (sin for in, cos for out); in² + out² = 1 at every point. */
+/** Kurva fade equal-power dengan `n` titik (sin buat masuk, cos buat keluar); in² + out² = 1 di tiap titik. */
 export function equalPowerCurve(n: number, direction: 'in' | 'out'): Float32Array {
   const curve = new Float32Array(n);
   for (let i = 0; i < n; i += 1) {

@@ -1,34 +1,34 @@
 /*
- * Pure geometry of the spiral (CSS 3D helix, no WebGL). No DOM access, so it is unit-tested directly.
+ * Geometri murni spiral (heliks 3D CSS, tanpa WebGL). Nggak nyentuh DOM, jadi bisa di-unit-test langsung.
  *
- * The spiral is a vertical helix of "slots". Slot i sits at offset d = i - p from the camera position p
- * (in slots): it turns `STEP_DEG` per slot around the vertical axis and drops `rise` px per slot, so the
- * front of the helix is the active work and the rest coil away above and below it, front and back.
+ * Spiral itu heliks vertikal berisi "slot". Slot i ada di offset d = i - p dari posisi kamera p (dalam slot):
+ * berputar `STEP_DEG` per slot mengelilingi sumbu vertikal dan turun `rise` px per slot, jadi bagian depan
+ * heliks adalah karya aktif dan sisanya melingkar menjauh di atas dan bawahnya, depan dan belakang.
  *
- * Short lists are repeated around the helix (slot i shows work i mod n) so the coil always looks full;
- * the work order itself is never changed.
+ * List pendek diulang mengelilingi heliks (slot i menampilkan karya i mod n) biar coil selalu kelihatan penuh;
+ * urutan karyanya sendiri nggak pernah diubah.
  */
 
-/** Rotation between consecutive slots: 360 / 30 = 12 slots per full turn. */
+/** Rotasi antar slot: 360 / 30 = 12 slot per putaran penuh. */
 export const STEP_DEG = 30;
-/** Minimum number of slots once the list loops (one full turn). */
+/** Jumlah slot minimum begitu list di-loop (satu putaran penuh). */
 export const MIN_SLOTS = 12;
-/** Fewer works than this never loop: they stay in a short arc in front of the camera. */
+/** Karya yang lebih sedikit dari ini nggak di-loop: tetap di busur pendek di depan kamera. */
 export const LOOP_MIN_WORKS = 3;
-/** Helix radius and vertical step relative to the card size. RISE > 1 keeps every card clear of its neighbours. */
+/** Radius heliks dan langkah vertikal relatif ke ukuran kartu. RISE > 1 jaga tiap kartu tetap lepas dari tetangganya. */
 export const RADIUS_PER_WIDTH = 1.25;
 export const RISE_PER_HEIGHT = 1.2;
 
 /*
- * Scene camera, written to the DOM by useSpiral (single source: projectCard() below uses the same numbers).
- * The scene origin sits at the perspective origin, so projection is a plain perspective divide around it.
+ * Kamera scene, ditulis ke DOM oleh useSpiral (sumber tunggal: projectCard() di bawah pakai angka yang sama).
+ * Origin scene ada di perspective origin, jadi proyeksinya perspective divide biasa di sekitarnya.
  */
 export const PERSPECTIVE_PX = 1500;
 export const ORIGIN_Y = 0.46;
 export const TILT_X_DEG = -7;
 export const TILT_Z_DEG = -4;
 
-/** Cards turned further than this from the camera are hidden (only the front of the coil is visible). */
+/** Kartu yang berputar lebih jauh dari ini dari kamera disembunyikan (cuma bagian depan coil yang kelihatan). */
 const FACING_HIDE = 0.45;
 const FACING_FULL = 0.75;
 
@@ -36,26 +36,23 @@ export function sceneTransform(radius: number): string {
   return `translateZ(${(-radius).toFixed(2)}px) rotateX(${TILT_X_DEG}deg) rotateZ(${TILT_Z_DEG}deg)`;
 }
 
-/** Radius and rise for a card size. */
 export function geometryFor(cardWidth: number, cardHeight: number): SpiralGeometry {
   return { radius: cardWidth * RADIUS_PER_WIDTH, rise: cardHeight * RISE_PER_HEIGHT };
 }
 
 export interface SpiralGeometry {
-  /** Helix radius in px. */
   radius: number;
-  /** Vertical drop per slot in px. */
   rise: number;
 }
 
 export interface CardPose {
   transform: string;
   opacity: number;
-  /** cos(angle): 1 = facing the camera, -1 = at the back of the helix. */
+  /** cos(sudut): 1 = menghadap kamera, -1 = di belakang heliks. */
   facing: number;
-  /** Whether this card may receive pointer input (front half, clearly visible). */
+  /** Boleh nerima input pointer atau nggak (setengah depan, jelas kelihatan). */
   interactive: boolean;
-  /** Signed offset from the camera position in slots (used to stagger enter/exit). */
+  /** Offset bertanda dari posisi kamera dalam slot (buat stagger enter/exit). */
   offset: number;
 }
 
@@ -66,20 +63,19 @@ export function loops(workCount: number): boolean {
   return workCount >= LOOP_MIN_WORKS;
 }
 
-/** Number of slots on the helix for `workCount` works (a whole number of repetitions). */
+/** Jumlah slot di heliks buat `workCount` karya (kelipatan bulat dari pengulangan). */
 export function slotCount(workCount: number): number {
   if (workCount <= 0) return 0;
   if (!loops(workCount)) return workCount;
   return Math.max(workCount, Math.ceil(MIN_SLOTS / workCount) * workCount);
 }
 
-/** Which work a slot shows. */
 export function workIndexForSlot(slot: number, workCount: number): number {
   if (workCount <= 0) return -1;
   return ((Math.round(slot) % workCount) + workCount) % workCount;
 }
 
-/** Offset of a slot from position p, wrapped into [-slots/2, slots/2) when the helix loops. */
+/** Offset slot dari posisi p, di-wrap ke [-slots/2, slots/2) kalau heliks di-loop. */
 export function slotOffset(slot: number, p: number, slots: number, looping: boolean): number {
   let d = slot - finite(p);
   if (looping && slots > 0) {
@@ -89,27 +85,24 @@ export function slotOffset(slot: number, p: number, slots: number, looping: bool
   return finite(d);
 }
 
-/** The slot nearest to the camera position. */
 export function activeSlot(p: number, slots: number): number {
   if (slots <= 0) return -1;
   return ((Math.round(finite(p)) % slots) + slots) % slots;
 }
 
-/** Index of the active work at position p. */
 export function activeWorkIndex(p: number, workCount: number): number {
   return workIndexForSlot(activeSlot(p, slotCount(workCount)), workCount);
 }
 
-/** Pose of one slot. */
 export function cardPose(slot: number, p: number, slots: number, looping: boolean, geometry: SpiralGeometry): CardPose {
   const d = slotOffset(slot, p, slots, looping);
   const angle = d * STEP_DEG;
   const y = d * geometry.rise;
   const facing = Math.cos((angle * Math.PI) / 180);
-  // Fade towards the ends of the coil (and across the loop seam, so the wrap jump is never visible).
+  // Memudar ke ujung coil (dan di sambungan loop, biar loncatan wrap nggak pernah kelihatan).
   const reach = looping ? slots / 2 : Math.max(slots, 2);
   const endFade = clamp01((reach - Math.abs(d)) / 2.5);
-  // Only the front of the helix is visible: cards fade out as they turn side-on.
+  // Cuma bagian depan heliks yang kelihatan: kartu memudar pas berputar menyamping.
   const depthFade = clamp01((facing - FACING_HIDE) / (FACING_FULL - FACING_HIDE));
   const opacity = finite(endFade * depthFade, 0);
   return {
@@ -121,7 +114,7 @@ export function cardPose(slot: number, p: number, slots: number, looping: boolea
   };
 }
 
-/** Shortest target position that shows `workIndex`, measured from p. */
+/** Posisi target terpendek yang menampilkan `workIndex`, diukur dari p. */
 export function nearestPositionFor(workIndex: number, p: number, workCount: number): number {
   const slots = slotCount(workCount);
   if (slots <= 0) return 0;
@@ -129,7 +122,7 @@ export function nearestPositionFor(workIndex: number, p: number, workCount: numb
   const current = Math.round(finite(p));
   let best = current;
   let bestDistance = Infinity;
-  // Every slot showing this work is a candidate; take the one closest to p.
+  // Semua slot yang menampilkan karya ini jadi kandidat; ambil yang paling dekat ke p.
   for (let base = current - slots; base <= current + slots; base += 1) {
     if (workIndexForSlot(base, workCount) !== workIndex) continue;
     const distance = Math.abs(base - p);
@@ -151,9 +144,9 @@ export type Point = readonly [number, number];
 const rad = (deg: number) => (deg * Math.PI) / 180;
 
 /**
- * Screen-space corners of a slot's card, following exactly the CSS chain: card `translate(0, y) rotateY(a)
- * translateZ(R)` about its centre, scene `translateZ(-R) rotateX(TILT_X) rotateZ(TILT_Z)`, then perspective
- * PERSPECTIVE_PX around (50%, ORIGIN_Y). Returns null when a corner falls behind the camera.
+ * Sudut kartu sebuah slot di layar, persis mengikuti rantai CSS: kartu `translate(0, y) rotateY(a)
+ * translateZ(R)` di sekitar pusatnya, scene `translateZ(-R) rotateX(TILT_X) rotateZ(TILT_Z)`, lalu perspective
+ * PERSPECTIVE_PX di sekitar (50%, ORIGIN_Y). Balikannya null kalau ada sudut yang jatuh di belakang kamera.
  */
 export function projectCard(
   slot: number,
@@ -177,11 +170,11 @@ export function projectCard(
     [card.width / 2, card.height / 2],
     [-card.width / 2, card.height / 2],
   ] as const) {
-    // Card: rotateY(a) of (qx, qy, R), then translate y.
+    // Kartu: rotateY(a) dari (qx, qy, R), lalu translate y.
     let x = qx * Math.cos(a) + geometry.radius * Math.sin(a);
     let y = qy + d * geometry.rise;
     let z = -qx * Math.sin(a) + geometry.radius * Math.cos(a);
-    // Scene: rotateZ, then rotateX, then translateZ(-R) (CSS applies the right-most function first).
+    // Scene: rotateZ, lalu rotateX, lalu translateZ(-R) (CSS menerapkan fungsi paling kanan duluan).
     [x, y] = [x * Math.cos(cz) - y * Math.sin(cz), x * Math.sin(cz) + y * Math.cos(cz)];
     [y, z] = [y * Math.cos(cx) - z * Math.sin(cx), y * Math.sin(cx) + z * Math.cos(cx)];
     z -= geometry.radius;
@@ -192,7 +185,7 @@ export function projectCard(
   return corners;
 }
 
-/** Separating-axis test for two convex polygons (true = they overlap with positive area). */
+/** Separating-axis test buat dua poligon konveks (true = beririsan dengan luas positif). */
 export function polygonsOverlap(a: readonly Point[], b: readonly Point[], epsilon = 0.5): boolean {
   for (const poly of [a, b]) {
     for (let i = 0; i < poly.length; i += 1) {

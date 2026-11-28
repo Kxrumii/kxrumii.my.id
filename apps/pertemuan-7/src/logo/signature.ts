@@ -1,10 +1,10 @@
 /*
- * The owner's mark: a signature-style "F" on an off-white disc. One source for the React logo (LogoMark) and the
- * favicons (tools/favicon.mjs), so the two never drift apart.
+ * Logoku: "F" gaya tanda tangan di atas disc off-white. Satu sumber buat logo React (LogoMark) dan favicon
+ * (scripts/build-favicons.mjs), biar keduanya nggak pernah melenceng.
  *
- * Strokes, in writing order: the wavy top bar with its entry hook; the stem, which loops at the bottom and swings
- * back up across itself like the tail of a signature; the short crossbar. Each centre line is drawn several times,
- * shifted along a narrow pen nib, so the ink thickens on the downstroke and thins on the sideways strokes.
+ * Goresan, berurutan: bar atas bergelombang dengan kait di awal; batang yang melingkar di bawah lalu ayun naik
+ * menyilang dirinya sendiri kayak ekor tanda tangan; crossbar pendek. Tiap garis tengah digambar beberapa kali,
+ * digeser sepanjang mata pena yang sempit, jadi tinta menebal di goresan turun dan menipis di goresan samping.
  */
 export const SIGNATURE_STROKES = [
   'M16 23C13.5 17.5 19 13 26 15C31 16.5 35.5 17.5 41.5 14.5C45 12.8 48.5 12.5 50.5 14.5',
@@ -14,7 +14,7 @@ export const SIGNATURE_STROKES = [
 
 const NIB_ANGLE = (40 * Math.PI) / 180;
 
-/** Offsets (SVG transforms) that spread one centre line across a pen nib `width` units wide. */
+/** Offset (transform SVG) yang menyebar satu garis tengah di mata pena selebar `width` unit. */
 export function nibOffsets(width: number, steps: number): string[] {
   return Array.from({ length: steps }, (_, i) => {
     const t = steps === 1 ? 0 : -width / 2 + (width * i) / (steps - 1);
@@ -30,7 +30,7 @@ export interface SignatureSvgOptions {
   strokeWidth: number;
 }
 
-/** The mark as a standalone SVG document (used for favicons). */
+/** Logo sebagai dokumen SVG mandiri (dipakai buat favicon). */
 export function signatureSvg({ disc, ink, nibWidth, nibSteps, strokeWidth }: SignatureSvgOptions): string {
   const offsets = nibOffsets(nibWidth, nibSteps);
   const paths = SIGNATURE_STROKES.map((d) => offsets.map((offset) => `<path d="${d}" transform="${offset}"/>`).join('')).join('');

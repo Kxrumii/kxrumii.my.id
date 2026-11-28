@@ -3,8 +3,8 @@ interface RollingLabelProps {
 }
 
 /**
- * Two stacked copies of a label: on hover/active the first rolls down and out while the second rolls in
- * from above (the switch and nav labels). The copy is aria-hidden so the text is read once.
+ * Dua salinan label bertumpuk: pas hover/active yang pertama menggulung turun keluar, yang kedua masuk dari atas
+ * (label switch dan nav). Salinannya aria-hidden biar teksnya kebaca sekali aja.
  */
 export function RollingLabel({ text }: RollingLabelProps) {
   return (

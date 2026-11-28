@@ -1,17 +1,17 @@
 import { startMusic, type MusicStatus } from './music';
 
 /*
- * Sound for the portfolio: ONE lazily created AudioContext, Web Audio only.
+ * Sound portfolio: SATU AudioContext yang dibuat lazy, cuma Web Audio.
  *
- *   music (Shelter loop, see music.ts) -> musicBus ─┐
- *   interface SFX (procedural)          -> sfxBus   ─┴─> master -> compressor -> destination
+ *   musik (loop Shelter, lihat music.ts)  -> musicBus ─┐
+ *   SFX interface (prosedural)            -> sfxBus   ─┴─> master -> compressor -> destination
  *
- * - One switch ("sound") drives music and SFX together. Every document load starts silent; the gate asks
- *   ("enter with sound" / "enter without sound") and the bottom-right button toggles it afterwards.
- * - The context is only created from a user gesture (autoplay-policy safe).
- * - Sound off or hidden tab: master fades out and the context is suspended. Suspending freezes the context clock,
- *   so the music schedule simply pauses and resumes in place.
- * - A playing video ducks the music.
+ * - Satu switch ("sound") ngatur musik dan SFX sekaligus. Tiap load dokumen mulai senyap; gate nanya
+ *   ("enter with sound" / "enter without sound"), habis itu tombol kanan bawah yang toggle.
+ * - Context baru dibuat dari user gesture (aman buat autoplay policy).
+ * - Sound off atau tab hidden: master fade out dan context di-suspend. Suspend membekukan clock context,
+ *   jadi jadwal musik tinggal pause dan lanjut di tempat.
+ * - Video yang lagi main bikin musik ducking.
  */
 export type SoundName = 'hover' | 'click' | 'open' | 'close' | 'enter' | 'switch' | 'spiral' | 'list' | 'next' | 'stars' | 'trail' | 'ripple' | 'shoot';
 
@@ -23,8 +23,10 @@ export interface SoundSnapshot {
 
 const MASTER_LEVEL = 0.85;
 const MUSIC_LEVEL = 0.55;
-/** A playing video takes over completely. */
+/** Pas ada video main, musik dimatiin total. */
 const MUSIC_DUCK_LEVEL = 0;
+/** SFX dikeraskan +6 dB lewat bus ini, soalnya sebelumnya kurang kedengeran. */
+const SFX_LEVEL = 2;
 const HOVER_THROTTLE_MS = 70;
 const TRAIL_THROTTLE_MS = 95;
 
@@ -67,7 +69,7 @@ function ensureContext(): AudioContext | null {
   master = ctx.createGain();
   master.gain.value = 0;
   sfxBus = ctx.createGain();
-  sfxBus.gain.value = 1;
+  sfxBus.gain.value = SFX_LEVEL;
   musicBus = ctx.createGain();
   musicBus.gain.value = 0;
   sfxBus.connect(master);
@@ -84,11 +86,11 @@ function applyLevels(): void {
   const now = ctx.currentTime;
   const audible = snapshot.enabled && document.visibilityState === 'visible';
   master.gain.cancelScheduledValues(now);
-  // On: full level at once, so the very first click (the gate choice) is heard. Off: a short fade.
+  // On: langsung level penuh, biar klik pertama (pilihan di gate) kedengeran. Off: fade pendek.
   if (audible) master.gain.setValueAtTime(MASTER_LEVEL, now);
   else master.gain.setTargetAtTime(0, now, 0.05);
   musicBus.gain.cancelScheduledValues(now);
-  // Music swells in slowly (about 1.5 s) and ducks under a playing video.
+  // Musik naik pelan (sekitar 1.5 s) dan ducking pas ada video main.
   musicBus.gain.setTargetAtTime(audible ? (ducked ? MUSIC_DUCK_LEVEL : MUSIC_LEVEL) : 0, now, audible ? 0.5 : 0.05);
   window.clearTimeout(suspendTimer);
   if (audible) {
@@ -100,7 +102,7 @@ function applyLevels(): void {
   }
 }
 
-/** Turns sound on or off. Must be called from a user gesture the first time it turns sound on. */
+/** Nyalain/matiin sound. Pertama kali nyalain harus dari user gesture. */
 export function setSoundEnabled(enabled: boolean): void {
   if (!snapshot.supported) return;
   emit({ enabled });
@@ -115,7 +117,6 @@ export function toggleSound(): void {
   setSoundEnabled(!snapshot.enabled);
 }
 
-/** Ducks the music while a video plays. */
 export function setMusicDucked(value: boolean): void {
   if (ducked === value) return;
   ducked = value;
@@ -158,16 +159,16 @@ function filteredNoise(at: number, from: number, to: number, duration: number, p
   source.stop(at + duration + 0.05);
 }
 
-/** Pentatonic steps (A minor-ish) so stacked sparkles never clash with each other. */
+/** Tangga pentatonik (kira-kira A minor) biar sparkle yang numpuk nggak tabrakan. */
 const SPARKLE = [880, 987.77, 1174.66, 1318.51, 1567.98, 1760, 1975.53, 2349.32];
 
 /**
- * Plays an interface sound when sound is on (no-op otherwise). `amount` (0–1) shapes the continuous ones:
- * the cursor speed for `trail`.
+ * Mainin SFX interface kalau sound on (kalau off nggak ngapa-ngapain). `amount` (0–1) ngatur yang kontinu,
+ * mis. kecepatan kursor buat `trail`.
  */
 export function playSound(name: SoundName, amount = 0.5, afterResume = false): void {
   if (!snapshot.enabled || !ctx || document.visibilityState !== 'visible') return;
-  // A context created by this very gesture can still be starting: play as soon as it runs.
+  // Context yang baru dibuat gesture ini bisa aja masih starting: mainin begitu udah running.
   if (ctx.state === 'suspended' && !afterResume) {
     void ctx.resume().then(() => playSound(name, amount, true));
     return;
@@ -179,10 +180,10 @@ export function playSound(name: SoundName, amount = 0.5, afterResume = false): v
     case 'hover':
       if (nowMs - lastHoverAt < HOVER_THROTTLE_MS) return;
       lastHoverAt = nowMs;
-      tone(2100, at, 0.05, 0.04);
+      tone(2100, at, 0.08, 0.04);
       break;
     case 'click':
-      // Short and crisp: a high-passed noise tick on top of a quick sine pop.
+      // Pendek dan tajam: tick noise high-pass di atas pop sine singkat.
       filteredNoise(at, 4200, 2600, 0.03, 0.32, 'highpass');
       tone(1480, at, 0.16, 0.035, 'sine', 0.001);
       tone(740, at + 0.004, 0.08, 0.05, 'triangle', 0.001);
@@ -199,13 +200,13 @@ export function playSound(name: SoundName, amount = 0.5, afterResume = false): v
       tone(1046.5, at + 0.18, 0.07, 0.9);
       break;
     case 'spiral':
-      // A rising swirl into the coil.
+      // Swirl naik ke arah coil.
       filteredNoise(at, 320, 2600, 0.34, 0.14);
       tone(523.25, at + 0.04, 0.05, 0.22, 'sine', 0.01);
       tone(783.99, at + 0.12, 0.045, 0.3, 'sine', 0.01);
       break;
     case 'list':
-      // Three quick descending ticks, like rows falling into place.
+      // Tiga tick turun cepat, kayak baris yang jatuh ke tempatnya.
       [1760, 1318.51, 987.77].forEach((freq, i) => tone(freq, at + i * 0.055, 0.06, 0.05, 'triangle', 0.001));
       break;
     case 'switch':
@@ -218,7 +219,7 @@ export function playSound(name: SoundName, amount = 0.5, afterResume = false): v
       tone(987.77, at + 0.22, 0.07, 0.7);
       break;
     case 'stars':
-      // A rising shimmer while the stars come out.
+      // Shimmer naik pas bintang-bintang muncul.
       SPARKLE.forEach((freq, i) => tone(freq, at + i * 0.07, 0.035, 0.5, 'sine', 0.01));
       break;
     case 'trail': {
@@ -226,7 +227,7 @@ export function playSound(name: SoundName, amount = 0.5, afterResume = false): v
       lastTrailAt = nowMs;
       const k = Math.min(Math.max(amount, 0), 1);
       const freq = SPARKLE[Math.min(SPARKLE.length - 1, Math.floor(k * SPARKLE.length))] * 2;
-      tone(freq, at, 0.012 + 0.02 * k, 0.05, 'sine', 0.002);
+      tone(freq, at, 0.02 + 0.032 * k, 0.05, 'sine', 0.002);
       break;
     }
     case 'ripple':
@@ -235,7 +236,7 @@ export function playSound(name: SoundName, amount = 0.5, afterResume = false): v
       tone(1975.53, at + 0.05, 0.03, 1.3, 'sine', 0.01);
       break;
     case 'shoot':
-      filteredNoise(at, 5200, 1400, 0.5, 0.035, 'highpass');
+      filteredNoise(at, 5200, 1400, 0.5, 0.056, 'highpass');
       break;
   }
 }
@@ -246,7 +247,7 @@ if (typeof document !== 'undefined') {
 
 declare global {
   interface Window {
-    /** Development-only read-out for scripted QA. */
+    /** Cuma buat development: read-out buat QA lewat script. */
     __t7Sound?: () => SoundSnapshot;
   }
 }

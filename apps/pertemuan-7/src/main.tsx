@@ -5,8 +5,8 @@ import App from './App';
 import './styles/index.css';
 
 /*
- * Holds the first render until the web font is ready (or `ms` has passed), so the loader's first frame is
- * already set in Inter Tight. The font is preloaded, so this is usually a few dozen milliseconds. Never rejects.
+ * Tahan render pertama sampai web font siap (atau `ms` lewat), biar frame pertama loader udah pakai Inter Tight.
+ * Font-nya di-preload, jadi biasanya cuma beberapa puluh milidetik. Nggak pernah reject.
  */
 function fontReady(ms: number): Promise<void> {
   if (!document.fonts) return Promise.resolve();

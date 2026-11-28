@@ -1,7 +1,7 @@
 /*
- * The gate. Transparent: the background canvas (ASCII wake, no stars yet) shows through, so leaving the gate
- * needs no panel wipe. Leaving dissolves the text and buttons while the F mark flies to the corner (FLIP in
- * Loader.tsx) and the stars come out.
+ * Gate. Transparan: canvas background (ASCII wake, belum ada bintang) kelihatan tembus, jadi keluar dari gate
+ * nggak butuh wipe panel. Pas keluar teks dan tombol larut sementara logo F terbang ke pojok (FLIP di
+ * Loader.tsx) dan bintang-bintang muncul.
  */
 .loader {
   position: fixed;
@@ -42,7 +42,7 @@
     transform 0.6s var(--ease-spring);
 }
 
-/* At 100 the ring closes in on the mark and disappears. */
+/* Di 100 ring menutup ke logo lalu hilang. */
 .loader:not([data-phase='loading']) .loader-ring {
   opacity: 0;
   transform: scale(0.8);
@@ -65,7 +65,7 @@
   filter: blur(4px);
 }
 
-/* The F mark: hidden while counting, springs in at 100, then flies to the corner. */
+/* Logo F: sembunyi pas menghitung, spring masuk di 100, lalu terbang ke pojok. */
 .loader-logo {
   grid-area: 1 / 1;
   width: 96px;
@@ -182,7 +182,7 @@
   }
 }
 
-/* Leaving: everything but the flying mark dissolves. */
+/* Keluar: semuanya larut kecuali logo yang terbang. */
 .loader[data-phase='leaving'] :is(.loader-text, .loader-enter, .loader-silent) {
   opacity: 0;
   filter: blur(8px);
@@ -195,7 +195,7 @@
   transform: translateY(12px);
 }
 
-/* The signature F is written stroke by stroke when the count reaches 100: top bar, looping stem, crossbar. */
+/* F tanda tangan ditulis goresan demi goresan pas hitungan sampai 100: bar atas, batang melingkar, crossbar. */
 .loader-logo .ink path {
   stroke-dasharray: 1;
   stroke-dashoffset: 1;

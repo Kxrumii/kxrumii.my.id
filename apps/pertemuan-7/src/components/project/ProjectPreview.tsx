@@ -13,9 +13,9 @@ interface ProjectPreviewProps {
 }
 
 /**
- * Full-height preview at the top of the white card: a muted loop of the work (the cover while it loads, or for
- * good when the loop file is not on the server). Clicking it, or "play", opens the full-screen player. Works not
- * on YouTube yet say so instead.
+ * Preview setinggi layar di atas kartu putih: loop karya yang muted (cover pas loading, atau selamanya kalau file
+ * loop-nya nggak ada di server). Klik, atau "play", buka player layar penuh. Karya yang belum ada di YouTube
+ * bilang begitu.
  */
 export function ProjectPreview({ work, number }: ProjectPreviewProps) {
   const reducedMotion = useReducedMotion();
